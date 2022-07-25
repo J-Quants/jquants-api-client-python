@@ -1,0 +1,1 @@
+# jquants-api-client
