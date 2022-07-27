@@ -1,12 +1,12 @@
-# -*- coding=utf-8 -*-
-
-import pandas as pd
-import requests
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
-from dateutil import tz
-from datetime import datetime
 import os
+from datetime import datetime
+from typing import Dict
+
+import pandas as pd  # type: ignore
+import requests
+from dateutil import tz
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry  # type: ignore
 
 
 class JQuantsAPIClient:
@@ -35,8 +35,8 @@ class JQuantsAPIClient:
 
     @staticmethod
     def _request_session(
-            status_forcelist=None,
-            method_whitelist=None,
+        status_forcelist=None,
+        method_whitelist=None,
     ):
         """
         requests の session 取得
@@ -86,7 +86,7 @@ class JQuantsAPIClient:
         return ret
 
     def _post(
-            self, url: str, payload: dict = None, headers: dict = None
+        self, url: str, payload: dict = None, headers: dict = None
     ) -> requests.Response:
         """
         requests の get 用ラッパー
@@ -162,7 +162,7 @@ class JQuantsAPIClient:
             pd.DataFrame: セクター一覧
         """
         url = f"{self.JQUANTS_API_BASE}/listed/sections"
-        params = {}
+        params: Dict = {}
         ret = self._get(url, params)
         d = ret.json()
         df = pd.DataFrame.from_dict(d["sections"])
@@ -224,11 +224,11 @@ class JQuantsAPIClient:
         return df_list
 
     def get_prices_daily_quotes(
-            self,
-            code: str = "",
-            from_yyyymmdd: str = "",
-            to_yyyymmdd: str = "",
-            date_yyyymmdd: str = "",
+        self,
+        code: str = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+        date_yyyymmdd: str = "",
     ) -> pd.DataFrame:
         """
         株価情報を取得
@@ -279,9 +279,9 @@ class JQuantsAPIClient:
         return df[cols]
 
     def get_price_range(
-            self,
-            start_dt: datetime = datetime(2017, 1, 1, tzinfo=tz.gettz("Asia/Tokyo")),
-            end_dt: datetime = datetime.now(tz.gettz("Asia/Tokyo")),
+        self,
+        start_dt: datetime = datetime(2017, 1, 1, tzinfo=tz.gettz("Asia/Tokyo")),
+        end_dt: datetime = datetime.now(tz.gettz("Asia/Tokyo")),
     ) -> pd.DataFrame:
         """
         全銘柄の株価情報を日付範囲指定して取得
@@ -306,7 +306,7 @@ class JQuantsAPIClient:
         return pd.concat(buff)
 
     def get_fins_statements(
-            self, code: str = "", date_yyyymmdd: str = ""
+        self, code: str = "", date_yyyymmdd: str = ""
     ) -> pd.DataFrame:
         """
         財務情報取得
@@ -418,10 +418,10 @@ class JQuantsAPIClient:
         return df[cols]
 
     def get_statements_range(
-            self,
-            start_dt: datetime = datetime(2017, 1, 1, tzinfo=tz.gettz("Asia/Tokyo")),
-            end_dt: datetime = datetime.now(tz.gettz("Asia/Tokyo")),
-            cache_dir: str = "",
+        self,
+        start_dt: datetime = datetime(2017, 1, 1, tzinfo=tz.gettz("Asia/Tokyo")),
+        end_dt: datetime = datetime.now(tz.gettz("Asia/Tokyo")),
+        cache_dir: str = "",
     ) -> pd.DataFrame:
         """
         財務情報を日付範囲指定して取得
@@ -441,7 +441,7 @@ class JQuantsAPIClient:
             # fetch data via API or cache file
             cache_file = f"fins_statements_{s.strftime('%Y%m%d')}.csv.gz"
             if (cache_dir != "") and os.path.isfile(
-                    f"{cache_dir}/{s.strftime('%Y')}/{cache_file}"
+                f"{cache_dir}/{s.strftime('%Y')}/{cache_file}"
             ):
                 df = pd.read_csv(f"{cache_dir}/{s.strftime('%Y')}/{cache_file}")
             else:

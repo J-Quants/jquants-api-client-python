@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "jquants-api-client-python"
+version = "0.1.0"
+description = "J-Quants API Client Library"
+authors = ["J-Quants Project Contributors <j-quants@jpx.co.jp>"]
+readme = "README.md"
+license = "Apache-2.0"
+homepage = "https://github.com/J-Quants/jquants-api-client-python"
+repository = "https://github.com/J-Quants/jquants-api-client-python"
+keywords = ["jquants", "api", "client", "J-Quants"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pandas = "^1.4.3"
+requests = "^2.28.1"
+
+[tool.poetry.dev-dependencies]
+black = "^22.6.0"
+isort = "^5.10.1"
+flake8 = "^4.0.1"
+mypy = "^0.971"
+pyproject-flake8 = "^0.0.1-alpha.4"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.flake8]
+max-line-length = 120
+max-complexity = 18
+ignore = "E203,E266,W503,"
