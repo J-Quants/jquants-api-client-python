@@ -6,34 +6,6 @@ on:
     branches: [ main ]
 
 jobs:
-  linting:
-    runs-on: ubuntu-latest
-    steps:
-      #----------------------------------------------
-      #       check-out repo and set-up python
-      #----------------------------------------------
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v2
-      #----------------------------------------------
-      #        load pip cache if cache exists
-      #----------------------------------------------
-      - uses: actions/cache@v2
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip
-          restore-keys: ${{ runner.os }}-pip
-      #----------------------------------------------
-      #          install and run linters
-      #----------------------------------------------
-      - run: python -m pip install black pyproject-flake8 isort mypy
-      - run: |
-          pflake8 .
-          black . --check
-          isort .
-          mypy .
-
   test:
     #needs: linting
     strategy:
@@ -81,8 +53,13 @@ jobs:
       #----------------------------------------------
       #    install your root project, if required
       #----------------------------------------------
-      - name: Install library
-        run: poetry install --no-interaction
+#      - name: Install library
+#        run: poetry install --no-interaction
+      #----------------------------------------------
+      #               run linter
+      #----------------------------------------------
+      - name: Lint
+        run: make lint
       #----------------------------------------------
       #               run test suite
       #----------------------------------------------
