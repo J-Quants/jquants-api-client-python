@@ -33,3 +33,4 @@ build-backend = "poetry.core.masonry.api"
 max-line-length = 120
 max-complexity = 18
 ignore = "E203,E266,W503,"
+exclude = ".venv"
