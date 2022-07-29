@@ -6,8 +6,30 @@ on:
     branches: [ main ]
 
 jobs:
+  linting:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.10
+      - name: Load cache
+        uses: actions/cache@v2
+        id: cached-poetry-dependencies
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+      - name: Lint
+        run: make lint
+
   test:
-    #needs: linting
     strategy:
       fail-fast: true
       matrix:
@@ -53,13 +75,8 @@ jobs:
       #----------------------------------------------
       #    install your root project, if required
       #----------------------------------------------
-#      - name: Install library
-#        run: poetry install --no-interaction
-      #----------------------------------------------
-      #               run linter
-      #----------------------------------------------
-      - name: Lint
-        run: make lint
+      #      - name: Install library
+      #        run: poetry install --no-interaction
       #----------------------------------------------
       #               run test suite
       #----------------------------------------------
