@@ -91,5 +91,5 @@ jobs:
         env:
           TEST_PYPI_TOKEN: ${{ secrets.TEST_PYPI_TOKEN }}
         run: |
-          poetry publish --build -r testpypi -u "__token__" -p $PYPI_TOKEN
+          poetry publish --build -r testpypi -u "__token__" -p $TEST_PYPI_TOKEN
 
