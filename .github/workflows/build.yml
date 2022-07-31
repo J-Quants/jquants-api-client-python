@@ -84,12 +84,3 @@ jobs:
         run: |
           source .venv/bin/activate
           poetry run pytest --cov=./jquants-api-client-python --cov-report=xml tests/
-      #----------------------------------------------
-      #            publish to Test PYPI
-      #----------------------------------------------
-      - name: publish to TestPYPI
-        env:
-          TEST_PYPI_TOKEN: ${{ secrets.TEST_PYPI_TOKEN }}
-        run: |
-          poetry publish --build -r testpypi -u "__token__" -p $TEST_PYPI_TOKEN
-
