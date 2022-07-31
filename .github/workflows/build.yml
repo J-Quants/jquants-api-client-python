@@ -78,14 +78,18 @@ jobs:
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --no-interaction --no-root
       #----------------------------------------------
-      #    install your root project, if required
-      #----------------------------------------------
-      #      - name: Install library
-      #        run: poetry install --no-interaction
-      #----------------------------------------------
       #               run test suite
       #----------------------------------------------
       - name: Run tests
         run: |
           source .venv/bin/activate
           poetry run pytest --cov=./jquants-api-client-python --cov-report=xml tests/
+      #----------------------------------------------
+      #            publish to Test PYPI
+      #----------------------------------------------
+      - name: publish to TestPYPI
+        env:
+          TEST_PYPI_TOKEN: ${{ secrets.TEST_PYPI_TOKEN }}
+        run: |
+          poetry publish --build -r testpypi -u "__token__" -p $PYPI_TOKEN
+

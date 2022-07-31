@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jquants-api-client"
-version = "0.1.0"
+version = "0.0.0" # use poetry-dynamic-versioning
 description = "J-Quants API Client Library"
 authors = ["J-Quants Project Contributors <j-quants@jpx.co.jp>"]
 readme = "README.md"
@@ -24,6 +24,11 @@ mypy = "^0.971"
 pyproject-flake8 = "^0.0.1-alpha.4"
 pytest = "^7.1.2"
 pytest-cov = "^3.0.0"
+poetry-dynamic-versioning = "^0.17.1"
+
+[tool.poetry-dynamic-versioning]
+enable = true
+style = "pep440"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
