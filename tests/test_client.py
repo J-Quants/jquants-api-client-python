@@ -1,8 +1,8 @@
-from src.client import JQuantsAPIClient
+import jquantsapi
 
 
 def test_jquants_api_client():
-    cli = JQuantsAPIClient(refresh_token="hello")
+    cli = jquantsapi.Client(refresh_token="hello")
     print("Hello world")
     print(cli)
     assert True

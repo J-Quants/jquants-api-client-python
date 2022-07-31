@@ -9,7 +9,7 @@ from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry  # type: ignore
 
 
-class JQuantsAPIClient:
+class Client:
     """
     J-Quants API からデータを取得する
     ref. https://jpx.gitbook.io/j-quants-api/
