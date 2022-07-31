@@ -24,10 +24,10 @@ J-Quants APIを利用するためには [J-Quants API の Web サイト](https:/
 ```python
 from datetime import datetime
 from dateutil import tz
-from jquantsapi import JQuantsAPIClient
+import jquantsapi
 
-my_refresh_token = "*****"
-cli = JQuantsAPIClient(refresh_token=my_refresh_token)
+my_refresh_token:str = "*****"
+cli = jquantsapi.Client(refresh_token=my_refresh_token)
 df = cli.get_price_range(
     start_dt=datetime(2022, 7, 25, tzinfo=tz.gettz("Asia/Tokyo")),
     end_dt=datetime(2022, 7, 26, tzinfo=tz.gettz("Asia/Tokyo")),
