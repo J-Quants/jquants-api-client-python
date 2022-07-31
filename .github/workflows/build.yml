@@ -1,4 +1,4 @@
-name: test
+name: build
 on:
   push:
     branches: [ main ]
@@ -39,7 +39,7 @@ jobs:
       fail-fast: true
       matrix:
         os: [ "ubuntu-latest" ]
-        python-version: [ "3.7", "3.8", "3.9", "3.10" ]
+        python-version: [ "3.7", "3.8", "3.9", "3.10", "3.11-dev" ]
     runs-on: ${{ matrix.os }}
     steps:
       #----------------------------------------------
@@ -88,4 +88,4 @@ jobs:
       - name: Run tests
         run: |
           source .venv/bin/activate
-          pytest tests/
+          poetry run pytest --cov=./jquants-api-client-python --cov-report=xml tests/

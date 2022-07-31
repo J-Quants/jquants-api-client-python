@@ -1,5 +1,6 @@
 # jquants-api-client
-[![PyPI version](https://badge.fury.io/py/jquants-api-client-python.svg)](https://badge.fury.io/py/jquants-api-client-python)
+
+[![PyPI version](https://badge.fury.io/py/jquants-api-client.svg)](https://badge.fury.io/py/jquants-api-client)
 
 個人投資家向けデータAPI配信サービス「 [J-Quants API](https://jpx-jquants.com/#jquants-api) 」のPythonクライアントライブラリです。
 J-QuantsやAPI仕様についての詳細を知りたい方は [公式ウェブサイト](https://jpx-jquants.com/) をご参照ください。
