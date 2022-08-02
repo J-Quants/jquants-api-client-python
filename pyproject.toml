@@ -16,9 +16,9 @@ keywords = ["jquants", "api", "client", "J-Quants"]
 packages = [
     { include = "jquantsapi" }
 ]
+homepage = "https://github.com/J-Quants/jquants-api-client-python"
 
-[project.urls]
-"Homepage" = "https://github.com/J-Quants/jquants-api-client-python"
+[tool.poetry.urls]
 "Bug Tracker" = "https://github.com/J-Quants/jquants-api-client-python/issues"
 
 [build-system]
