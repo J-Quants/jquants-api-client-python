@@ -6,11 +6,7 @@ import pandas as pd  # type: ignore
 import requests
 from dateutil import tz
 from requests.adapters import HTTPAdapter
-
-try:
-    from requests.packages.urllib3.util.retry import Retry  # type: ignore
-except ImportError:
-    from urllib3.util import Retry
+from urllib3.util import Retry
 
 
 class Client:
