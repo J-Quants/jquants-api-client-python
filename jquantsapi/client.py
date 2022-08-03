@@ -6,7 +6,7 @@ import pandas as pd  # type: ignore
 import requests
 from dateutil import tz
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry  # type: ignore
+from urllib3.util import Retry
 
 
 class Client:
