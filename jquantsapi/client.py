@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import pandas as pd  # type: ignore
 import requests
@@ -25,7 +25,7 @@ class Client:
         self.refresh_token = refresh_token
         self._id_token = ""
         self._id_token_expire = pd.Timestamp.utcnow()
-        self._session = None
+        self._session: Optional[requests.Session] = None
 
     def _base_headers(self) -> dict:
         """
