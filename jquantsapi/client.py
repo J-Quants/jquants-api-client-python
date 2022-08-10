@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from typing import Dict
+from typing import Dict, List
 
 import pandas as pd  # type: ignore
 import requests
@@ -25,6 +25,7 @@ class Client:
         self.refresh_token = refresh_token
         self._id_token = ""
         self._id_token_expire = pd.Timestamp.utcnow()
+        self._session = None
 
     def _base_headers(self) -> dict:
         """
@@ -33,10 +34,10 @@ class Client:
         headers = {"Authorization": f"Bearer {self.get_id_token()}"}
         return headers
 
-    @staticmethod
     def _request_session(
-        status_forcelist=None,
-        method_whitelist=None,
+        self,
+        status_forcelist: List[int] = [429, 500, 502, 503, 504],
+        method_whitelist: List[str] = ["HEAD", "GET", "OPTIONS"],
     ):
         """
         requests の session 取得
@@ -44,25 +45,22 @@ class Client:
         リトライを設定
 
         Args:
-            N/A
+            status_forcelist: リトライ対象のステータスコード
+            method_whitelist: リトライ対象のメソッド
         Returns:
             requests.session
         """
-        if status_forcelist is None:
-            status_forcelist = [429, 500, 502, 503, 504]
-        if method_whitelist is None:
-            method_whitelist = ["HEAD", "GET", "OPTIONS"]
+        if self._session is None:
+            retry_strategy = Retry(
+                total=3,
+                status_forcelist=status_forcelist,
+                method_whitelist=method_whitelist,
+            )
+            adapter = HTTPAdapter(max_retries=retry_strategy)
+            self._session = requests.Session()
+            self._session.mount("https://", adapter)
 
-        retry_strategy = Retry(
-            total=3,
-            status_forcelist=status_forcelist,
-            method_whitelist=method_whitelist,
-        )
-        adapter = HTTPAdapter(max_retries=retry_strategy)
-        s = requests.Session()
-        s.mount("https://", adapter)
-        # s.mount("http://", adapter)
-        return s
+        return self._session
 
     def _get(self, url: str, params: dict = None) -> requests.Response:
         """
