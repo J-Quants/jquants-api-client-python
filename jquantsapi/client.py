@@ -1,4 +1,5 @@
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -291,17 +292,21 @@ class Client:
         Returns:
             pd.DataFrame: 株価情報
         """
+        MAX_WOKERS = 5
         buff = []
         dates = pd.date_range(start_dt, end_dt, freq="D")
-        counter = 1
-        for s in dates:
-            df = self.get_prices_daily_quotes(date_yyyymmdd=s.strftime("%Y%m%d"))
-            buff.append(df)
-            # progress log
-            if (counter % 100) == 0:
-                print(f"{counter} / {len(dates)}")
-            counter += 1
-        return pd.concat(buff)
+        with ThreadPoolExecutor(max_workers=MAX_WOKERS) as executor:
+            futures = [
+                executor.submit(
+                    self.get_prices_daily_quotes, date_yyyymmdd=s.strftime("%Y%m%d")
+                )
+                for s in dates
+            ]
+            for future in as_completed(futures):
+                df = future.result()
+                buff.append(df)
+
+        return pd.concat(buff).sort_values(["Code", "Date"])
 
     def get_fins_statements(
         self, code: str = "", date_yyyymmdd: str = ""
