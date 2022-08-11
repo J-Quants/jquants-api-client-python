@@ -1,8 +1,7 @@
 import os
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Union
 
-from typing import Union
 import pandas as pd  # type: ignore
 import requests
 from dateutil import tz
@@ -10,6 +9,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
 DatetimeLike = Union[datetime, pd.Timestamp, str]
+
 
 class Client:
     """
