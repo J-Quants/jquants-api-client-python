@@ -1,12 +1,14 @@
 import os
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Union
 
 import pandas as pd  # type: ignore
 import requests
 from dateutil import tz
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
+
+DatetimeLike = Union[datetime, pd.Timestamp, str]
 
 
 class Client:
@@ -280,8 +282,8 @@ class Client:
 
     def get_price_range(
         self,
-        start_dt: datetime = datetime(2017, 1, 1, tzinfo=tz.gettz("Asia/Tokyo")),
-        end_dt: datetime = datetime.now(tz.gettz("Asia/Tokyo")),
+        start_dt: DatetimeLike = "20170101",
+        end_dt: DatetimeLike = datetime.now(),
     ) -> pd.DataFrame:
         """
         全銘柄の株価情報を日付範囲指定して取得
