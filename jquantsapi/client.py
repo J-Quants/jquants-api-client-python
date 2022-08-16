@@ -298,7 +298,7 @@ class Client:
             end_dt: 取得終了日
 
         Returns:
-            pd.DataFrame: 株価情報
+            pd.DataFrame: 株価情報 (Code, Date列でソートされています)
         """
         buff = []
         dates = pd.date_range(start_dt, end_dt, freq="D")
