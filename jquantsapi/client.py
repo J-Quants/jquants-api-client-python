@@ -1,13 +1,15 @@
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import pandas as pd  # type: ignore
 import requests
 from dateutil import tz
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
+
+DatetimeLike = Union[datetime, pd.Timestamp, str]
 
 
 class Client:
@@ -17,6 +19,7 @@ class Client:
     """
 
     JQUANTS_API_BASE = "https://api.jpx-jquants.com/v1"
+    MAX_WORKERS = 5
 
     def __init__(self, refresh_token: str) -> None:
         """
@@ -37,8 +40,8 @@ class Client:
 
     def _request_session(
         self,
-        status_forcelist: List[int] = [429, 500, 502, 503, 504],
-        method_whitelist: List[str] = ["HEAD", "GET", "OPTIONS"],
+        status_forcelist: Optional[List[int]] = None,
+        method_whitelist: Optional[List[str]] = None,
     ):
         """
         requests の session 取得
@@ -51,6 +54,11 @@ class Client:
         Returns:
             requests.session
         """
+        if status_forcelist is None:
+            status_forcelist = [429, 500, 502, 503, 504]
+        if method_whitelist is None:
+            method_whitelist = ["HEAD", "GET", "OPTIONS", "POST"]
+
         if self._session is None:
             retry_strategy = Retry(
                 total=3,
@@ -101,7 +109,7 @@ class Client:
         Returns:
             requests.Response: レスポンス
         """
-        s = self._request_session(method_whitelist=["POST"])
+        s = self._request_session()
 
         ret = s.post(url, data=payload, headers=headers, timeout=30)
         ret.raise_for_status()
@@ -239,7 +247,7 @@ class Client:
             date_yyyymmdd: 取得日
 
         Returns:
-            pd.DataFrame: 株価情報
+            pd.DataFrame: 株価情報 (Code, Date列でソートされています)
         """
         url = f"{self.JQUANTS_API_BASE}/prices/daily_quotes"
         params = {
@@ -279,8 +287,8 @@ class Client:
 
     def get_price_range(
         self,
-        start_dt: datetime = datetime(2017, 1, 1, tzinfo=tz.gettz("Asia/Tokyo")),
-        end_dt: datetime = datetime.now(tz.gettz("Asia/Tokyo")),
+        start_dt: DatetimeLike = "20170101",
+        end_dt: DatetimeLike = datetime.now(),
     ) -> pd.DataFrame:
         """
         全銘柄の株価情報を日付範囲指定して取得
@@ -292,10 +300,9 @@ class Client:
         Returns:
             pd.DataFrame: 株価情報
         """
-        MAX_WOKERS = 5
         buff = []
         dates = pd.date_range(start_dt, end_dt, freq="D")
-        with ThreadPoolExecutor(max_workers=MAX_WOKERS) as executor:
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
             futures = [
                 executor.submit(
                     self.get_prices_daily_quotes, date_yyyymmdd=s.strftime("%Y%m%d")
