@@ -1,6 +1,7 @@
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from typing import Dict, Union
+from typing import Dict, List, Optional, Union
 
 import pandas as pd  # type: ignore
 import requests
@@ -18,6 +19,7 @@ class Client:
     """
 
     JQUANTS_API_BASE = "https://api.jpx-jquants.com/v1"
+    MAX_WORKERS = 5
 
     def __init__(self, refresh_token: str) -> None:
         """
@@ -27,6 +29,7 @@ class Client:
         self.refresh_token = refresh_token
         self._id_token = ""
         self._id_token_expire = pd.Timestamp.utcnow()
+        self._session: Optional[requests.Session] = None
 
     def _base_headers(self) -> dict:
         """
@@ -35,10 +38,10 @@ class Client:
         headers = {"Authorization": f"Bearer {self.get_id_token()}"}
         return headers
 
-    @staticmethod
     def _request_session(
-        status_forcelist=None,
-        method_whitelist=None,
+        self,
+        status_forcelist: Optional[List[int]] = None,
+        method_whitelist: Optional[List[str]] = None,
     ):
         """
         requests の session 取得
@@ -46,25 +49,27 @@ class Client:
         リトライを設定
 
         Args:
-            N/A
+            status_forcelist: リトライ対象のステータスコード
+            method_whitelist: リトライ対象のメソッド
         Returns:
             requests.session
         """
         if status_forcelist is None:
             status_forcelist = [429, 500, 502, 503, 504]
         if method_whitelist is None:
-            method_whitelist = ["HEAD", "GET", "OPTIONS"]
+            method_whitelist = ["HEAD", "GET", "OPTIONS", "POST"]
 
-        retry_strategy = Retry(
-            total=3,
-            status_forcelist=status_forcelist,
-            method_whitelist=method_whitelist,
-        )
-        adapter = HTTPAdapter(max_retries=retry_strategy)
-        s = requests.Session()
-        s.mount("https://", adapter)
-        # s.mount("http://", adapter)
-        return s
+        if self._session is None:
+            retry_strategy = Retry(
+                total=3,
+                status_forcelist=status_forcelist,
+                method_whitelist=method_whitelist,
+            )
+            adapter = HTTPAdapter(max_retries=retry_strategy)
+            self._session = requests.Session()
+            self._session.mount("https://", adapter)
+
+        return self._session
 
     def _get(self, url: str, params: dict = None) -> requests.Response:
         """
@@ -104,7 +109,7 @@ class Client:
         Returns:
             requests.Response: レスポンス
         """
-        s = self._request_session(method_whitelist=["POST"])
+        s = self._request_session()
 
         ret = s.post(url, data=payload, headers=headers, timeout=30)
         ret.raise_for_status()
@@ -242,7 +247,7 @@ class Client:
             date_yyyymmdd: 取得日
 
         Returns:
-            pd.DataFrame: 株価情報
+            pd.DataFrame: 株価情報 (Code, Date列でソートされています)
         """
         url = f"{self.JQUANTS_API_BASE}/prices/daily_quotes"
         params = {
@@ -293,19 +298,22 @@ class Client:
             end_dt: 取得終了日
 
         Returns:
-            pd.DataFrame: 株価情報
+            pd.DataFrame: 株価情報 (Code, Date列でソートされています)
         """
         buff = []
         dates = pd.date_range(start_dt, end_dt, freq="D")
-        counter = 1
-        for s in dates:
-            df = self.get_prices_daily_quotes(date_yyyymmdd=s.strftime("%Y%m%d"))
-            buff.append(df)
-            # progress log
-            if (counter % 100) == 0:
-                print(f"{counter} / {len(dates)}")
-            counter += 1
-        return pd.concat(buff)
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            futures = [
+                executor.submit(
+                    self.get_prices_daily_quotes, date_yyyymmdd=s.strftime("%Y%m%d")
+                )
+                for s in dates
+            ]
+            for future in as_completed(futures):
+                df = future.result()
+                buff.append(df)
+
+        return pd.concat(buff).sort_values(["Code", "Date"])
 
     def get_fins_statements(
         self, code: str = "", date_yyyymmdd: str = ""
