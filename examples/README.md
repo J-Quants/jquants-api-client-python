@@ -1,0 +1,19 @@
+# Examples
+
+jquants-api-client-python の使用例集です。データの取得方法や分析のアイディアなどが含まれています。使用例のPRをお待ちしております。
+
+## Google Colab
+
+Google Colab での使用例です。実際に実行することも可能となっていますのでご活用ください。
+
+| ファイル | 内容 | Colabで開く |
+| :- | :- | :-: |
+| [20220825-000-write-refresh_token.ipynb](20220825-000-write-refresh_token.ipynb) | リフレッシュトークンを Google Drive のファイルに書き込みます。 | |
+| [20220825-001-price-movement.ipynb](20220825-001-price-movement.ipynb) | 株価の推移をプロットします。 | |
+| [20220825-002-sector.ipynb](20220825-002-sector.ipynb) | セクターのリターンをプロットします。| |
+| [20220825-003-dividend.ipynb](20220825-003-dividend.ipynb) | 配当利回りを一覧表示します。 | |
+
+## その他の使用例
+
+- [AlpacaDB/jquants-api-sample](https://github.com/AlpacaDB/jquants-api-sample)
+    - jquants-api-client-python の使用方法ノートブックです。データ取得用メソッドを網羅しています。
