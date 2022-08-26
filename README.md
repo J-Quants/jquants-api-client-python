@@ -52,6 +52,8 @@ APIレスポンスがDataframeの形式で取得できます。
 [8388 rows x 14 columns]
 ```
 
+より具体的な使用例は [サンプルノートブック(/examples)](examples) をご参照ください。
+
 ## 対応API
 
 ### ラッパー群　 
