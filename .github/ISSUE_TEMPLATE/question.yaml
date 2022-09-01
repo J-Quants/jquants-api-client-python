@@ -1,7 +1,7 @@
 name: ❓ Questions/質問 ❓
 description: I have a question about the SDK I can't find an answer to in the documentation or README.
 title: "[Question]: "
-labels: [ kind/question ]
+labels: [ question ]
 assignees:
   -
 body:
