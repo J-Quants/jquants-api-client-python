@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to request a feature for jquants-api-client-python! Please fill the form in English/Japanese!
+        Thanks for taking the time to request a feature for jquants-api-client-python! Please fill the form in English/日本語!
   - type: checkboxes
     attributes:
       label: Is there an existing issue for this?
