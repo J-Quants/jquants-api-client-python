@@ -18,7 +18,7 @@ body:
       options:
         - label: I have searched the existing issues to ensure there isn't already an issue about this question.
           required: true
-        - label: My question has to do with the Python SDK and isn't a general question about the API. (If it is please open your issue [here](https://github.com/alpacahq/Alpaca-API))
+        - label: My question has to do with the Python SDK and isn't a general question about the API. (If it is please open your issue in J-Quants API workspace on Slack)
           required: true
         - label: My question isn't about how to do a specific algorithm or asking for trade advice (answers to these are outside the scope of this repo).
           required: true
