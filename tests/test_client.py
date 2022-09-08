@@ -135,13 +135,14 @@ def test_client(
     exp_refresh_token_expire,
 ):
     utcnow = pd.Timestamp("2022-09-08T22:00:00Z")
-    with (
-        patch.object(jquantsapi.Client, "_is_colab", return_value=True),
-        patch.object(jquantsapi.client.os.path, "isfile", side_effect=isfile),
-        patch("builtins.open"),
-        patch.dict(jquantsapi.client.os.environ, env, clear=True),
-        patch.object(jquantsapi.client.tomllib, "load", side_effect=load),
-        patch.object(jquantsapi.client.pd.Timestamp, "utcnow", return_value=utcnow),
+    with patch.object(jquantsapi.Client, "_is_colab", return_value=True), patch.object(
+        jquantsapi.client.os.path, "isfile", side_effect=isfile
+    ), patch("builtins.open"), patch.dict(
+        jquantsapi.client.os.environ, env, clear=True
+    ), patch.object(
+        jquantsapi.client.tomllib, "load", side_effect=load
+    ), patch.object(
+        jquantsapi.client.pd.Timestamp, "utcnow", return_value=utcnow
     ):
         cli = jquantsapi.Client(
             refresh_token=refresh_token, mail_address=mail_address, password=password
