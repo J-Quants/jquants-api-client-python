@@ -5,7 +5,6 @@ from typing import Dict, List, Optional, Union
 
 import pandas as pd  # type: ignore
 import requests
-from dateutil import tz
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
