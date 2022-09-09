@@ -65,7 +65,12 @@ class Client:
                 status_forcelist=status_forcelist,
                 method_whitelist=method_whitelist,
             )
-            adapter = HTTPAdapter(max_retries=retry_strategy)
+            adapter = HTTPAdapter(
+                # 安全のため並列スレッド数に更に10追加しておく
+                pool_connections=self.MAX_WORKERS + 10,
+                pool_maxsize=self.MAX_WORKERS + 10,
+                max_retries=retry_strategy,
+            )
             self._session = requests.Session()
             self._session.mount("https://", adapter)
 
