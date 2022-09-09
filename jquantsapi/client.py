@@ -66,8 +66,8 @@ class Client:
                 method_whitelist=method_whitelist,
             )
             adapter = HTTPAdapter(
-                pool_connections=self.MAX_WORKERS,
-                pool_maxsize=self.MAX_WORKERS,
+                pool_connections=self.MAX_WORKERS + 10,
+                pool_maxsize=self.MAX_WORKERS + 10,
                 max_retries=retry_strategy,
             )
             self._session = requests.Session()
