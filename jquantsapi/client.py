@@ -429,8 +429,8 @@ class Client:
 
     def get_statements_range(
         self,
-        start_dt: datetime = datetime(2017, 1, 1, tzinfo=tz.gettz("Asia/Tokyo")),
-        end_dt: datetime = datetime.now(tz.gettz("Asia/Tokyo")),
+        start_dt: DatetimeLike = "20170101",
+        end_dt: DatetimeLike = datetime.now(),
         cache_dir: str = "",
     ) -> pd.DataFrame:
         """
