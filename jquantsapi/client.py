@@ -39,9 +39,9 @@ class Client:
         return headers
 
     def _request_session(
-            self,
-            status_forcelist: Optional[List[int]] = None,
-            method_whitelist: Optional[List[str]] = None,
+        self,
+        status_forcelist: Optional[List[int]] = None,
+        method_whitelist: Optional[List[str]] = None,
     ):
         """
         requests の session 取得
@@ -66,6 +66,7 @@ class Client:
                 method_whitelist=method_whitelist,
             )
             adapter = HTTPAdapter(
+                # 安全のため並列スレッド数に更に10追加しておく
                 pool_connections=self.MAX_WORKERS + 10,
                 pool_maxsize=self.MAX_WORKERS + 10,
                 max_retries=retry_strategy,
@@ -97,7 +98,7 @@ class Client:
         return ret
 
     def _post(
-            self, url: str, payload: dict = None, headers: dict = None
+        self, url: str, payload: dict = None, headers: dict = None
     ) -> requests.Response:
         """
         requests の get 用ラッパー
@@ -235,11 +236,11 @@ class Client:
         return df_list
 
     def get_prices_daily_quotes(
-            self,
-            code: str = "",
-            from_yyyymmdd: str = "",
-            to_yyyymmdd: str = "",
-            date_yyyymmdd: str = "",
+        self,
+        code: str = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+        date_yyyymmdd: str = "",
     ) -> pd.DataFrame:
         """
         株価情報を取得
@@ -290,9 +291,9 @@ class Client:
         return df[cols]
 
     def get_price_range(
-            self,
-            start_dt: DatetimeLike = "20170101",
-            end_dt: DatetimeLike = datetime.now(),
+        self,
+        start_dt: DatetimeLike = "20170101",
+        end_dt: DatetimeLike = datetime.now(),
     ) -> pd.DataFrame:
         """
         全銘柄の株価情報を日付範囲指定して取得
@@ -320,7 +321,7 @@ class Client:
         return pd.concat(buff).sort_values(["Code", "Date"])
 
     def get_fins_statements(
-            self, code: str = "", date_yyyymmdd: str = ""
+        self, code: str = "", date_yyyymmdd: str = ""
     ) -> pd.DataFrame:
         """
         財務情報取得
@@ -432,10 +433,10 @@ class Client:
         return df[cols]
 
     def get_statements_range(
-            self,
-            start_dt: datetime = datetime(2017, 1, 1, tzinfo=tz.gettz("Asia/Tokyo")),
-            end_dt: datetime = datetime.now(tz.gettz("Asia/Tokyo")),
-            cache_dir: str = "",
+        self,
+        start_dt: datetime = datetime(2017, 1, 1, tzinfo=tz.gettz("Asia/Tokyo")),
+        end_dt: datetime = datetime.now(tz.gettz("Asia/Tokyo")),
+        cache_dir: str = "",
     ) -> pd.DataFrame:
         """
         財務情報を日付範囲指定して取得
@@ -455,7 +456,7 @@ class Client:
             # fetch data via API or cache file
             cache_file = f"fins_statements_{s.strftime('%Y%m%d')}.csv.gz"
             if (cache_dir != "") and os.path.isfile(
-                    f"{cache_dir}/{s.strftime('%Y')}/{cache_file}"
+                f"{cache_dir}/{s.strftime('%Y')}/{cache_file}"
             ):
                 df = pd.read_csv(f"{cache_dir}/{s.strftime('%Y')}/{cache_file}")
             else:

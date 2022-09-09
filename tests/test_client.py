@@ -16,7 +16,6 @@ def test_get_price_range():
     # 実際に通信が発生しないようにする。
     mock = MagicMock(return_value=pd.DataFrame(columns=["Code", "Date"]))
     cli = jquantsapi.Client(refresh_token="dummy")
-
     cli.get_prices_daily_quotes = mock  # get_prices_daily_quotes() をモックに置き換える
     formats = {
         # テストする期間はいつでも良いので、何かが起こりやすい閏日をテスト対象に含む
@@ -42,7 +41,3 @@ def test_get_price_range():
             call.get_prices_daily_quotes(date_yyyymmdd="20200302"),
         ]
         mock.reset_mock()
-
-
-def test_client():
-    assert False
