@@ -80,6 +80,15 @@ class Client:
         self._id_token_expire = pd.Timestamp.utcnow()
         self._session: Optional[requests.Session] = None
 
+        if ((self._mail_address == "") or (self._password == "")) and (
+            self._refresh_token == ""
+        ):
+            raise ValueError(
+                "Either mail_address/password or refresh_token is required."
+            )
+        if (self._mail_address != "") and ("@" not in self._mail_address):
+            raise ValueError("mail_address must contain '@' charactor.")
+
     def _is_colab(self) -> bool:
         """
         Return True if running in colab
@@ -237,7 +246,9 @@ class Client:
         ret.raise_for_status()
         return ret
 
-    def get_refresh_token(self, mail_address: str, password: str) -> str:
+    def get_refresh_token(
+        self, mail_address: Optional[str] = None, password: Optional[str] = None
+    ) -> str:
         """
         get J-Quants API refresh token
 
@@ -249,6 +260,16 @@ class Client:
         """
         if self._refresh_token_expire > pd.Timestamp.utcnow():
             return self._refresh_token
+
+        if mail_address is None:
+            mail_address = self._mail_address
+        if password is None:
+            password = self._password
+
+        if mail_address == "" or password == "":
+            raise ValueError("mail_address/password are required")
+        if (mail_address is not None) and ("@" not in mail_address):
+            raise ValueError("mail_address must contain '@' charactor.")
 
         url = f"{self.JQUANTS_API_BASE}/token/auth_user"
         data = {
@@ -281,7 +302,7 @@ class Client:
         if refresh_token is not None:
             _refresh_token = refresh_token
         else:
-            _refresh_token = self.get_refresh_token(self._mail_address, self._password)
+            _refresh_token = self.get_refresh_token()
 
         url = (
             f"{self.JQUANTS_API_BASE}/token/auth_refresh?refreshtoken={_refresh_token}"
