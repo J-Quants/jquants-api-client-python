@@ -540,7 +540,7 @@ class Client:
             date_yyyymmdd: 日付(YYYYMMDD or YYYY-MM-DD)
 
         Returns:
-            pd.DataFrame: 財務情報
+            pd.DataFrame: 財務情報 (DisclosedUnixTime列、DisclosureNumber列でソートされています)
         """
         url = f"{self.JQUANTS_API_BASE}/fins/statements"
         params = {
@@ -609,7 +609,7 @@ class Client:
         df.loc[:, "CurrentFiscalYearEndDate"] = pd.to_datetime(
             df["CurrentFiscalYearEndDate"], format="%Y-%m-%d"
         )
-        df.sort_values("DisclosedUnixTime", inplace=True)
+        df.sort_values(["DisclosedUnixTime", "DisclosureNumber"], inplace=True)
         return df[cols]
 
     def get_fins_announcement(self) -> pd.DataFrame:
@@ -656,31 +656,40 @@ class Client:
             cache_dir: CSV形式のキャッシュファイルが存在するディレクトリ
 
         Returns:
-            pd.DataFrame: 財務情報
+            pd.DataFrame: 財務情報 (DisclosedUnixTime列、DisclosureNumber列でソートされています)
         """
+        # pre-load id_token
+        self.get_id_token()
+
         buff = []
+        futures = {}
         dates = pd.date_range(start_dt, end_dt, freq="D")
-        counter = 1
-        for s in dates:
-            # fetch data via API or cache file
-            cache_file = f"fins_statements_{s.strftime('%Y%m%d')}.csv.gz"
-            if (cache_dir != "") and os.path.isfile(
-                f"{cache_dir}/{s.strftime('%Y')}/{cache_file}"
-            ):
-                df = pd.read_csv(f"{cache_dir}/{s.strftime('%Y')}/{cache_file}")
-            else:
-                df = self.get_fins_statements(date_yyyymmdd=s.strftime("%Y%m%d"))
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            for s in dates:
+                # fetch data via API or cache file
+                yyyymmdd = s.strftime("%Y%m%d")
+                yyyy = yyyymmdd[:4]
+                cache_file = f"fins_statements_{yyyymmdd}.csv.gz"
+                if (cache_dir != "") and os.path.isfile(
+                    f"{cache_dir}/{yyyy}/{cache_file}"
+                ):
+                    df = pd.read_csv(f"{cache_dir}/{yyyy}/{cache_file}")
+                    buff.append(df)
+                else:
+                    future = executor.submit(
+                        self.get_fins_statements, date_yyyymmdd=yyyymmdd
+                    )
+                    futures[future] = yyyymmdd
+            for future in as_completed(futures):
+                df = future.result()
+                buff.append(df)
+                yyyymmdd = futures[future]
+                yyyy = yyyymmdd[:4]
+                cache_file = f"fins_statements_{yyyymmdd}.csv.gz"
                 if cache_dir != "":
                     # create year directory
-                    os.makedirs(f"{cache_dir}/{s.strftime('%Y')}", exist_ok=True)
+                    os.makedirs(f"{cache_dir}/{yyyy}", exist_ok=True)
                     # write cache file
-                    df.to_csv(
-                        f"{cache_dir}/{s.strftime('%Y')}/{cache_file}", index=False
-                    )
+                    df.to_csv(f"{cache_dir}/{yyyy}/{cache_file}", index=False)
 
-            buff.append(df)
-            # progress log
-            if (counter % 100) == 0:
-                print(f"{counter} / {len(dates)}")
-            counter += 1
-        return pd.concat(buff)
+        return pd.concat(buff).sort_values(["DisclosedUnixTime", "DisclosureNumber"])
