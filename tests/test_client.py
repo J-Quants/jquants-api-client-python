@@ -233,6 +233,52 @@ def test_get_refresh_token(
         assert ret == "ret_token"
 
 
+@pytest.mark.parametrize(
+    "section, from_yyyymmdd, to_yyyymmdd, exp_params",
+    (
+        ("", "", "", {}),
+        ("TSEPrime", "", "", {"section": "TSEPrime"}),
+        (
+            jquantsapi.MARKET_API_SECTIONS.TSE1st,
+            "",
+            "",
+            {"section": "TSE1st"},
+        ),
+        ("", "20220101", "", {"from": "20220101"}),
+        ("", "", "20220101", {"to": "20220101"}),
+        (
+            "TSEPrime",
+            "20220101",
+            "20220102",
+            {"section": "TSEPrime", "from": "20220101", "to": "20220102"},
+        ),
+    ),
+)
+def test_get_markets_trades_spec(section, from_yyyymmdd, to_yyyymmdd, exp_params):
+    config = {
+        "mail_address": "",
+        "password": "",
+        "refresh_token": "dummy_token",
+    }
+
+    ret_value = {"trades_spec": []}
+    exp_ret_len = 0
+    exp_raise = does_not_raise()
+
+    with exp_raise, patch.object(
+        jquantsapi.Client, "_load_config", return_value=config
+    ), patch.object(jquantsapi.Client, "_get") as mock_get:
+        mock_get.return_value.json.return_value = ret_value
+
+        cli = jquantsapi.Client()
+        ret = cli.get_markets_trades_spec(
+            section=section, from_yyyymmdd=from_yyyymmdd, to_yyyymmdd=to_yyyymmdd
+        )
+        args, _ = mock_get.call_args
+        assert args[1] == exp_params
+        assert len(ret) == exp_ret_len
+
+
 def test_get_price_range():
     """
     get_price_range()を呼ぶ際、引数に様々な型が入っていても問題なく
