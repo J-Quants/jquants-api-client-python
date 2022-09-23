@@ -17,6 +17,8 @@ from tenacity import (
 )
 from urllib3.util import Retry
 
+from jquantsapi.enums import MARKET_API_SECTIONS
+
 if sys.version_info >= (3, 11):
     import tomllib
 else:
@@ -610,6 +612,101 @@ class Client:
             df["CurrentFiscalYearEndDate"], format="%Y-%m-%d"
         )
         df.sort_values(["DisclosedUnixTime", "DisclosureNumber"], inplace=True)
+        return df[cols]
+
+    def get_markets_trades_spec(
+        self,
+        section: Union[str, MARKET_API_SECTIONS] = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+    ) -> pd.DataFrame:
+        """
+        Weekly Trading by Type of Investors
+
+        Args:
+            section: section name (e.g. "TSEPrime" or MARKET_API_SECTIONS.TSEPrime)
+            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
+            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
+        Returns:
+            pd.DataFrame: Weekly Trading by Type of Investors (Sorted by "PublishedDate" and "Section" columns)
+        """
+        url = f"{self.JQUANTS_API_BASE}/markets/trades_spec"
+        params = {}
+        if section != "":
+            params["section"] = section
+        if from_yyyymmdd != "":
+            params["from"] = from_yyyymmdd
+        if to_yyyymmdd != "":
+            params["to"] = to_yyyymmdd
+        ret = self._get(url, params)
+        d = ret.json()
+        df = pd.DataFrame.from_dict(d["trades_spec"])
+        cols = [
+            "Section",
+            "PublishedDate",
+            "StartDate",
+            "EndDate",
+            "ProprietarySales",
+            "ProprietaryPurchases",
+            "ProprietaryTotal",
+            "ProprietaryBalance",
+            "BrokerageSales",
+            "BrokeragePurchases",
+            "BrokerageTotal",
+            "BrokerageBalance",
+            "TotalSales",
+            "TotalPurchases",
+            "TotalTotal",
+            "TotalBalance",
+            "IndividualsSales",
+            "IndividualsPurchases",
+            "IndividualsTotal",
+            "IndividualsBalance",
+            "ForeignersSales",
+            "ForeignersPurchases",
+            "ForeignersTotal",
+            "ForeignersBalance",
+            "SecuritiesCosSales",
+            "SecuritiesCosPurchases",
+            "SecuritiesCosTotal",
+            "SecuritiesCosBalance",
+            "InvestmentTrustsSales",
+            "InvestmentTrustsPurchases",
+            "InvestmentTrustsTotal",
+            "InvestmentTrustsBalance",
+            "BusinessCosSales",
+            "BusinessCosPurchases",
+            "BusinessCosTotal",
+            "BusinessCosBalance",
+            "OtherCosSales",
+            "OtherCosPurchases",
+            "OtherCosTotal",
+            "OtherCosBalance",
+            "InsuranceCosSales",
+            "InsuranceCosPurchases",
+            "InsuranceCosTotal",
+            "InsuranceCosBalance",
+            "CityBKsRegionalBKsEtcSales",
+            "CityBKsRegionalBKsEtcPurchases",
+            "CityBKsRegionalBKsEtcTotal",
+            "CityBKsRegionalBKsEtcBalance",
+            "TrustBanksSales",
+            "TrustBanksPurchases",
+            "TrustBanksTotal",
+            "TrustBanksBalance",
+            "OtherFinancialInstitutionsSales",
+            "OtherFinancialInstitutionsPurchases",
+            "OtherFinancialInstitutionsTotal",
+            "OtherFinancialInstitutionsBalance",
+        ]
+        if len(df) == 0:
+            return pd.DataFrame([], columns=cols)
+        df.loc[:, "PublishedDate"] = pd.to_datetime(
+            df["PublishedDate"], format="%Y-%m-%d"
+        )
+        df.loc[:, "StartDate"] = pd.to_datetime(df["StartDate"], format="%Y-%m-%d")
+        df.loc[:, "EndDate"] = pd.to_datetime(df["EndDate"], format="%Y-%m-%d")
+        df.sort_values(["PublishedDate", "Section"], inplace=True)
         return df[cols]
 
     def get_fins_announcement(self) -> pd.DataFrame:
