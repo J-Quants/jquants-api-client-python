@@ -169,7 +169,7 @@ class Client:
     def _request_session(
         self,
         status_forcelist: Optional[List[int]] = None,
-        method_whitelist: Optional[List[str]] = None,
+        allowed_methods: Optional[List[str]] = None,
     ) -> requests.Session:
         """
         requests の session 取得
@@ -178,20 +178,20 @@ class Client:
 
         Args:
             status_forcelist: リトライ対象のステータスコード
-            method_whitelist: リトライ対象のメソッド
+            allowed_methods: リトライ対象のメソッド
         Returns:
             requests.session
         """
         if status_forcelist is None:
             status_forcelist = [429, 500, 502, 503, 504]
-        if method_whitelist is None:
-            method_whitelist = ["HEAD", "GET", "OPTIONS", "POST"]
+        if allowed_methods is None:
+            allowed_methods = ["HEAD", "GET", "OPTIONS", "POST"]
 
         if self._session is None:
             retry_strategy = Retry(
                 total=3,
                 status_forcelist=status_forcelist,
-                method_whitelist=method_whitelist,
+                allowed_methods=allowed_methods,
             )
             adapter = HTTPAdapter(
                 # 安全のため並列スレッド数に更に10追加しておく
