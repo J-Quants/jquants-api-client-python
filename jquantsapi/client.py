@@ -614,6 +614,42 @@ class Client:
         df.sort_values(["DisclosedUnixTime", "DisclosureNumber"], inplace=True)
         return df[cols]
 
+    def get_indices_topix(
+        self,
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+    ) -> pd.DataFrame:
+        """
+        TOPIX Daily OHLC
+
+        Args:
+            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
+            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
+        Returns:
+            pd.DataFrame: TOPIX Daily OHLC (Sorted by "Date" column)
+        """
+        url = f"{self.JQUANTS_API_BASE}/indices/topix"
+        params = {}
+        if from_yyyymmdd != "":
+            params["from"] = from_yyyymmdd
+        if to_yyyymmdd != "":
+            params["to"] = to_yyyymmdd
+        ret = self._get(url, params)
+        d = ret.json()
+        df = pd.DataFrame.from_dict(d["topix"])
+        cols = [
+            "Date",
+            "Open",
+            "High",
+            "Low",
+            "Close",
+        ]
+        if len(df) == 0:
+            return pd.DataFrame([], columns=cols)
+        df.loc[:, "Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
+        df.sort_values(["Date"], inplace=True)
+        return df[cols]
+
     def get_markets_trades_spec(
         self,
         section: Union[str, MARKET_API_SECTIONS] = "",
