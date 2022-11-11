@@ -74,6 +74,7 @@ J-Quants API の各APIエンドポイントに対応しています。
   - get_listed_sections
   - get_market_segments
   - get_prices_daily_quotes
+  - get_indices_topix
   - get_markets_trades_spec
   - get_fins_statements
   - get_fins_announcement
