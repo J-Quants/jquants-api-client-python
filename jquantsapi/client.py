@@ -17,7 +17,7 @@ from tenacity import (
 )
 from urllib3.util import Retry
 
-from jquantsapi.constatns import (
+from jquantsapi.constants import (
     MARKET_SEGMENT_COLUMNS,
     MARKET_SEGMENT_DATA,
     SECTOR_17_COLUMNS,
