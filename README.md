@@ -72,7 +72,6 @@ J-Quants API の各APIエンドポイントに対応しています。
   - get_id_token
   - get_listed_info
   - get_listed_sections
-  - get_market_segments
   - get_prices_daily_quotes
   - get_indices_topix
   - get_markets_trades_spec
@@ -80,6 +79,11 @@ J-Quants API の各APIエンドポイントに対応しています。
   - get_fins_announcement
 
 ### ユーティリティ群
+
+業種や市場区分一覧などを返します。
+  - get_market_segments
+  - get_17_sectors
+  - get_33_sectors
 
 日付範囲を指定して一括でデータ取得して、取得したデータを結合して返すようなユーティリティが用意されています。
 
