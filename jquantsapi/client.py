@@ -367,8 +367,6 @@ class Client:
         ret = self._get(url, params)
         d = ret.json()
         df = pd.DataFrame.from_dict(d["info"])
-        # tmp: adjust Sector33Code
-        df.loc[df["Sector33Code"] == "50", "Sector33Code"] = "0050"
         cols = [
             "Date",
             "Code",
