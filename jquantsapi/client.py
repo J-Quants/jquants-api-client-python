@@ -367,8 +367,6 @@ class Client:
         ret = self._get(url, params)
         d = ret.json()
         df = pd.DataFrame.from_dict(d["info"])
-        # tmp: adjust Sector33Code
-        df.loc[df["Sector33Code"] == "50", "Sector33Code"] = "0050"
         cols = [
             "Date",
             "Code",
@@ -384,7 +382,7 @@ class Client:
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
 
-        df.loc[:, "Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
         df.sort_values("Code", inplace=True)
 
         return df[cols]
@@ -536,7 +534,7 @@ class Client:
         ]
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
-        df.loc[:, "Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
         df.sort_values(["Code", "Date"], inplace=True)
         return df[cols]
 
@@ -641,16 +639,14 @@ class Client:
         ]
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
-        df.loc[:, "DisclosedDate"] = pd.to_datetime(
-            df["DisclosedDate"], format="%Y-%m-%d"
-        )
-        df.loc[:, "CurrentPeriodEndDate"] = pd.to_datetime(
+        df["DisclosedDate"] = pd.to_datetime(df["DisclosedDate"], format="%Y-%m-%d")
+        df["CurrentPeriodEndDate"] = pd.to_datetime(
             df["CurrentPeriodEndDate"], format="%Y-%m-%d"
         )
-        df.loc[:, "CurrentFiscalYearStartDate"] = pd.to_datetime(
+        df["CurrentFiscalYearStartDate"] = pd.to_datetime(
             df["CurrentFiscalYearStartDate"], format="%Y-%m-%d"
         )
-        df.loc[:, "CurrentFiscalYearEndDate"] = pd.to_datetime(
+        df["CurrentFiscalYearEndDate"] = pd.to_datetime(
             df["CurrentFiscalYearEndDate"], format="%Y-%m-%d"
         )
         df.sort_values(["DisclosedUnixTime", "DisclosureNumber"], inplace=True)
@@ -688,7 +684,7 @@ class Client:
         ]
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
-        df.loc[:, "Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
         df.sort_values(["Date"], inplace=True)
         return df[cols]
 
@@ -779,11 +775,9 @@ class Client:
         ]
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
-        df.loc[:, "PublishedDate"] = pd.to_datetime(
-            df["PublishedDate"], format="%Y-%m-%d"
-        )
-        df.loc[:, "StartDate"] = pd.to_datetime(df["StartDate"], format="%Y-%m-%d")
-        df.loc[:, "EndDate"] = pd.to_datetime(df["EndDate"], format="%Y-%m-%d")
+        df["PublishedDate"] = pd.to_datetime(df["PublishedDate"], format="%Y-%m-%d")
+        df["StartDate"] = pd.to_datetime(df["StartDate"], format="%Y-%m-%d")
+        df["EndDate"] = pd.to_datetime(df["EndDate"], format="%Y-%m-%d")
         df.sort_values(["PublishedDate", "Section"], inplace=True)
         return df[cols]
 
@@ -812,7 +806,7 @@ class Client:
         ]
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
-        df.loc[:, "Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
         df.sort_values(["Date", "Code"], inplace=True)
         return df[cols]
 
