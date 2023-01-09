@@ -117,6 +117,8 @@ refresh_token = "*****"
 
 Google Colab および Python 3.10 で動作確認を行っています。
 J-Quants APIは現在β版のため、本ライブラリも今後仕様が変更となる可能性があります。
+Python 3.7 サポートは廃止予定です。将来のバージョンではサポート対象外となります。
+Please note Python 3.7 support is deprecated.
 
 ## 開発
 
