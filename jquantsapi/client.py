@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -17,15 +18,7 @@ from tenacity import (
 )
 from urllib3.util import Retry
 
-from jquantsapi.constants import (
-    MARKET_SEGMENT_COLUMNS,
-    MARKET_SEGMENT_DATA,
-    SECTOR_17_COLUMNS,
-    SECTOR_17_DATA,
-    SECTOR_33_COLUMNS,
-    SECTOR_33_DATA,
-)
-from jquantsapi.enums import MARKET_API_SECTIONS
+from jquantsapi import constants, enums
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -49,6 +42,7 @@ class Client:
 
     JQUANTS_API_BASE = "https://api.jpx-jquants.com/v1"
     MAX_WORKERS = 5
+    RAW_ENCODING = "utf-8"
 
     def __init__(
         self,
@@ -243,7 +237,6 @@ class Client:
         """
         requests の get 用ラッパー
 
-        ヘッダーにアクセストークンを設定
         タイムアウトを設定
 
         Args:
@@ -326,7 +319,7 @@ class Client:
         except HTTPError as e:
             # retry if:
             # - refresh_token is not provided as a parameter
-            # - error is 400 bad request
+            # - error is 400 bad request (refresh_token expire)
             # - mail_address and password are provided
             if (
                 refresh_token is None
@@ -347,6 +340,27 @@ class Client:
         self._id_token_expire = pd.Timestamp.utcnow() + pd.Timedelta(23, unit="hour")
         return self._id_token
 
+    def get_listed_info_raw(self, code: str = "", date_yyyymmdd: str = "") -> str:
+        """
+        Get listed companies raw API returns
+
+        Args:
+            code: Issue code (Optional)
+            date: YYYYMMDD or YYYY-MM-DD (Optional)
+
+        Returns:
+            str: listed companies raw json string
+        """
+        url = f"{self.JQUANTS_API_BASE}/listed/info"
+        params = {}
+        if code != "":
+            params["code"] = code
+        if date_yyyymmdd != "":
+            params["date"] = date_yyyymmdd
+        ret = self._get(url, params)
+        ret.encoding = self.RAW_ENCODING
+        return ret.text
+
     def get_listed_info(self, code: str = "", date_yyyymmdd: str = "") -> pd.DataFrame:
         """
         Get listed companies
@@ -356,36 +370,33 @@ class Client:
             date: YYYYMMDD or YYYY-MM-DD (Optional)
 
         Returns:
-            pd.DataFrame: listed companies
+            pd.DataFrame: listed companies (sorted by Code)
         """
-        url = f"{self.JQUANTS_API_BASE}/listed/info"
-        params = {}
-        if code != "":
-            params["code"] = code
-        if date_yyyymmdd != "":
-            params["date"] = date_yyyymmdd
-        ret = self._get(url, params)
-        d = ret.json()
+        j = self.get_listed_info_raw(code=code, date_yyyymmdd=date_yyyymmdd)
+        d = json.loads(j)
         df = pd.DataFrame.from_dict(d["info"])
-        cols = [
-            "Date",
-            "Code",
-            "CompanyName",
-            "Sector17Code",
-            "Sector17CodeName",
-            "Sector33Code",
-            "Sector33CodeName",
-            "ScaleCategory",
-            "MarketCode",
-            "MarketCodeName",
-        ]
+        cols = constants.LISTED_INFO_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
-
         df["Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
         df.sort_values("Code", inplace=True)
-
         return df[cols]
+
+    def get_listed_sections_raw(self) -> str:
+        """
+        Get listed sections raw API returns
+
+        Args:
+            N/A
+
+        Returns:
+            str: list of sections
+        """
+        url = f"{self.JQUANTS_API_BASE}/listed/sections"
+        params: dict = {}
+        ret = self._get(url, params)
+        ret.encoding = self.RAW_ENCODING
+        return ret.text
 
     def get_listed_sections(self) -> pd.DataFrame:
         """
@@ -397,15 +408,13 @@ class Client:
         Returns:
             pd.DataFrame: セクター一覧
         """
-        url = f"{self.JQUANTS_API_BASE}/listed/sections"
-        params: dict = {}
-        ret = self._get(url, params)
-        d = ret.json()
+        j = self.get_listed_sections_raw()
+        d = json.loads(j)
         df = pd.DataFrame.from_dict(d["sections"])
-        cols = ["SectorCode", "SectorName"]
+        cols = constants.LISTED_SECTIONS_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
-        df.sort_values("SectorCode", inplace=True)
+        df.sort_values(constants.LISTED_SECTIONS_COLUMNS[0], inplace=True)
         return df[cols]
 
     def get_17_sectors(self) -> pd.DataFrame:
@@ -419,8 +428,8 @@ class Client:
         Returns:
             pd.DataFrame: 17-sector code and name
         """
-        df = pd.DataFrame(SECTOR_17_DATA, columns=SECTOR_17_COLUMNS)
-        df.sort_values(SECTOR_17_COLUMNS[0], inplace=True)
+        df = pd.DataFrame(constants.SECTOR_17_DATA, columns=constants.SECTOR_17_COLUMNS)
+        df.sort_values(constants.SECTOR_17_COLUMNS[0], inplace=True)
         return df
 
     def get_33_sectors(self) -> pd.DataFrame:
@@ -434,8 +443,8 @@ class Client:
         Returns:
             pd.DataFrame: 33-sector code and name
         """
-        df = pd.DataFrame(SECTOR_33_DATA, columns=SECTOR_33_COLUMNS)
-        df.sort_values(SECTOR_33_COLUMNS[0], inplace=True)
+        df = pd.DataFrame(constants.SECTOR_33_DATA, columns=constants.SECTOR_33_COLUMNS)
+        df.sort_values(constants.SECTOR_33_COLUMNS[0], inplace=True)
         return df
 
     @staticmethod
@@ -451,8 +460,10 @@ class Client:
 
         """
 
-        df = pd.DataFrame(MARKET_SEGMENT_DATA, columns=MARKET_SEGMENT_COLUMNS)
-        df.sort_values(MARKET_SEGMENT_COLUMNS[0], inplace=True)
+        df = pd.DataFrame(
+            constants.MARKET_SEGMENT_DATA, columns=constants.MARKET_SEGMENT_COLUMNS
+        )
+        df.sort_values(constants.MARKET_SEGMENT_COLUMNS[0], inplace=True)
         return df
 
     def get_list(self, code: str = "", date_yyyymmdd: str = "") -> pd.DataFrame:
@@ -476,12 +487,45 @@ class Client:
         df_segments = self.get_market_segments()[
             ["MarketCode", "MarketCodeNameEnglish"]
         ]
-
         df_list = pd.merge(df_list, df_17_sectors, how="left", on=["Sector17Code"])
         df_list = pd.merge(df_list, df_33_sectors, how="left", on=["Sector33Code"])
         df_list = pd.merge(df_list, df_segments, how="left", on=["MarketCode"])
         df_list.sort_values("Code", inplace=True)
         return df_list
+
+    def get_prices_daily_quotes_raw(
+        self,
+        code: str = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+        date_yyyymmdd: str = "",
+    ) -> str:
+        """
+        get daily quotes raw API returns
+
+        Args:
+            code: 銘柄コード
+            from_yyyymmdd: 取得開始日
+            to_yyyymmdd: 取得終了日
+            date_yyyymmdd: 取得日
+
+        Returns:
+            str: daily quotes
+        """
+        url = f"{self.JQUANTS_API_BASE}/prices/daily_quotes"
+        params = {
+            "code": code,
+        }
+        if date_yyyymmdd != "":
+            params["date"] = date_yyyymmdd
+        else:
+            if from_yyyymmdd != "":
+                params["from"] = from_yyyymmdd
+            if to_yyyymmdd != "":
+                params["to"] = to_yyyymmdd
+        ret = self._get(url, params)
+        ret.encoding = self.RAW_ENCODING
+        return ret.text
 
     def get_prices_daily_quotes(
         self,
@@ -502,36 +546,15 @@ class Client:
         Returns:
             pd.DataFrame: 株価情報 (Code, Date列でソートされています)
         """
-        url = f"{self.JQUANTS_API_BASE}/prices/daily_quotes"
-        params = {
-            "code": code,
-        }
-        if date_yyyymmdd != "":
-            params["date"] = date_yyyymmdd
-        else:
-            if from_yyyymmdd != "":
-                params["from"] = from_yyyymmdd
-            if to_yyyymmdd != "":
-                params["to"] = to_yyyymmdd
-        ret = self._get(url, params)
-        d = ret.json()
+        j = self.get_prices_daily_quotes_raw(
+            code=code,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+            date_yyyymmdd=date_yyyymmdd,
+        )
+        d = json.loads(j)
         df = pd.DataFrame.from_dict(d["daily_quotes"])
-        cols = [
-            "Code",
-            "Date",
-            "Open",
-            "High",
-            "Low",
-            "Close",
-            "Volume",
-            "TurnoverValue",
-            "AdjustmentFactor",
-            "AdjustmentOpen",
-            "AdjustmentHigh",
-            "AdjustmentLow",
-            "AdjustmentClose",
-            "AdjustmentVolume",
-        ]
+        cols = constants.PRICES_DAILY_QUOTES_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
         df["Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
@@ -555,7 +578,6 @@ class Client:
         """
         # pre-load id_token
         self.get_id_token()
-
         buff = []
         dates = pd.date_range(start_dt, end_dt, freq="D")
         with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
@@ -568,8 +590,28 @@ class Client:
             for future in as_completed(futures):
                 df = future.result()
                 buff.append(df)
-
         return pd.concat(buff).sort_values(["Code", "Date"])
+
+    def get_fins_statements_raw(self, code: str = "", date_yyyymmdd: str = "") -> str:
+        """
+        get fins statements raw API return
+
+        Args:
+            code: 銘柄コード
+            date_yyyymmdd: 日付(YYYYMMDD or YYYY-MM-DD)
+
+        Returns:
+            str: fins statements
+        """
+        url = f"{self.JQUANTS_API_BASE}/fins/statements"
+        params = {
+            "code": code,
+            "date": date_yyyymmdd,
+        }
+        ret = self._get(url, params)
+        ret.encoding = self.RAW_ENCODING
+
+        return ret.text
 
     def get_fins_statements(
         self, code: str = "", date_yyyymmdd: str = ""
@@ -584,59 +626,10 @@ class Client:
         Returns:
             pd.DataFrame: 財務情報 (DisclosedUnixTime列、DisclosureNumber列でソートされています)
         """
-        url = f"{self.JQUANTS_API_BASE}/fins/statements"
-        params = {
-            "code": code,
-            "date": date_yyyymmdd,
-        }
-        ret = self._get(url, params)
-        d = ret.json()
+        j = self.get_fins_statements_raw(code=code, date_yyyymmdd=date_yyyymmdd)
+        d = json.loads(j)
         df = pd.DataFrame.from_dict(d["statements"])
-        cols = [
-            "DisclosureNumber",
-            "DisclosedDate",
-            "ApplyingOfSpecificAccountingOfTheQuarterlyFinancialStatements",
-            "AverageNumberOfShares",
-            "BookValuePerShare",
-            "ChangesBasedOnRevisionsOfAccountingStandard",
-            "ChangesInAccountingEstimates",
-            "ChangesOtherThanOnesBasedOnRevisionsOfAccountingStandard",
-            "CurrentFiscalYearEndDate",
-            "CurrentFiscalYearStartDate",
-            "CurrentPeriodEndDate",
-            "DisclosedTime",
-            "DisclosedUnixTime",
-            "EarningsPerShare",
-            "Equity",
-            "EquityToAssetRatio",
-            "ForecastDividendPerShare1stQuarter",
-            "ForecastDividendPerShare2ndQuarter",
-            "ForecastDividendPerShare3rdQuarter",
-            "ForecastDividendPerShareAnnual",
-            "ForecastDividendPerShareFiscalYearEnd",
-            "ForecastEarningsPerShare",
-            "ForecastNetSales",
-            "ForecastOperatingProfit",
-            "ForecastOrdinaryProfit",
-            "ForecastProfit",
-            "LocalCode",
-            "MaterialChangesInSubsidiaries",
-            "NetSales",
-            "NumberOfIssuedAndOutstandingSharesAtTheEndOfFiscalYearIncludingTreasuryStock",
-            "NumberOfTreasuryStockAtTheEndOfFiscalYear",
-            "OperatingProfit",
-            "OrdinaryProfit",
-            "Profit",
-            "ResultDividendPerShare1stQuarter",
-            "ResultDividendPerShare2ndQuarter",
-            "ResultDividendPerShare3rdQuarter",
-            "ResultDividendPerShareAnnual",
-            "ResultDividendPerShareFiscalYearEnd",
-            "RetrospectiveRestatement",
-            "TotalAssets",
-            "TypeOfCurrentPeriod",
-            "TypeOfDocument",
-        ]
+        cols = constants.FINS_STATEMENTS_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
         df["DisclosedDate"] = pd.to_datetime(df["DisclosedDate"], format="%Y-%m-%d")
@@ -652,6 +645,30 @@ class Client:
         df.sort_values(["DisclosedUnixTime", "DisclosureNumber"], inplace=True)
         return df[cols]
 
+    def get_indices_topix_raw(
+        self,
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+    ) -> str:
+        """
+        TOPIX Daily OHLC raw API returns
+
+        Args:
+            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
+            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
+        Returns:
+            str: TOPIX Daily OHLC
+        """
+        url = f"{self.JQUANTS_API_BASE}/indices/topix"
+        params = {}
+        if from_yyyymmdd != "":
+            params["from"] = from_yyyymmdd
+        if to_yyyymmdd != "":
+            params["to"] = to_yyyymmdd
+        ret = self._get(url, params)
+        ret.encoding = self.RAW_ENCODING
+        return ret.text
+
     def get_indices_topix(
         self,
         from_yyyymmdd: str = "",
@@ -666,31 +683,49 @@ class Client:
         Returns:
             pd.DataFrame: TOPIX Daily OHLC (Sorted by "Date" column)
         """
-        url = f"{self.JQUANTS_API_BASE}/indices/topix"
-        params = {}
-        if from_yyyymmdd != "":
-            params["from"] = from_yyyymmdd
-        if to_yyyymmdd != "":
-            params["to"] = to_yyyymmdd
-        ret = self._get(url, params)
-        d = ret.json()
+        j = self.get_indices_topix_raw(
+            from_yyyymmdd=from_yyyymmdd, to_yyyymmdd=to_yyyymmdd
+        )
+        d = json.loads(j)
         df = pd.DataFrame.from_dict(d["topix"])
-        cols = [
-            "Date",
-            "Open",
-            "High",
-            "Low",
-            "Close",
-        ]
+        cols = constants.INDICES_TOPIX_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
         df["Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
         df.sort_values(["Date"], inplace=True)
         return df[cols]
 
+    def get_markets_trades_spec_raw(
+        self,
+        section: Union[str, enums.MARKET_API_SECTIONS] = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+    ) -> str:
+        """
+        Weekly Trading by Type of Investors raw API returns
+
+        Args:
+            section: section name (e.g. "TSEPrime" or MARKET_API_SECTIONS.TSEPrime)
+            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
+            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
+        Returns:
+            str: Weekly Trading by Type of Investors
+        """
+        url = f"{self.JQUANTS_API_BASE}/markets/trades_spec"
+        params = {}
+        if section != "":
+            params["section"] = section
+        if from_yyyymmdd != "":
+            params["from"] = from_yyyymmdd
+        if to_yyyymmdd != "":
+            params["to"] = to_yyyymmdd
+        ret = self._get(url, params)
+        ret.encoding = self.RAW_ENCODING
+        return ret.text
+
     def get_markets_trades_spec(
         self,
-        section: Union[str, MARKET_API_SECTIONS] = "",
+        section: Union[str, enums.MARKET_API_SECTIONS] = "",
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
     ) -> pd.DataFrame:
@@ -704,75 +739,12 @@ class Client:
         Returns:
             pd.DataFrame: Weekly Trading by Type of Investors (Sorted by "PublishedDate" and "Section" columns)
         """
-        url = f"{self.JQUANTS_API_BASE}/markets/trades_spec"
-        params = {}
-        if section != "":
-            params["section"] = section
-        if from_yyyymmdd != "":
-            params["from"] = from_yyyymmdd
-        if to_yyyymmdd != "":
-            params["to"] = to_yyyymmdd
-        ret = self._get(url, params)
-        d = ret.json()
+        j = self.get_markets_trades_spec_raw(
+            section=section, from_yyyymmdd=from_yyyymmdd, to_yyyymmdd=to_yyyymmdd
+        )
+        d = json.loads(j)
         df = pd.DataFrame.from_dict(d["trades_spec"])
-        cols = [
-            "Section",
-            "PublishedDate",
-            "StartDate",
-            "EndDate",
-            "ProprietarySales",
-            "ProprietaryPurchases",
-            "ProprietaryTotal",
-            "ProprietaryBalance",
-            "BrokerageSales",
-            "BrokeragePurchases",
-            "BrokerageTotal",
-            "BrokerageBalance",
-            "TotalSales",
-            "TotalPurchases",
-            "TotalTotal",
-            "TotalBalance",
-            "IndividualsSales",
-            "IndividualsPurchases",
-            "IndividualsTotal",
-            "IndividualsBalance",
-            "ForeignersSales",
-            "ForeignersPurchases",
-            "ForeignersTotal",
-            "ForeignersBalance",
-            "SecuritiesCosSales",
-            "SecuritiesCosPurchases",
-            "SecuritiesCosTotal",
-            "SecuritiesCosBalance",
-            "InvestmentTrustsSales",
-            "InvestmentTrustsPurchases",
-            "InvestmentTrustsTotal",
-            "InvestmentTrustsBalance",
-            "BusinessCosSales",
-            "BusinessCosPurchases",
-            "BusinessCosTotal",
-            "BusinessCosBalance",
-            "OtherCosSales",
-            "OtherCosPurchases",
-            "OtherCosTotal",
-            "OtherCosBalance",
-            "InsuranceCosSales",
-            "InsuranceCosPurchases",
-            "InsuranceCosTotal",
-            "InsuranceCosBalance",
-            "CityBKsRegionalBKsEtcSales",
-            "CityBKsRegionalBKsEtcPurchases",
-            "CityBKsRegionalBKsEtcTotal",
-            "CityBKsRegionalBKsEtcBalance",
-            "TrustBanksSales",
-            "TrustBanksPurchases",
-            "TrustBanksTotal",
-            "TrustBanksBalance",
-            "OtherFinancialInstitutionsSales",
-            "OtherFinancialInstitutionsPurchases",
-            "OtherFinancialInstitutionsTotal",
-            "OtherFinancialInstitutionsBalance",
-        ]
+        cols = constants.MARKETS_TRADES_SPEC
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
         df["PublishedDate"] = pd.to_datetime(df["PublishedDate"], format="%Y-%m-%d")
@@ -781,29 +753,35 @@ class Client:
         df.sort_values(["PublishedDate", "Section"], inplace=True)
         return df[cols]
 
-    def get_fins_announcement(self) -> pd.DataFrame:
+    def get_fins_announcement_raw(self) -> str:
         """
-        翌日の決算発表情報の取得
+        get fin announcement raw API returns
 
         Args:
             N/A
 
         Returns:
-            pd.DataFrame: 翌日決算発表情報
+            str: Schedule of financial announcement
         """
         url = f"{self.JQUANTS_API_BASE}/fins/announcement"
         ret = self._get(url)
-        d = ret.json()
+        ret.encoding = self.RAW_ENCODING
+        return ret.text
+
+    def get_fins_announcement(self) -> pd.DataFrame:
+        """
+        get fin announcement
+
+        Args:
+            N/A
+
+        Returns:
+            pd.DataFrame: Schedule of financial announcement
+        """
+        j = self.get_fins_announcement_raw()
+        d = json.loads(j)
         df = pd.DataFrame.from_dict(d["announcement"])
-        cols = [
-            "Code",
-            "Date",
-            "CompanyName",
-            "FiscalYear",
-            "SectorName",
-            "FiscalQuarter",
-            "Section",
-        ]
+        cols = constants.FINS_ANNOUNCEMENT_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
         df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
