@@ -340,7 +340,7 @@ class Client:
         self._id_token_expire = pd.Timestamp.utcnow() + pd.Timedelta(23, unit="hour")
         return self._id_token
 
-    def get_listed_info_raw(self, code: str = "", date_yyyymmdd: str = "") -> str:
+    def _get_listed_info_raw(self, code: str = "", date_yyyymmdd: str = "") -> str:
         """
         Get listed companies raw API returns
 
@@ -372,7 +372,7 @@ class Client:
         Returns:
             pd.DataFrame: listed companies (sorted by Code)
         """
-        j = self.get_listed_info_raw(code=code, date_yyyymmdd=date_yyyymmdd)
+        j = self._get_listed_info_raw(code=code, date_yyyymmdd=date_yyyymmdd)
         d = json.loads(j)
         df = pd.DataFrame.from_dict(d["info"])
         cols = constants.LISTED_INFO_COLUMNS
@@ -382,7 +382,7 @@ class Client:
         df.sort_values("Code", inplace=True)
         return df[cols]
 
-    def get_listed_sections_raw(self) -> str:
+    def _get_listed_sections_raw(self) -> str:
         """
         Get listed sections raw API returns
 
@@ -408,7 +408,7 @@ class Client:
         Returns:
             pd.DataFrame: セクター一覧
         """
-        j = self.get_listed_sections_raw()
+        j = self._get_listed_sections_raw()
         d = json.loads(j)
         df = pd.DataFrame.from_dict(d["sections"])
         cols = constants.LISTED_SECTIONS_COLUMNS
@@ -493,7 +493,7 @@ class Client:
         df_list.sort_values("Code", inplace=True)
         return df_list
 
-    def get_prices_daily_quotes_raw(
+    def _get_prices_daily_quotes_raw(
         self,
         code: str = "",
         from_yyyymmdd: str = "",
@@ -546,7 +546,7 @@ class Client:
         Returns:
             pd.DataFrame: 株価情報 (Code, Date列でソートされています)
         """
-        j = self.get_prices_daily_quotes_raw(
+        j = self._get_prices_daily_quotes_raw(
             code=code,
             from_yyyymmdd=from_yyyymmdd,
             to_yyyymmdd=to_yyyymmdd,
@@ -592,7 +592,7 @@ class Client:
                 buff.append(df)
         return pd.concat(buff).sort_values(["Code", "Date"])
 
-    def get_fins_statements_raw(self, code: str = "", date_yyyymmdd: str = "") -> str:
+    def _get_fins_statements_raw(self, code: str = "", date_yyyymmdd: str = "") -> str:
         """
         get fins statements raw API return
 
@@ -626,7 +626,7 @@ class Client:
         Returns:
             pd.DataFrame: 財務情報 (DisclosedUnixTime列、DisclosureNumber列でソートされています)
         """
-        j = self.get_fins_statements_raw(code=code, date_yyyymmdd=date_yyyymmdd)
+        j = self._get_fins_statements_raw(code=code, date_yyyymmdd=date_yyyymmdd)
         d = json.loads(j)
         df = pd.DataFrame.from_dict(d["statements"])
         cols = constants.FINS_STATEMENTS_COLUMNS
@@ -645,7 +645,7 @@ class Client:
         df.sort_values(["DisclosedUnixTime", "DisclosureNumber"], inplace=True)
         return df[cols]
 
-    def get_indices_topix_raw(
+    def _get_indices_topix_raw(
         self,
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
@@ -683,7 +683,7 @@ class Client:
         Returns:
             pd.DataFrame: TOPIX Daily OHLC (Sorted by "Date" column)
         """
-        j = self.get_indices_topix_raw(
+        j = self._get_indices_topix_raw(
             from_yyyymmdd=from_yyyymmdd, to_yyyymmdd=to_yyyymmdd
         )
         d = json.loads(j)
@@ -695,7 +695,7 @@ class Client:
         df.sort_values(["Date"], inplace=True)
         return df[cols]
 
-    def get_markets_trades_spec_raw(
+    def _get_markets_trades_spec_raw(
         self,
         section: Union[str, enums.MARKET_API_SECTIONS] = "",
         from_yyyymmdd: str = "",
@@ -739,7 +739,7 @@ class Client:
         Returns:
             pd.DataFrame: Weekly Trading by Type of Investors (Sorted by "PublishedDate" and "Section" columns)
         """
-        j = self.get_markets_trades_spec_raw(
+        j = self._get_markets_trades_spec_raw(
             section=section, from_yyyymmdd=from_yyyymmdd, to_yyyymmdd=to_yyyymmdd
         )
         d = json.loads(j)
@@ -753,7 +753,7 @@ class Client:
         df.sort_values(["PublishedDate", "Section"], inplace=True)
         return df[cols]
 
-    def get_fins_announcement_raw(self) -> str:
+    def _get_fins_announcement_raw(self) -> str:
         """
         get fin announcement raw API returns
 
@@ -778,7 +778,7 @@ class Client:
         Returns:
             pd.DataFrame: Schedule of financial announcement
         """
-        j = self.get_fins_announcement_raw()
+        j = self._get_fins_announcement_raw()
         d = json.loads(j)
         df = pd.DataFrame.from_dict(d["announcement"])
         cols = constants.FINS_ANNOUNCEMENT_COLUMNS
