@@ -17,6 +17,14 @@ from tenacity import (
 )
 from urllib3.util import Retry
 
+from jquantsapi.constants import (
+    MARKET_SEGMENT_COLUMNS,
+    MARKET_SEGMENT_DATA,
+    SECTOR_17_COLUMNS,
+    SECTOR_17_DATA,
+    SECTOR_33_COLUMNS,
+    SECTOR_33_DATA,
+)
 from jquantsapi.enums import MARKET_API_SECTIONS
 
 if sys.version_info >= (3, 11):
@@ -339,34 +347,42 @@ class Client:
         self._id_token_expire = pd.Timestamp.utcnow() + pd.Timedelta(23, unit="hour")
         return self._id_token
 
-    def get_listed_info(self, code: str = "") -> pd.DataFrame:
+    def get_listed_info(self, code: str = "", date_yyyymmdd: str = "") -> pd.DataFrame:
         """
-        銘柄一覧を取得
+        Get listed companies
 
         Args:
-            code: 銘柄コード (Optional)
+            code: Issue code (Optional)
+            date: YYYYMMDD or YYYY-MM-DD (Optional)
 
         Returns:
-            pd.DataFrame: 銘柄一覧
+            pd.DataFrame: listed companies
         """
         url = f"{self.JQUANTS_API_BASE}/listed/info"
-        params = {"code": code}
+        params = {}
+        if code != "":
+            params["code"] = code
+        if date_yyyymmdd != "":
+            params["date"] = date_yyyymmdd
         ret = self._get(url, params)
         d = ret.json()
         df = pd.DataFrame.from_dict(d["info"])
         cols = [
+            "Date",
             "Code",
             "CompanyName",
-            "CompanyNameEnglish",
-            "CompanyNameFull",
-            "SectorCode",
-            "UpdateDate",
+            "Sector17Code",
+            "Sector17CodeName",
+            "Sector33Code",
+            "Sector33CodeName",
+            "ScaleCategory",
             "MarketCode",
+            "MarketCodeName",
         ]
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
 
-        df.loc[:, "UpdateDate"] = pd.to_datetime(df["UpdateDate"], format="%Y%m%d")
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
         df.sort_values("Code", inplace=True)
 
         return df[cols]
@@ -392,53 +408,77 @@ class Client:
         df.sort_values("SectorCode", inplace=True)
         return df[cols]
 
+    def get_17_sectors(self) -> pd.DataFrame:
+        """
+        Get 17-sector code and name
+        ref. https://jpx.gitbook.io/j-quants-api-en/api-reference/listed-api/17-sector
+
+        Args:
+            N/A
+
+        Returns:
+            pd.DataFrame: 17-sector code and name
+        """
+        df = pd.DataFrame(SECTOR_17_DATA, columns=SECTOR_17_COLUMNS)
+        df.sort_values(SECTOR_17_COLUMNS[0], inplace=True)
+        return df
+
+    def get_33_sectors(self) -> pd.DataFrame:
+        """
+        Get 33-sector code and name
+        ref. https://jpx.gitbook.io/j-quants-api-en/api-reference/listed-api/33-sector
+
+        Args:
+            N/A
+
+        Returns:
+            pd.DataFrame: 33-sector code and name
+        """
+        df = pd.DataFrame(SECTOR_33_DATA, columns=SECTOR_33_COLUMNS)
+        df.sort_values(SECTOR_33_COLUMNS[0], inplace=True)
+        return df
+
     @staticmethod
     def get_market_segments() -> pd.DataFrame:
         """
-        市場区分一覧を取得
+        Get market segment code and name
 
         Args:
             N/A
 
         Returns:
-            pd.DataFrame: 市場区分一覧
+            pd.DataFrame: market segment code and name
+
         """
 
-        df = pd.DataFrame(
-            [
-                {"MarketCode": "", "MarketName": "東証非上場"},
-                {"MarketCode": "1", "MarketName": "市場一部"},
-                {"MarketCode": "2", "MarketName": "市場二部"},
-                {"MarketCode": "3", "MarketName": "マザーズ"},
-                {"MarketCode": "5", "MarketName": "その他"},
-                {"MarketCode": "6", "MarketName": "JASDAQ スタンダード"},
-                {"MarketCode": "7", "MarketName": "JASDAQ グロース"},
-                {"MarketCode": "8", "MarketName": "TOKYO PRO Market"},
-                {"MarketCode": "9", "MarketName": "上場廃止"},
-                {"MarketCode": "A", "MarketName": "プライム"},
-                {"MarketCode": "B", "MarketName": "スタンダード"},
-                {"MarketCode": "C", "MarketName": "グロース"},
-            ]
-        )
-        cols = ["MarketCode", "MarketName"]
-        df.sort_values("MarketCode", inplace=True)
-        return df[cols]
+        df = pd.DataFrame(MARKET_SEGMENT_DATA, columns=MARKET_SEGMENT_COLUMNS)
+        df.sort_values(MARKET_SEGMENT_COLUMNS[0], inplace=True)
+        return df
 
-    def get_list(self) -> pd.DataFrame:
+    def get_list(self, code: str = "", date_yyyymmdd: str = "") -> pd.DataFrame:
         """
-        銘柄一覧を取得 (市場区分およびセクター結合済み)
+        Get listed companies (incl English name for sectors/segments)
 
         Args:
-            N/A
+            code: Issue code (Optional)
+            date: YYYYMMDD or YYYY-MM-DD (Optional)
 
         Returns:
-            pd.DataFrame: 銘柄一覧
+            pd.DataFrame: listed companies
         """
-        df_list = self.get_listed_info()
-        df_sectors = self.get_listed_sections()
-        df_segments = self.get_market_segments()
+        df_list = self.get_listed_info(code=code, date_yyyymmdd=date_yyyymmdd)
+        df_17_sectors = self.get_17_sectors()[
+            ["Sector17Code", "Sector17CodeNameEnglish"]
+        ]
+        df_33_sectors = self.get_33_sectors()[
+            ["Sector33Code", "Sector33CodeNameEnglish"]
+        ]
+        df_segments = self.get_market_segments()[
+            ["MarketCode", "MarketCodeNameEnglish"]
+        ]
 
-        df_list = pd.merge(df_list, df_sectors, how="left", on=["SectorCode"])
+        df_list = pd.merge(df_list, df_17_sectors, how="left", on=["Sector17Code"])
+        df_list = pd.merge(df_list, df_33_sectors, how="left", on=["Sector33Code"])
         df_list = pd.merge(df_list, df_segments, how="left", on=["MarketCode"])
         df_list.sort_values("Code", inplace=True)
         return df_list
@@ -494,7 +534,7 @@ class Client:
         ]
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
-        df.loc[:, "Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
         df.sort_values(["Code", "Date"], inplace=True)
         return df[cols]
 
@@ -599,19 +639,53 @@ class Client:
         ]
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
-        df.loc[:, "DisclosedDate"] = pd.to_datetime(
-            df["DisclosedDate"], format="%Y-%m-%d"
-        )
-        df.loc[:, "CurrentPeriodEndDate"] = pd.to_datetime(
+        df["DisclosedDate"] = pd.to_datetime(df["DisclosedDate"], format="%Y-%m-%d")
+        df["CurrentPeriodEndDate"] = pd.to_datetime(
             df["CurrentPeriodEndDate"], format="%Y-%m-%d"
         )
-        df.loc[:, "CurrentFiscalYearStartDate"] = pd.to_datetime(
+        df["CurrentFiscalYearStartDate"] = pd.to_datetime(
             df["CurrentFiscalYearStartDate"], format="%Y-%m-%d"
         )
-        df.loc[:, "CurrentFiscalYearEndDate"] = pd.to_datetime(
+        df["CurrentFiscalYearEndDate"] = pd.to_datetime(
             df["CurrentFiscalYearEndDate"], format="%Y-%m-%d"
         )
         df.sort_values(["DisclosedUnixTime", "DisclosureNumber"], inplace=True)
+        return df[cols]
+
+    def get_indices_topix(
+        self,
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+    ) -> pd.DataFrame:
+        """
+        TOPIX Daily OHLC
+
+        Args:
+            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
+            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
+        Returns:
+            pd.DataFrame: TOPIX Daily OHLC (Sorted by "Date" column)
+        """
+        url = f"{self.JQUANTS_API_BASE}/indices/topix"
+        params = {}
+        if from_yyyymmdd != "":
+            params["from"] = from_yyyymmdd
+        if to_yyyymmdd != "":
+            params["to"] = to_yyyymmdd
+        ret = self._get(url, params)
+        d = ret.json()
+        df = pd.DataFrame.from_dict(d["topix"])
+        cols = [
+            "Date",
+            "Open",
+            "High",
+            "Low",
+            "Close",
+        ]
+        if len(df) == 0:
+            return pd.DataFrame([], columns=cols)
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
+        df.sort_values(["Date"], inplace=True)
         return df[cols]
 
     def get_markets_trades_spec(
@@ -701,11 +775,9 @@ class Client:
         ]
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
-        df.loc[:, "PublishedDate"] = pd.to_datetime(
-            df["PublishedDate"], format="%Y-%m-%d"
-        )
-        df.loc[:, "StartDate"] = pd.to_datetime(df["StartDate"], format="%Y-%m-%d")
-        df.loc[:, "EndDate"] = pd.to_datetime(df["EndDate"], format="%Y-%m-%d")
+        df["PublishedDate"] = pd.to_datetime(df["PublishedDate"], format="%Y-%m-%d")
+        df["StartDate"] = pd.to_datetime(df["StartDate"], format="%Y-%m-%d")
+        df["EndDate"] = pd.to_datetime(df["EndDate"], format="%Y-%m-%d")
         df.sort_values(["PublishedDate", "Section"], inplace=True)
         return df[cols]
 
@@ -734,7 +806,7 @@ class Client:
         ]
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
-        df.loc[:, "Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
         df.sort_values(["Date", "Code"], inplace=True)
         return df[cols]
 

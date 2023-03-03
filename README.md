@@ -72,13 +72,18 @@ J-Quants API の各APIエンドポイントに対応しています。
   - get_id_token
   - get_listed_info
   - get_listed_sections
-  - get_market_segments
   - get_prices_daily_quotes
+  - get_indices_topix
   - get_markets_trades_spec
   - get_fins_statements
   - get_fins_announcement
 
 ### ユーティリティ群
+
+業種や市場区分一覧などを返します。
+  - get_market_segments
+  - get_17_sectors
+  - get_33_sectors
 
 日付範囲を指定して一括でデータ取得して、取得したデータを結合して返すようなユーティリティが用意されています。
 
@@ -112,6 +117,8 @@ refresh_token = "*****"
 
 Google Colab および Python 3.10 で動作確認を行っています。
 J-Quants APIは現在β版のため、本ライブラリも今後仕様が変更となる可能性があります。
+Python 3.7 サポートは廃止予定です。将来のバージョンではサポート対象外となります。
+Please note Python 3.7 support is deprecated.
 
 ## 開発
 
