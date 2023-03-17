@@ -1,4 +1,5 @@
 import os
+import platform
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -49,6 +50,8 @@ class Client:
 
     JQUANTS_API_BASE = "https://api.jpx-jquants.com/v1"
     MAX_WORKERS = 5
+    USER_AGENT = "jqapi-python"
+    USER_AGENT_VERSION = "0.0.0"
 
     def __init__(
         self,
@@ -171,7 +174,10 @@ class Client:
         J-Quants API にアクセスする際にヘッダーにIDトークンを設定
         """
         id_token = self.get_id_token()
-        headers = {"Authorization": f"Bearer {id_token}"}
+        headers = {
+            "Authorization": f"Bearer {id_token}",
+            "User-Agent": f"{self.USER_AGENT}/{self.USER_AGENT_VERSION} p/{platform.python_version()}",
+        }
         return headers
 
     def _request_session(
@@ -256,7 +262,13 @@ class Client:
         """
         s = self._request_session()
 
-        ret = s.post(url, data=data, json=json, headers=headers, timeout=30)
+        base_headers = {
+            "User-Agent": f"{self.USER_AGENT}/{self.USER_AGENT_VERSION} p/{platform.python_version()}",
+        }
+        if headers is not None:
+            base_headers.update(headers)
+
+        ret = s.post(url, data=data, json=json, headers=base_headers, timeout=30)
         ret.raise_for_status()
         return ret
 
