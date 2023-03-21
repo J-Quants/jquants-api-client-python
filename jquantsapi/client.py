@@ -842,7 +842,19 @@ class Client:
                 if (cache_dir != "") and os.path.isfile(
                     f"{cache_dir}/{yyyy}/{cache_file}"
                 ):
-                    df = pd.read_csv(f"{cache_dir}/{yyyy}/{cache_file}")
+                    df = pd.read_csv(f"{cache_dir}/{yyyy}/{cache_file}", dtype=str)
+                    df["DisclosedDate"] = pd.to_datetime(
+                        df["DisclosedDate"], format="%Y-%m-%d"
+                    )
+                    df["CurrentPeriodEndDate"] = pd.to_datetime(
+                        df["CurrentPeriodEndDate"], format="%Y-%m-%d"
+                    )
+                    df["CurrentFiscalYearStartDate"] = pd.to_datetime(
+                        df["CurrentFiscalYearStartDate"], format="%Y-%m-%d"
+                    )
+                    df["CurrentFiscalYearEndDate"] = pd.to_datetime(
+                        df["CurrentFiscalYearEndDate"], format="%Y-%m-%d"
+                    )
                     buff.append(df)
                 else:
                     future = executor.submit(
