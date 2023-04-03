@@ -567,12 +567,11 @@ class Client:
         d = json.loads(j)
         df = pd.DataFrame.from_dict(d["daily_quotes"])
         cols = constants.PRICES_DAILY_QUOTES_COLUMNS
-        cols_premium = constants.PRICES_DAILY_QUOTES_PREMIUM_COLUMNS
         if len(df) == 0:
-            return pd.DataFrame([], columns=cols_premium)
+            return pd.DataFrame([], columns=cols)
         df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
         df.sort_values(["Code", "Date"], inplace=True)
-        df = df.reindex(columns=cols_premium)
+        df = df.reindex(columns=cols)
 
         return df
 
