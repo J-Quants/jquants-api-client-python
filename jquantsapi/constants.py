@@ -90,7 +90,6 @@ SECTOR_33_DATA = [
 # ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/prices-api#no
 # ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/prices-api#daily-stock-price-information
 
-
 PRICES_DAILY_QUOTES_COLUMNS = [
     "Date",
     "Code",
@@ -330,6 +329,67 @@ FINS_STATEMENTS_COLUMNS = [
     "NextYearForecastNonConsolidatedProfit",
     "NextYearForecastNonConsolidatedEarningsPerShare",
 ]
+
+# ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/finance-api#jue-suan-fa-biao-yu-ding-ri
+# ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/finance-api#schedule-of-financial-announcement
+FINS_ANNOUNCEMENT_COLUMNS = [
+    "Code",
+    "Date",
+    "CompanyName",
+    "FiscalYear",
+    "SectorName",
+    "FiscalQuarter",
+    "Section",
+]
+
+# ref ja https://jpx.gitbook.io/j-quants-api/api-reference/finance-api#no
+# ref en https://jpx.gitbook.io/j-quants-api-en/api-reference/finance-api#financial-information-for-the-quarter
+FINS_STATEMENTS_COLUMNS = [
+    "DisclosureNumber",
+    "DisclosedDate",
+    "ApplyingOfSpecificAccountingOfTheQuarterlyFinancialStatements",
+    "AverageNumberOfShares",
+    "BookValuePerShare",
+    "ChangesBasedOnRevisionsOfAccountingStandard",
+    "ChangesInAccountingEstimates",
+    "ChangesOtherThanOnesBasedOnRevisionsOfAccountingStandard",
+    "CurrentFiscalYearEndDate",
+    "CurrentFiscalYearStartDate",
+    "CurrentPeriodEndDate",
+    "DisclosedTime",
+    "DisclosedUnixTime",
+    "EarningsPerShare",
+    "Equity",
+    "EquityToAssetRatio",
+    "ForecastDividendPerShare1stQuarter",
+    "ForecastDividendPerShare2ndQuarter",
+    "ForecastDividendPerShare3rdQuarter",
+    "ForecastDividendPerShareAnnual",
+    "ForecastDividendPerShareFiscalYearEnd",
+    "ForecastEarningsPerShare",
+    "ForecastNetSales",
+    "ForecastOperatingProfit",
+    "ForecastOrdinaryProfit",
+    "ForecastProfit",
+    "LocalCode",
+    "MaterialChangesInSubsidiaries",
+    "NetSales",
+    "NumberOfIssuedAndOutstandingSharesAtTheEndOfFiscalYearIncludingTreasuryStock",
+    "NumberOfTreasuryStockAtTheEndOfFiscalYear",
+    "OperatingProfit",
+    "OrdinaryProfit",
+    "Profit",
+    "ResultDividendPerShare1stQuarter",
+    "ResultDividendPerShare2ndQuarter",
+    "ResultDividendPerShare3rdQuarter",
+    "ResultDividendPerShareAnnual",
+    "ResultDividendPerShareFiscalYearEnd",
+    "RetrospectiveRestatement",
+    "TotalAssets",
+    "TypeOfCurrentPeriod",
+    "TypeOfDocument",
+]
+
 
 # ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/finance-api#jue-suan-fa-biao-yu-ding-ri
 # ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/finance-api#schedule-of-financial-announcement
