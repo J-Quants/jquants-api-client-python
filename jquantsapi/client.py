@@ -47,7 +47,7 @@ class Client:
     ref. https://jpx.gitbook.io/j-quants-api/
     """
 
-    JQUANTS_API_BASE = "https://api.jpx-jquants.com/v1"
+    JQUANTS_API_BASE = "https://api.jquants.com/v1"
     MAX_WORKERS = 5
 
     def __init__(
@@ -382,7 +382,7 @@ class Client:
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
 
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
         df.sort_values("Code", inplace=True)
 
         return df[cols]
