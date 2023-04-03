@@ -567,11 +567,14 @@ class Client:
         d = json.loads(j)
         df = pd.DataFrame.from_dict(d["daily_quotes"])
         cols = constants.PRICES_DAILY_QUOTES_COLUMNS
+        cols_premium = constants.PRICES_DAILY_QUOTES_PREMIUM_COLUMNS
         if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
+            return pd.DataFrame([], columns=cols_premium)
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
         df.sort_values(["Code", "Date"], inplace=True)
-        return df[cols]
+        df = df.reindex(columns=cols_premium)
+
+        return df
 
     def get_price_range(
         self,
@@ -595,7 +598,7 @@ class Client:
         with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
             futures = [
                 executor.submit(
-                    self.get_prices_daily_quotes, date_yyyymmdd=s.strftime("%Y%m%d")
+                    self.get_prices_daily_quotes, date_yyyymmdd=s.strftime("%Y-%m-%d")
                 )
                 for s in dates
             ]
@@ -654,7 +657,7 @@ class Client:
         df["CurrentFiscalYearEndDate"] = pd.to_datetime(
             df["CurrentFiscalYearEndDate"], format="%Y-%m-%d"
         )
-        df.sort_values(["DisclosedUnixTime", "DisclosureNumber"], inplace=True)
+        df.sort_values(["DisclosureNumber"], inplace=True)
         return df[cols]
 
     def _get_indices_topix_raw(
@@ -703,7 +706,7 @@ class Client:
         cols = constants.INDICES_TOPIX_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
         df.sort_values(["Date"], inplace=True)
         return df[cols]
 
@@ -815,7 +818,7 @@ class Client:
             cache_dir: CSV形式のキャッシュファイルが存在するディレクトリ
 
         Returns:
-            pd.DataFrame: 財務情報 (DisclosedUnixTime列、DisclosureNumber列でソートされています)
+            pd.DataFrame: 財務情報 (DisclosureNumber列でソートされています)
         """
         # pre-load id_token
         self.get_id_token()
@@ -832,7 +835,19 @@ class Client:
                 if (cache_dir != "") and os.path.isfile(
                     f"{cache_dir}/{yyyy}/{cache_file}"
                 ):
-                    df = pd.read_csv(f"{cache_dir}/{yyyy}/{cache_file}")
+                    df = pd.read_csv(f"{cache_dir}/{yyyy}/{cache_file}", dtype=str)
+                    df["DisclosedDate"] = pd.to_datetime(
+                        df["DisclosedDate"], format="%Y-%m-%d"
+                    )
+                    df["CurrentPeriodEndDate"] = pd.to_datetime(
+                        df["CurrentPeriodEndDate"], format="%Y-%m-%d"
+                    )
+                    df["CurrentFiscalYearStartDate"] = pd.to_datetime(
+                        df["CurrentFiscalYearStartDate"], format="%Y-%m-%d"
+                    )
+                    df["CurrentFiscalYearEndDate"] = pd.to_datetime(
+                        df["CurrentFiscalYearEndDate"], format="%Y-%m-%d"
+                    )
                     buff.append(df)
                 else:
                     future = executor.submit(
@@ -851,4 +866,4 @@ class Client:
                     # write cache file
                     df.to_csv(f"{cache_dir}/{yyyy}/{cache_file}", index=False)
 
-        return pd.concat(buff).sort_values(["DisclosedUnixTime", "DisclosureNumber"])
+        return pd.concat(buff).sort_values(["DisclosureNumber"])
