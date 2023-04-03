@@ -261,14 +261,14 @@ def test_get_markets_trades_spec(section, from_yyyymmdd, to_yyyymmdd, exp_params
         "refresh_token": "dummy_token",
     }
 
-    ret_value = {"trades_spec": []}
+    ret_value = '{"trades_spec": []}'
     exp_ret_len = 0
     exp_raise = does_not_raise()
 
     with exp_raise, patch.object(
         jquantsapi.Client, "_load_config", return_value=config
     ), patch.object(jquantsapi.Client, "_get") as mock_get:
-        mock_get.return_value.json.return_value = ret_value
+        mock_get.return_value.text = ret_value
 
         cli = jquantsapi.Client()
         ret = cli.get_markets_trades_spec(

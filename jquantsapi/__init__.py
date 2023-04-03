@@ -1,1 +1,2 @@
-from .client import MARKET_API_SECTIONS, Client
+from .client import Client
+from .enums import MARKET_API_SECTIONS
