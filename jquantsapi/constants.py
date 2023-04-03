@@ -1,3 +1,22 @@
+# ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/listed-api
+# ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/listed-api
+LISTED_INFO_COLUMNS = [
+    "Date",
+    "Code",
+    "CompanyName",
+    "Sector17Code",
+    "Sector17CodeName",
+    "Sector33Code",
+    "Sector33CodeName",
+    "ScaleCategory",
+    "MarketCode",
+    "MarketCodeName",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/listed-api#ye-zhong-qing-bao-zhao-hui
+# ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/listed-api#sector-information
+LISTED_SECTIONS_COLUMNS = ["SectorCode", "SectorName"]
+
 # ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/listed-api/17-sector
 # ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/listed-api/17-sector
 SECTOR_17_COLUMNS = ["Sector17Code", "Sector17CodeName", "Sector17CodeNameEnglish"]
@@ -68,6 +87,95 @@ SECTOR_33_DATA = [
     ("9999", "その他", "Other", "99"),
 ]
 
+# ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/prices-api#no
+# ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/prices-api#daily-stock-price-information
+PRICES_DAILY_QUOTES_COLUMNS = [
+    "Code",
+    "Date",
+    "Open",
+    "High",
+    "Low",
+    "Close",
+    "Volume",
+    "TurnoverValue",
+    "AdjustmentFactor",
+    "AdjustmentOpen",
+    "AdjustmentHigh",
+    "AdjustmentLow",
+    "AdjustmentClose",
+    "AdjustmentVolume",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/indices#notopix
+# ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/indices#daily-topix-information
+INDICES_TOPIX_COLUMNS = [
+    "Date",
+    "Open",
+    "High",
+    "Low",
+    "Close",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/market-api#no
+# ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/market-api#weekly-trading-by-type-of-investors
+MARKETS_TRADES_SPEC = [
+    "Section",
+    "PublishedDate",
+    "StartDate",
+    "EndDate",
+    "ProprietarySales",
+    "ProprietaryPurchases",
+    "ProprietaryTotal",
+    "ProprietaryBalance",
+    "BrokerageSales",
+    "BrokeragePurchases",
+    "BrokerageTotal",
+    "BrokerageBalance",
+    "TotalSales",
+    "TotalPurchases",
+    "TotalTotal",
+    "TotalBalance",
+    "IndividualsSales",
+    "IndividualsPurchases",
+    "IndividualsTotal",
+    "IndividualsBalance",
+    "ForeignersSales",
+    "ForeignersPurchases",
+    "ForeignersTotal",
+    "ForeignersBalance",
+    "SecuritiesCosSales",
+    "SecuritiesCosPurchases",
+    "SecuritiesCosTotal",
+    "SecuritiesCosBalance",
+    "InvestmentTrustsSales",
+    "InvestmentTrustsPurchases",
+    "InvestmentTrustsTotal",
+    "InvestmentTrustsBalance",
+    "BusinessCosSales",
+    "BusinessCosPurchases",
+    "BusinessCosTotal",
+    "BusinessCosBalance",
+    "OtherCosSales",
+    "OtherCosPurchases",
+    "OtherCosTotal",
+    "OtherCosBalance",
+    "InsuranceCosSales",
+    "InsuranceCosPurchases",
+    "InsuranceCosTotal",
+    "InsuranceCosBalance",
+    "CityBKsRegionalBKsEtcSales",
+    "CityBKsRegionalBKsEtcPurchases",
+    "CityBKsRegionalBKsEtcTotal",
+    "CityBKsRegionalBKsEtcBalance",
+    "TrustBanksSales",
+    "TrustBanksPurchases",
+    "TrustBanksTotal",
+    "TrustBanksBalance",
+    "OtherFinancialInstitutionsSales",
+    "OtherFinancialInstitutionsPurchases",
+    "OtherFinancialInstitutionsTotal",
+    "OtherFinancialInstitutionsBalance",
+]
 
 # ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/listed-api/segment
 # ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/listed-api/segment
@@ -87,4 +195,65 @@ MARKET_SEGMENT_DATA = [
     ("111", "プライム", "Prime"),
     ("112", "スタンダード", "Standard"),
     ("113", "グロース", "Growth"),
+]
+
+# ref ja https://jpx.gitbook.io/j-quants-api/api-reference/finance-api#no
+# ref en https://jpx.gitbook.io/j-quants-api-en/api-reference/finance-api#financial-information-for-the-quarter
+FINS_STATEMENTS_COLUMNS = [
+    "DisclosureNumber",
+    "DisclosedDate",
+    "ApplyingOfSpecificAccountingOfTheQuarterlyFinancialStatements",
+    "AverageNumberOfShares",
+    "BookValuePerShare",
+    "ChangesBasedOnRevisionsOfAccountingStandard",
+    "ChangesInAccountingEstimates",
+    "ChangesOtherThanOnesBasedOnRevisionsOfAccountingStandard",
+    "CurrentFiscalYearEndDate",
+    "CurrentFiscalYearStartDate",
+    "CurrentPeriodEndDate",
+    "DisclosedTime",
+    "DisclosedUnixTime",
+    "EarningsPerShare",
+    "Equity",
+    "EquityToAssetRatio",
+    "ForecastDividendPerShare1stQuarter",
+    "ForecastDividendPerShare2ndQuarter",
+    "ForecastDividendPerShare3rdQuarter",
+    "ForecastDividendPerShareAnnual",
+    "ForecastDividendPerShareFiscalYearEnd",
+    "ForecastEarningsPerShare",
+    "ForecastNetSales",
+    "ForecastOperatingProfit",
+    "ForecastOrdinaryProfit",
+    "ForecastProfit",
+    "LocalCode",
+    "MaterialChangesInSubsidiaries",
+    "NetSales",
+    "NumberOfIssuedAndOutstandingSharesAtTheEndOfFiscalYearIncludingTreasuryStock",
+    "NumberOfTreasuryStockAtTheEndOfFiscalYear",
+    "OperatingProfit",
+    "OrdinaryProfit",
+    "Profit",
+    "ResultDividendPerShare1stQuarter",
+    "ResultDividendPerShare2ndQuarter",
+    "ResultDividendPerShare3rdQuarter",
+    "ResultDividendPerShareAnnual",
+    "ResultDividendPerShareFiscalYearEnd",
+    "RetrospectiveRestatement",
+    "TotalAssets",
+    "TypeOfCurrentPeriod",
+    "TypeOfDocument",
+]
+
+
+# ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/finance-api#jue-suan-fa-biao-yu-ding-ri
+# ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/finance-api#schedule-of-financial-announcement
+FINS_ANNOUNCEMENT_COLUMNS = [
+    "Code",
+    "Date",
+    "CompanyName",
+    "FiscalYear",
+    "SectorName",
+    "FiscalQuarter",
+    "Section",
 ]
