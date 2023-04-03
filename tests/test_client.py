@@ -308,10 +308,10 @@ def test_get_price_range():
 
         # 呼び出しの履歴と、get_prices_daily_quotes()が呼ばれた際の年月日8桁の引数を比較
         assert mock.mock_calls == [
-            call.get_prices_daily_quotes(date_yyyymmdd="20200227"),
-            call.get_prices_daily_quotes(date_yyyymmdd="20200228"),
-            call.get_prices_daily_quotes(date_yyyymmdd="20200229"),
-            call.get_prices_daily_quotes(date_yyyymmdd="20200301"),
-            call.get_prices_daily_quotes(date_yyyymmdd="20200302"),
+            call.get_prices_daily_quotes(date_yyyymmdd="2020-02-27"),
+            call.get_prices_daily_quotes(date_yyyymmdd="2020-02-28"),
+            call.get_prices_daily_quotes(date_yyyymmdd="2020-02-29"),
+            call.get_prices_daily_quotes(date_yyyymmdd="2020-03-01"),
+            call.get_prices_daily_quotes(date_yyyymmdd="2020-03-02"),
         ]
         mock.reset_mock()

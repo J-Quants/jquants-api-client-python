@@ -41,7 +41,7 @@ class Client:
     ref. https://jpx.gitbook.io/j-quants-api/
     """
 
-    JQUANTS_API_BASE = "https://api.jpx-jquants.com/v1"
+    JQUANTS_API_BASE = "https://api.jquants.com/v1"
     MAX_WORKERS = 5
     USER_AGENT = "jqapi-python"
     USER_AGENT_VERSION = "0.0.0"
@@ -390,7 +390,7 @@ class Client:
         cols = constants.LISTED_INFO_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
         df.sort_values("Code", inplace=True)
         return df[cols]
 
@@ -569,9 +569,11 @@ class Client:
         cols = constants.PRICES_DAILY_QUOTES_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
         df.sort_values(["Code", "Date"], inplace=True)
-        return df[cols]
+        df = df.reindex(columns=cols)
+
+        return df
 
     def get_price_range(
         self,
@@ -595,7 +597,7 @@ class Client:
         with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
             futures = [
                 executor.submit(
-                    self.get_prices_daily_quotes, date_yyyymmdd=s.strftime("%Y%m%d")
+                    self.get_prices_daily_quotes, date_yyyymmdd=s.strftime("%Y-%m-%d")
                 )
                 for s in dates
             ]
@@ -654,7 +656,7 @@ class Client:
         df["CurrentFiscalYearEndDate"] = pd.to_datetime(
             df["CurrentFiscalYearEndDate"], format="%Y-%m-%d"
         )
-        df.sort_values(["DisclosedUnixTime", "DisclosureNumber"], inplace=True)
+        df.sort_values(["DisclosureNumber"], inplace=True)
         return df[cols]
 
     def _get_indices_topix_raw(
@@ -703,7 +705,7 @@ class Client:
         cols = constants.INDICES_TOPIX_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
         df.sort_values(["Date"], inplace=True)
         return df[cols]
 
@@ -815,7 +817,7 @@ class Client:
             cache_dir: CSV形式のキャッシュファイルが存在するディレクトリ
 
         Returns:
-            pd.DataFrame: 財務情報 (DisclosedUnixTime列、DisclosureNumber列でソートされています)
+            pd.DataFrame: 財務情報 (DisclosureNumber列でソートされています)
         """
         # pre-load id_token
         self.get_id_token()
@@ -863,4 +865,4 @@ class Client:
                     # write cache file
                     df.to_csv(f"{cache_dir}/{yyyy}/{cache_file}", index=False)
 
-        return pd.concat(buff).sort_values(["DisclosedUnixTime", "DisclosureNumber"])
+        return pd.concat(buff).sort_values(["DisclosureNumber"])
