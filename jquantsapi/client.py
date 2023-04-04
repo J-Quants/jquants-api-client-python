@@ -759,7 +759,9 @@ class Client:
         get weekly margin interest raw API returns
 
         Args:
-            code: issue code (e.g. 27800 or 2780) If a 4-digit issue code is specified, only the data of common stock will be obtained for the issue on which both common and preferred stocks are listed.
+            code: issue code (e.g. 27800 or 2780)
+                If a 4-digit issue code is specified, only the data of common stock will be obtained
+                for the issue on which both common and preferred stocks are listed.
             from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
             to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
             date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
@@ -792,7 +794,9 @@ class Client:
         get weekly margin interest API returns
 
         Args:
-            code: issue code (e.g. 27800 or 2780) If a 4-digit issue code is specified, only the data of common stock will be obtained for the issue on which both common and preferred stocks are listed.
+            code: issue code (e.g. 27800 or 2780)
+                If a 4-digit issue code is specified, only the data of common stock will be obtained
+                for the issue on which both common and preferred stocks are listed.
             from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
             to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
             date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)

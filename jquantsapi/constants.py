@@ -198,15 +198,15 @@ MARKETS_TRADES_SPEC = [
 # ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/weekly_margin_interest
 # ref. en https://jpx.gitbook.io/j-quants-en/api-reference/weekly_margin_interest
 MARKETS_WEEKLY_MARGIN_INTEREST = [
-            "Date",
-            "Code",
-            "ShortMarginTradeVolume",
-            "LongMarginTradeVolume",
-            "ShortNegotiableMarginTradeVolume",
-            "LongNegotiableMarginTradeVolume",
-            "ShortStandardizedMarginTradeVolume",
-            "LongStandardizedMarginTradeVolume",
-            "IssueType",
+    "Date",
+    "Code",
+    "ShortMarginTradeVolume",
+    "LongMarginTradeVolume",
+    "ShortNegotiableMarginTradeVolume",
+    "LongNegotiableMarginTradeVolume",
+    "ShortStandardizedMarginTradeVolume",
+    "LongStandardizedMarginTradeVolume",
+    "IssueType",
 ]
 
 # ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/listed-api/segment
