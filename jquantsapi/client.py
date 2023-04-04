@@ -801,7 +801,7 @@ class Client:
             to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
             date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
         Returns:
-            pd.DataFrame: weekly margin interest (Sorted by "PublishedDate" and "Section" columns)
+            pd.DataFrame: weekly margin interest (Sorted by "Date" and "Code" columns)
         """
         j = self._get_markets_weekly_margin_interest_raw(
             code=code,
