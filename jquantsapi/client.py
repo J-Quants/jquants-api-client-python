@@ -410,25 +410,6 @@ class Client:
         ret.encoding = self.RAW_ENCODING
         return ret.text
 
-    def get_listed_sections(self) -> pd.DataFrame:
-        """
-        セクター一覧を取得
-
-        Args:
-            N/A
-
-        Returns:
-            pd.DataFrame: セクター一覧
-        """
-        j = self._get_listed_sections_raw()
-        d = json.loads(j)
-        df = pd.DataFrame.from_dict(d["sections"])
-        cols = constants.LISTED_SECTIONS_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df.sort_values(constants.LISTED_SECTIONS_COLUMNS[0], inplace=True)
-        return df[cols]
-
     def get_17_sectors(self) -> pd.DataFrame:
         """
         Get 17-sector code and name
@@ -638,7 +619,7 @@ class Client:
             date_yyyymmdd: 日付(YYYYMMDD or YYYY-MM-DD)
 
         Returns:
-            pd.DataFrame: 財務情報 (DisclosedUnixTime列、DisclosureNumber列でソートされています)
+            pd.DataFrame: 財務情報 (DisclosedDate, DisclosedTime, 及びLocalCode列でソートされています)
         """
         j = self._get_fins_statements_raw(code=code, date_yyyymmdd=date_yyyymmdd)
         d = json.loads(j)
@@ -656,7 +637,7 @@ class Client:
         df["CurrentFiscalYearEndDate"] = pd.to_datetime(
             df["CurrentFiscalYearEndDate"], format="%Y-%m-%d"
         )
-        df.sort_values(["DisclosureNumber"], inplace=True)
+        df.sort_values(["DisclosedDate", "DisclosedTime", "LocalCode"], inplace=True)
         return df[cols]
 
     def _get_indices_topix_raw(
@@ -817,7 +798,7 @@ class Client:
             cache_dir: CSV形式のキャッシュファイルが存在するディレクトリ
 
         Returns:
-            pd.DataFrame: 財務情報 (DisclosureNumber列でソートされています)
+            pd.DataFrame: 財務情報 (DisclosedDate, DisclosedTime, 及びLocalCode列でソートされています)
         """
         # pre-load id_token
         self.get_id_token()
@@ -865,4 +846,6 @@ class Client:
                     # write cache file
                     df.to_csv(f"{cache_dir}/{yyyy}/{cache_file}", index=False)
 
-        return pd.concat(buff).sort_values(["DisclosureNumber"])
+        return pd.concat(buff).sort_values(
+            ["DisclosedDate", "DisclosedTime", "LocalCode"]
+        )
