@@ -410,25 +410,6 @@ class Client:
         ret.encoding = self.RAW_ENCODING
         return ret.text
 
-    def get_listed_sections(self) -> pd.DataFrame:
-        """
-        セクター一覧を取得
-
-        Args:
-            N/A
-
-        Returns:
-            pd.DataFrame: セクター一覧
-        """
-        j = self._get_listed_sections_raw()
-        d = json.loads(j)
-        df = pd.DataFrame.from_dict(d["sections"])
-        cols = constants.LISTED_SECTIONS_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df.sort_values(constants.LISTED_SECTIONS_COLUMNS[0], inplace=True)
-        return df[cols]
-
     def get_17_sectors(self) -> pd.DataFrame:
         """
         Get 17-sector code and name
@@ -865,4 +846,4 @@ class Client:
                     # write cache file
                     df.to_csv(f"{cache_dir}/{yyyy}/{cache_file}", index=False)
 
-        return pd.concat(buff).sort_values(["DisclosureNumber"])
+        return pd.concat(buff).sort_values(["DisclosedDate", "DisclosedTime", "LocalCode"])
