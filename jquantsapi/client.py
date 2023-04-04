@@ -846,4 +846,6 @@ class Client:
                     # write cache file
                     df.to_csv(f"{cache_dir}/{yyyy}/{cache_file}", index=False)
 
-        return pd.concat(buff).sort_values(["DisclosedDate", "DisclosedTime", "LocalCode"])
+        return pd.concat(buff).sort_values(
+            ["DisclosedDate", "DisclosedTime", "LocalCode"]
+        )
