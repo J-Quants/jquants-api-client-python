@@ -748,6 +748,74 @@ class Client:
         df.sort_values(["PublishedDate", "Section"], inplace=True)
         return df[cols]
 
+    def _get_markets_weekly_margin_interest_raw(
+        self,
+        code: str = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+        date_yyyymmdd: str = "",
+    ) -> str:
+        """
+        get weekly margin interest raw API returns
+
+        Args:
+            code: issue code (e.g. 27800 or 2780)
+                If a 4-digit issue code is specified, only the data of common stock will be obtained
+                for the issue on which both common and preferred stocks are listed.
+            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
+            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
+            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
+        Returns:
+            str: weekly margin interest
+        """
+        url = f"{self.JQUANTS_API_BASE}/markets/weekly_margin_interest"
+        params = {
+            "code": code,
+        }
+        if date_yyyymmdd != "":
+            params["date"] = date_yyyymmdd
+        else:
+            if from_yyyymmdd != "":
+                params["from"] = from_yyyymmdd
+            if to_yyyymmdd != "":
+                params["to"] = to_yyyymmdd
+        ret = self._get(url, params)
+        ret.encoding = self.RAW_ENCODING
+        return ret.text
+
+    def get_markets_weekly_margin_interest(
+        self,
+        code: str = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+        date_yyyymmdd: str = "",
+    ) -> pd.DataFrame:
+        """
+        get weekly margin interest API returns
+
+        Args:
+            code: issue code (e.g. 27800 or 2780)
+                If a 4-digit issue code is specified, only the data of common stock will be obtained
+                for the issue on which both common and preferred stocks are listed.
+            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
+            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
+            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
+        Returns:
+            pd.DataFrame: weekly margin interest (Sorted by "Date" and "Code" columns)
+        """
+        j = self._get_markets_weekly_margin_interest_raw(
+            code=code,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+            date_yyyymmdd=date_yyyymmdd,
+        )
+        d = json.loads(j)
+        df = pd.DataFrame.from_dict(d["weekly_margin_interest"])
+        cols = constants.MARKETS_WEEKLY_MARGIN_INTEREST
+        df = df.reindex(columns=cols)
+        df.sort_values(["Date", "Code"], inplace=True)
+        return df
+
     def _get_fins_announcement_raw(self) -> str:
         """
         get fin announcement raw API returns
