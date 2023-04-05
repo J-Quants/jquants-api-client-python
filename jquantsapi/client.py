@@ -38,13 +38,13 @@ class TokenAuthRefreshBadRequestException(Exception):
 class Client:
     """
     J-Quants API からデータを取得する
-    ref. https://jpx.gitbook.io/j-quants-api/
+    ref. https://jpx.gitbook.io/j-quants-ja/
     """
 
     JQUANTS_API_BASE = "https://api.jquants.com/v1"
     MAX_WORKERS = 5
     USER_AGENT = "jqapi-python"
-    USER_AGENT_VERSION = "0.0.0"
+    USER_AGENT_VERSION = "1.1.0"
     RAW_ENCODING = "utf-8"
 
     def __init__(

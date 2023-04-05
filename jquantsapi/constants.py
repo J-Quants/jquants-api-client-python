@@ -1,5 +1,5 @@
-# ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/listed-api
-# ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/listed-api
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/listed_info
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/listed_info
 LISTED_INFO_COLUMNS = [
     "Date",
     "Code",
@@ -13,8 +13,8 @@ LISTED_INFO_COLUMNS = [
     "MarketCodeName",
 ]
 
-# ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/listed-api/17-sector
-# ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/listed-api/17-sector
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/listed_info/sector17code
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/listed_info/sector17code
 SECTOR_17_COLUMNS = ["Sector17Code", "Sector17CodeName", "Sector17CodeNameEnglish"]
 SECTOR_17_DATA = [
     ("1", "食品", "FOODS"),
@@ -37,8 +37,8 @@ SECTOR_17_DATA = [
     ("99", "その他", "OTHER"),
 ]
 
-# ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/listed-api/33-sector
-# ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/listed-api/33-sector
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/listed_info/sector33code
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/listed_info/sector33code
 # ref. 33-17 mapping https://www.jpx.co.jp/markets/indices/line-up/files/fac_13_sector.pdf
 SECTOR_33_COLUMNS = [
     "Sector33Code",
@@ -83,9 +83,8 @@ SECTOR_33_DATA = [
     ("9999", "その他", "Other", "99"),
 ]
 
-# ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/prices-api#no
-# ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/prices-api#daily-stock-price-information
-
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/daily_quotes
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/daily_quotes
 PRICES_DAILY_QUOTES_COLUMNS = [
     "Date",
     "Code",
@@ -124,8 +123,8 @@ PRICES_DAILY_QUOTES_COLUMNS = [
     "AfternoonAdjustmentVolume",
 ]
 
-# ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/indices#notopix
-# ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/indices#daily-topix-information
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/topix
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/topix
 INDICES_TOPIX_COLUMNS = [
     "Date",
     "Open",
@@ -134,8 +133,8 @@ INDICES_TOPIX_COLUMNS = [
     "Close",
 ]
 
-# ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/market-api#no
-# ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/market-api#weekly-trading-by-type-of-investors
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/trades_spec
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/trades_spec
 MARKETS_TRADES_SPEC = [
     "Section",
     "PublishedDate",
@@ -209,8 +208,8 @@ MARKETS_WEEKLY_MARGIN_INTEREST = [
     "IssueType",
 ]
 
-# ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/listed-api/segment
-# ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/listed-api/segment
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/listed_info/marketcode
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/listed_info/marketcode
 MARKET_SEGMENT_COLUMNS = [
     "MarketCode",
     "MarketCodeName",
@@ -229,8 +228,8 @@ MARKET_SEGMENT_DATA = [
     ("0113", "グロース", "Growth"),
 ]
 
-# ref ja https://jpx.gitbook.io/j-quants-api/api-reference/finance-api#no
-# ref en https://jpx.gitbook.io/j-quants-api-en/api-reference/finance-api#financial-information-for-the-quarter
+# ref ja https://jpx.gitbook.io/j-quants-ja/api-reference/statements
+# ref en https://jpx.gitbook.io/j-quants-en/api-reference/statements
 FINS_STATEMENTS_COLUMNS = [
     "DisclosedDate",
     "DisclosedTime",
@@ -340,8 +339,8 @@ FINS_STATEMENTS_COLUMNS = [
     "NextYearForecastNonConsolidatedEarningsPerShare",
 ]
 
-# ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/finance-api#jue-suan-fa-biao-yu-ding-ri
-# ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/finance-api#schedule-of-financial-announcement
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/announcement
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/announcement
 FINS_ANNOUNCEMENT_COLUMNS = [
     "Code",
     "Date",
@@ -352,125 +351,12 @@ FINS_ANNOUNCEMENT_COLUMNS = [
     "Section",
 ]
 
-# ref ja https://jpx.gitbook.io/j-quants-api/api-reference/finance-api#no
-# ref en https://jpx.gitbook.io/j-quants-api-en/api-reference/finance-api#financial-information-for-the-quarter
-FINS_STATEMENTS_COLUMNS = [
-    "DisclosedDate",
-    "DisclosedTime",
-    "LocalCode",
-    "DisclosureNumber",
-    "TypeOfDocument",
-    "TypeOfCurrentPeriod",
-    "CurrentPeriodStartDate",
-    "CurrentPeriodEndDate",
-    "CurrentFiscalYearStartDate",
-    "CurrentFiscalYearEndDate",
-    "NextFiscalYearStartDate",
-    "NextFiscalYearEndDate",
-    "NetSales",
-    "OperatingProfit",
-    "OrdinaryProfit",
-    "Profit",
-    "EarningsPerShare",
-    "DilutedEarningsPerShare",
-    "TotalAssets",
-    "Equity",
-    "EquityToAssetRatio",
-    "BookValuePerShare",
-    "CashFlowsFromOperatingActivities",
-    "CashFlowsFromInvestingActivities",
-    "CashFlowsFromFinancingActivities",
-    "CashAndEquivalents",
-    "ResultDividendPerShare1stQuarter",
-    "ResultDividendPerShare2ndQuarter",
-    "ResultDividendPerShare3rdQuarter",
-    "ResultDividendPerShareFiscalYearEnd",
-    "ResultDividendPerShareAnnual",
-    "DistributionsPerUnit(REIT)",
-    "ResultTotalDividendPaidAnnual",
-    "ResultPayoutRatioAnnual",
-    "ForecastDividendPerShare1stQuarter",
-    "ForecastDividendPerShare2ndQuarter",
-    "ForecastDividendPerShare3rdQuarter",
-    "ForecastDividendPerShareFiscalYearEnd",
-    "ForecastDividendPerShareAnnual",
-    "ForecastDistributionsPerUnit(REIT)",
-    "ForecastTotalDividendPaidAnnual",
-    "ForecastPayoutRatioAnnual",
-    "NextYearForecastDividendPerShare1stQuarter",
-    "NextYearForecastDividendPerShare2ndQuarter",
-    "NextYearForecastDividendPerShare3rdQuarter",
-    "NextYearForecastDividendPerShareFiscalYearEnd",
-    "NextYearForecastDividendPerShareAnnual",
-    "NextYearForecastDistributionsPerUnit(REIT)",
-    "NextYearForecastPayoutRatioAnnual",
-    "ForecastNetSales2ndQuarter",
-    "ForecastOperatingProfit2ndQuarter",
-    "ForecastOrdinaryProfit2ndQuarter",
-    "ForecastProfit2ndQuarter",
-    "ForecastEarningsPerShare2ndQuarter",
-    "NextYearForecastNetSales2ndQuarter",
-    "NextYearForecastOperatingProfit2ndQuarter",
-    "NextYearForecastOrdinaryProfit2ndQuarter",
-    "NextYearForecastProfit2ndQuarter",
-    "NextYearForecastEarningsPerShare2ndQuarter",
-    "ForecastNetSales",
-    "ForecastOperatingProfit",
-    "ForecastOrdinaryProfit",
-    "ForecastProfit",
-    "ForecastEarningsPerShare",
-    "NextYearForecastNetSales",
-    "NextYearForecastOperatingProfit",
-    "NextYearForecastOrdinaryProfit",
-    "NextYearForecastProfit",
-    "NextYearForecastEarningsPerShare",
-    "MaterialChangesInSubsidiaries",
-    "ChangesBasedOnRevisionsOfAccountingStandard",
-    "ChangesOtherThanOnesBasedOnRevisionsOfAccountingStandard",
-    "ChangesInAccountingEstimates",
-    "RetrospectiveRestatement",
-    "NumberOfIssuedAndOutstandingSharesAtTheEndOfFiscalYearIncludingTreasuryStock",
-    "NumberOfTreasuryStockAtTheEndOfFiscalYear",
-    "AverageNumberOfShares",
-    "NonConsolidatedNetSales",
-    "NonConsolidatedOperatingProfit",
-    "NonConsolidatedOrdinaryProfit",
-    "NonConsolidatedProfit",
-    "NonConsolidatedEarningsPerShare",
-    "NonConsolidatedTotalAssets",
-    "NonConsolidatedEquity",
-    "NonConsolidatedEquityToAssetRatio",
-    "NonConsolidatedBookValuePerShare",
-    "ForecastNonConsolidatedNetSales2ndQuarter",
-    "ForecastNonConsolidatedOperatingProfit2ndQuarter",
-    "ForecastNonConsolidatedOrdinaryProfit2ndQuarter",
-    "ForecastNonConsolidatedProfit2ndQuarter",
-    "ForecastNonConsolidatedEarningsPerShare2ndQuarter",
-    "NextYearForecastNonConsolidatedNetSales2ndQuarter",
-    "NextYearForecastNonConsolidatedOperatingProfit2ndQuarter",
-    "NextYearForecastNonConsolidatedOrdinaryProfit2ndQuarter",
-    "NextYearForecastNonConsolidatedProfit2ndQuarter",
-    "NextYearForecastNonConsolidatedEarningsPerShare2ndQuarter",
-    "ForecastNonConsolidatedNetSales",
-    "ForecastNonConsolidatedOperatingProfit",
-    "ForecastNonConsolidatedOrdinaryProfit",
-    "ForecastNonConsolidatedProfit",
-    "ForecastNonConsolidatedEarningsPerShare",
-    "NextYearForecastNonConsolidatedNetSales",
-    "NextYearForecastNonConsolidatedOperatingProfit",
-    "NextYearForecastNonConsolidatedOrdinaryProfit",
-    "NextYearForecastNonConsolidatedProfit",
-    "NextYearForecastNonConsolidatedEarningsPerShare",
-]
-
-# ref. ja https://jpx.gitbook.io/j-quants-api/api-reference/finance-api#jue-suan-fa-biao-yu-ding-ri
-# ref. en https://jpx.gitbook.io/j-quants-api-en/api-reference/finance-api#schedule-of-financial-announcement
-FINS_ANNOUNCEMENT_COLUMNS = [
-    "Code",
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/short_selling
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/short_selling
+MARKET_SHORT_SELLING_COLUMNS = [
     "Date",
-    "CompanyName",
-    "FiscalYear",
-    "SectorName",
-    "FiscalQuarter",
-    "Section",
+    "Sector33Code",
+    "SellingExcludingShortSellingTurnoverValue",
+    "ShortSellingWithRestrictionsTurnoverValue",
+    "ShortSellingWithoutRestrictionsTurnoverValue"
 ]
