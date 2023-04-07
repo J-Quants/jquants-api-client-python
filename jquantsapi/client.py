@@ -44,7 +44,7 @@ class Client:
     JQUANTS_API_BASE = "https://api.jquants.com/v1"
     MAX_WORKERS = 5
     USER_AGENT = "jqapi-python"
-    USER_AGENT_VERSION = "1.1.0"
+    USER_AGENT_VERSION = "0.0.0"
     RAW_ENCODING = "utf-8"
 
     def __init__(
@@ -230,7 +230,7 @@ class Client:
         headers = self._base_headers()
         ret = s.get(url, params=params, headers=headers, timeout=30)
         if ret.status_code == 400:
-            raise ValueError(json.loads(ret.text)["message"])
+            raise HTTPError(ret.status_code, ret.json())
         ret.raise_for_status()
         return ret
 
@@ -266,6 +266,7 @@ class Client:
         ret.raise_for_status()
         return ret
 
+    # /token
     def get_refresh_token(
         self, mail_address: Optional[str] = None, password: Optional[str] = None
     ) -> str:
@@ -353,6 +354,7 @@ class Client:
         self._id_token_expire = pd.Timestamp.utcnow() + pd.Timedelta(23, unit="hour")
         return self._id_token
 
+    # /listed
     def _get_listed_info_raw(self, code: str = "", date_yyyymmdd: str = "") -> str:
         """
         Get listed companies raw API returns
@@ -395,6 +397,25 @@ class Client:
         df.sort_values("Code", inplace=True)
         return df[cols]
 
+    @staticmethod
+    def get_market_segments() -> pd.DataFrame:
+        """
+        Get market segment code and name
+
+        Args:
+            N/A
+
+        Returns:
+            pd.DataFrame: market segment code and name
+
+        """
+
+        df = pd.DataFrame(
+            constants.MARKET_SEGMENT_DATA, columns=constants.MARKET_SEGMENT_COLUMNS
+        )
+        df.sort_values(constants.MARKET_SEGMENT_COLUMNS[0], inplace=True)
+        return df
+
     def get_17_sectors(self) -> pd.DataFrame:
         """
         Get 17-sector code and name
@@ -425,25 +446,6 @@ class Client:
         df.sort_values(constants.SECTOR_33_COLUMNS[0], inplace=True)
         return df
 
-    @staticmethod
-    def get_market_segments() -> pd.DataFrame:
-        """
-        Get market segment code and name
-
-        Args:
-            N/A
-
-        Returns:
-            pd.DataFrame: market segment code and name
-
-        """
-
-        df = pd.DataFrame(
-            constants.MARKET_SEGMENT_DATA, columns=constants.MARKET_SEGMENT_COLUMNS
-        )
-        df.sort_values(constants.MARKET_SEGMENT_COLUMNS[0], inplace=True)
-        return df
-
     def get_list(self, code: str = "", date_yyyymmdd: str = "") -> pd.DataFrame:
         """
         Get listed companies (incl English name for sectors/segments)
@@ -471,6 +473,7 @@ class Client:
         df_list.sort_values("Code", inplace=True)
         return df_list
 
+    # /prices
     def _get_prices_daily_quotes_raw(
         self,
         code: str = "",
@@ -532,7 +535,7 @@ class Client:
         )
         d = json.loads(j)
         df = pd.DataFrame.from_dict(d["daily_quotes"])
-        premium_flag = bool([c for c in df.columns if "Morning" in c])
+        premium_flag = "MorningClose" in df.columns
         if premium_flag:
             cols = constants.PRICES_DAILY_QUOTES_PREMIUM_COLUMNS
         else:
@@ -573,194 +576,56 @@ class Client:
                 buff.append(df)
         return pd.concat(buff).sort_values(["Code", "Date"])
 
-    def _get_fins_statements_raw(self, code: str = "", date_yyyymmdd: str = "") -> str:
+    def _get_prices_prices_am_raw(
+        self,
+        code: str = "",
+    ) -> str:
         """
-        get fins statements raw API return
+        get the morning session's high, low, opening, and closing prices for individual stocks raw API returns
 
         Args:
-            code: 銘柄コード
-            date_yyyymmdd: 日付(YYYYMMDD or YYYY-MM-DD)
-
+            code: issue code (e.g. 27800 or 2780)
+                If a 4-digit issue code is specified, only the data of common stock will be obtained
+                for the issue on which both common and preferred stocks are listed.
         Returns:
-            str: fins statements
+            str: the morning session's OHLC data
         """
-        url = f"{self.JQUANTS_API_BASE}/fins/statements"
+        url = f"{self.JQUANTS_API_BASE}/prices/prices_am"
         params = {
             "code": code,
-            "date": date_yyyymmdd,
         }
         ret = self._get(url, params)
         ret.encoding = self.RAW_ENCODING
-
         return ret.text
 
-    def get_fins_statements(
-        self, code: str = "", date_yyyymmdd: str = ""
+    def get_prices_prices_am(
+        self,
+        code: str = "",
     ) -> pd.DataFrame:
         """
-        財務情報取得
+        get the morning session's high, low, opening, and closing prices for individual stocks API returns
 
         Args:
-            code: 銘柄コード
-            date_yyyymmdd: 日付(YYYYMMDD or YYYY-MM-DD)
-
-        Returns:
-            pd.DataFrame: 財務情報 (DisclosedDate, DisclosedTime, 及びLocalCode列でソートされています)
+            code: issue code (e.g. 27800 or 2780)
+                If a 4-digit issue code is specified, only the data of common stock will be obtained
+                for the issue on which both common and preferred stocks are listed.
+        Returns: pd.DataFrame: the morning session's OHLC data
         """
-        j = self._get_fins_statements_raw(code=code, date_yyyymmdd=date_yyyymmdd)
-        d = json.loads(j)
-        df = pd.DataFrame.from_dict(d["statements"])
-        cols = constants.FINS_STATEMENTS_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["DisclosedDate"] = pd.to_datetime(df["DisclosedDate"], format="%Y-%m-%d")
-        df["CurrentPeriodStartDate"] = pd.to_datetime(
-            df["CurrentPeriodStartDate"], format="%Y-%m-%d"
-        )
-        df["CurrentPeriodEndDate"] = pd.to_datetime(
-            df["CurrentPeriodEndDate"], format="%Y-%m-%d"
-        )
-        df["CurrentFiscalYearStartDate"] = pd.to_datetime(
-            df["CurrentFiscalYearStartDate"], format="%Y-%m-%d"
-        )
-        df["CurrentFiscalYearEndDate"] = pd.to_datetime(
-            df["CurrentFiscalYearEndDate"], format="%Y-%m-%d"
-        )
-        df["NextFiscalYearStartDate"] = pd.to_datetime(
-            df["NextFiscalYearStartDate"], format="%Y-%m-%d"
-        )
-        df["NextFiscalYearEndDate"] = pd.to_datetime(
-            df["NextFiscalYearEndDate"], format="%Y-%m-%d"
-        )
-        df.sort_values(["DisclosedDate", "DisclosedTime", "LocalCode"], inplace=True)
-        return df[cols]
-
-    def get_statements_range(
-        self,
-        start_dt: DatetimeLike = "20170101",
-        end_dt: DatetimeLike = datetime.now(),
-        cache_dir: str = "",
-    ) -> pd.DataFrame:
-        """
-        財務情報を日付範囲指定して取得
-
-        Args:
-            start_dt: 取得開始日
-            end_dt: 取得終了日
-            cache_dir: CSV形式のキャッシュファイルが存在するディレクトリ
-
-        Returns:
-            pd.DataFrame: 財務情報 (DisclosedDate, DisclosedTime, 及びLocalCode列でソートされています)
-        """
-        # pre-load id_token
-        self.get_id_token()
-
-        buff = []
-        futures = {}
-        dates = pd.date_range(start_dt, end_dt, freq="D")
-        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
-            for s in dates:
-                # fetch data via API or cache file
-                yyyymmdd = s.strftime("%Y%m%d")
-                yyyy = yyyymmdd[:4]
-                cache_file = f"fins_statements_{yyyymmdd}.csv.gz"
-                if (cache_dir != "") and os.path.isfile(
-                    f"{cache_dir}/{yyyy}/{cache_file}"
-                ):
-                    df = pd.read_csv(f"{cache_dir}/{yyyy}/{cache_file}", dtype=str)
-                    df["DisclosedDate"] = pd.to_datetime(
-                        df["DisclosedDate"], format="%Y-%m-%d"
-                    )
-                    df["CurrentPeriodStartDate"] = pd.to_datetime(
-                        df["CurrentPeriodStartDate"], format="%Y-%m-%d"
-                    )
-                    df["CurrentPeriodEndDate"] = pd.to_datetime(
-                        df["CurrentPeriodEndDate"], format="%Y-%m-%d"
-                    )
-                    df["CurrentFiscalYearStartDate"] = pd.to_datetime(
-                        df["CurrentFiscalYearStartDate"], format="%Y-%m-%d"
-                    )
-                    df["CurrentFiscalYearEndDate"] = pd.to_datetime(
-                        df["CurrentFiscalYearEndDate"], format="%Y-%m-%d"
-                    )
-                    df["NextFiscalYearStartDate"] = pd.to_datetime(
-                        df["NextFiscalYearStartDate"], format="%Y-%m-%d"
-                    )
-                    df["NextFiscalYearEndDate"] = pd.to_datetime(
-                        df["NextFiscalYearEndDate"], format="%Y-%m-%d"
-                    )
-                    buff.append(df)
-                else:
-                    future = executor.submit(
-                        self.get_fins_statements, date_yyyymmdd=yyyymmdd
-                    )
-                    futures[future] = yyyymmdd
-            for future in as_completed(futures):
-                df = future.result()
-                buff.append(df)
-                yyyymmdd = futures[future]
-                yyyy = yyyymmdd[:4]
-                cache_file = f"fins_statements_{yyyymmdd}.csv.gz"
-                if cache_dir != "":
-                    # create year directory
-                    os.makedirs(f"{cache_dir}/{yyyy}", exist_ok=True)
-                    # write cache file
-                    df.to_csv(f"{cache_dir}/{yyyy}/{cache_file}", index=False)
-
-        return pd.concat(buff).sort_values(
-            ["DisclosedDate", "DisclosedTime", "LocalCode"]
-        )
-
-    def _get_indices_topix_raw(
-        self,
-        from_yyyymmdd: str = "",
-        to_yyyymmdd: str = "",
-    ) -> str:
-        """
-        TOPIX Daily OHLC raw API returns
-
-        Args:
-            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
-            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
-        Returns:
-            str: TOPIX Daily OHLC
-        """
-        url = f"{self.JQUANTS_API_BASE}/indices/topix"
-        params = {}
-        if from_yyyymmdd != "":
-            params["from"] = from_yyyymmdd
-        if to_yyyymmdd != "":
-            params["to"] = to_yyyymmdd
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
-
-    def get_indices_topix(
-        self,
-        from_yyyymmdd: str = "",
-        to_yyyymmdd: str = "",
-    ) -> pd.DataFrame:
-        """
-        TOPIX Daily OHLC
-
-        Args:
-            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
-            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
-        Returns:
-            pd.DataFrame: TOPIX Daily OHLC (Sorted by "Date" column)
-        """
-        j = self._get_indices_topix_raw(
-            from_yyyymmdd=from_yyyymmdd, to_yyyymmdd=to_yyyymmdd
+        j = self._get_prices_prices_am_raw(
+            code=code,
         )
         d = json.loads(j)
-        df = pd.DataFrame.from_dict(d["topix"])
-        cols = constants.INDICES_TOPIX_COLUMNS
+        if d.get("message"):
+            return d["message"]
+        df = pd.DataFrame.from_dict(d["prices_am"])
+        cols = constants.PRICES_PRICES_AM_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
         df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
-        df.sort_values(["Date"], inplace=True)
+        df.sort_values(["Code"], inplace=True)
         return df[cols]
 
+    # /markets
     def _get_markets_trades_spec_raw(
         self,
         section: Union[str, enums.MARKET_API_SECTIONS] = "",
@@ -921,41 +786,6 @@ class Client:
                 buff.append(df)
         return pd.concat(buff).sort_values(["Code", "Date"])
 
-    def _get_fins_announcement_raw(self) -> str:
-        """
-        get fin announcement raw API returns
-
-        Args:
-            N/A
-
-        Returns:
-            str: Schedule of financial announcement
-        """
-        url = f"{self.JQUANTS_API_BASE}/fins/announcement"
-        ret = self._get(url)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
-
-    def get_fins_announcement(self) -> pd.DataFrame:
-        """
-        get fin announcement
-
-        Args:
-            N/A
-
-        Returns:
-            pd.DataFrame: Schedule of financial announcement
-        """
-        j = self._get_fins_announcement_raw()
-        d = json.loads(j)
-        df = pd.DataFrame.from_dict(d["announcement"])
-        cols = constants.FINS_ANNOUNCEMENT_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
-        df.sort_values(["Date", "Code"], inplace=True)
-        return df[cols]
-
     def _get_markets_short_selling_raw(
         self,
         sector_33_code: str = "",
@@ -1053,82 +883,6 @@ class Client:
                 df = future.result()
                 buff.append(df)
         return pd.concat(buff).sort_values(["Sector33Code", "Date"])
-
-    def _get_option_index_option_raw(
-        self,
-        date_yyyymmdd: str = "",
-    ) -> str:
-        """
-        get information on the OHLC etc. of Nikkei 225 raw API returns
-
-        Args:
-            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
-        Returns:
-            str: Nikkei 225 Options' OHLC etc.
-        """
-        url = f"{self.JQUANTS_API_BASE}/option/index_option"
-        params = {
-            "date": date_yyyymmdd,
-        }
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
-
-    def get_option_index_option(
-        self,
-        date_yyyymmdd: str = "",
-    ) -> pd.DataFrame:
-        """
-        get information on the OHLC etc. of Nikkei 225 API returns
-
-        Args:
-            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
-        Returns:
-            pd.DataFrame:
-                Nikkei 225 Options' OHLC etc. (Sorted by "Code")
-        """
-        j = self._get_option_index_option_raw(
-            date_yyyymmdd=date_yyyymmdd,
-        )
-        d = json.loads(j)
-        df = pd.DataFrame.from_dict(d["index_option"])
-        cols = constants.OPTION_INDEX_OPTION_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
-        df.sort_values(["Code"], inplace=True)
-        return df[cols]
-
-    def get_index_option_range(
-        self,
-        start_dt: DatetimeLike = "20170101",
-        end_dt: DatetimeLike = datetime.now(),
-    ) -> pd.DataFrame:
-        """
-        指数オプション（Nikkei225）に関するOHLC等の情報を日付範囲指定して取得
-
-        Args:
-            start_dt: 取得開始日
-            end_dt: 取得終了日
-
-        Returns:
-            pd.DataFrame: 指数オプション（Nikkei225）に関するOHLC等 (Code, Date列でソートされています)
-        """
-        # pre-load id_token
-        self.get_id_token()
-        buff = []
-        dates = pd.date_range(start_dt, end_dt, freq="D")
-        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
-            futures = [
-                executor.submit(
-                    self.get_option_index_option, date_yyyymmdd=s.strftime("%Y-%m-%d")
-                )
-                for s in dates
-            ]
-            for future in as_completed(futures):
-                df = future.result()
-                buff.append(df)
-        return pd.concat(buff).sort_values(["Code", "Date"])
 
     def _get_markets_breakdown_raw(
         self,
@@ -1230,6 +984,196 @@ class Client:
                 df = future.result()
                 buff.append(df)
         return pd.concat(buff).sort_values(["Code", "Date"])
+
+    # /indices
+    def _get_indices_topix_raw(
+        self,
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+    ) -> str:
+        """
+        TOPIX Daily OHLC raw API returns
+
+        Args:
+            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
+            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
+        Returns:
+            str: TOPIX Daily OHLC
+        """
+        url = f"{self.JQUANTS_API_BASE}/indices/topix"
+        params = {}
+        if from_yyyymmdd != "":
+            params["from"] = from_yyyymmdd
+        if to_yyyymmdd != "":
+            params["to"] = to_yyyymmdd
+        ret = self._get(url, params)
+        ret.encoding = self.RAW_ENCODING
+        return ret.text
+
+    def get_indices_topix(
+        self,
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+    ) -> pd.DataFrame:
+        """
+        TOPIX Daily OHLC
+
+        Args:
+            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
+            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
+        Returns:
+            pd.DataFrame: TOPIX Daily OHLC (Sorted by "Date" column)
+        """
+        j = self._get_indices_topix_raw(
+            from_yyyymmdd=from_yyyymmdd, to_yyyymmdd=to_yyyymmdd
+        )
+        d = json.loads(j)
+        df = pd.DataFrame.from_dict(d["topix"])
+        cols = constants.INDICES_TOPIX_COLUMNS
+        if len(df) == 0:
+            return pd.DataFrame([], columns=cols)
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
+        df.sort_values(["Date"], inplace=True)
+        return df[cols]
+
+    # /fins
+    def _get_fins_statements_raw(self, code: str = "", date_yyyymmdd: str = "") -> str:
+        """
+        get fins statements raw API return
+
+        Args:
+            code: 銘柄コード
+            date_yyyymmdd: 日付(YYYYMMDD or YYYY-MM-DD)
+
+        Returns:
+            str: fins statements
+        """
+        url = f"{self.JQUANTS_API_BASE}/fins/statements"
+        params = {
+            "code": code,
+            "date": date_yyyymmdd,
+        }
+        ret = self._get(url, params)
+        ret.encoding = self.RAW_ENCODING
+
+        return ret.text
+
+    def get_fins_statements(
+        self, code: str = "", date_yyyymmdd: str = ""
+    ) -> pd.DataFrame:
+        """
+        財務情報取得
+
+        Args:
+            code: 銘柄コード
+            date_yyyymmdd: 日付(YYYYMMDD or YYYY-MM-DD)
+
+        Returns:
+            pd.DataFrame: 財務情報 (DisclosedDate, DisclosedTime, 及びLocalCode列でソートされています)
+        """
+        j = self._get_fins_statements_raw(code=code, date_yyyymmdd=date_yyyymmdd)
+        d = json.loads(j)
+        df = pd.DataFrame.from_dict(d["statements"])
+        cols = constants.FINS_STATEMENTS_COLUMNS
+        if len(df) == 0:
+            return pd.DataFrame([], columns=cols)
+        df["DisclosedDate"] = pd.to_datetime(df["DisclosedDate"], format="%Y-%m-%d")
+        df["CurrentPeriodStartDate"] = pd.to_datetime(
+            df["CurrentPeriodStartDate"], format="%Y-%m-%d"
+        )
+        df["CurrentPeriodEndDate"] = pd.to_datetime(
+            df["CurrentPeriodEndDate"], format="%Y-%m-%d"
+        )
+        df["CurrentFiscalYearStartDate"] = pd.to_datetime(
+            df["CurrentFiscalYearStartDate"], format="%Y-%m-%d"
+        )
+        df["CurrentFiscalYearEndDate"] = pd.to_datetime(
+            df["CurrentFiscalYearEndDate"], format="%Y-%m-%d"
+        )
+        df["NextFiscalYearStartDate"] = pd.to_datetime(
+            df["NextFiscalYearStartDate"], format="%Y-%m-%d"
+        )
+        df["NextFiscalYearEndDate"] = pd.to_datetime(
+            df["NextFiscalYearEndDate"], format="%Y-%m-%d"
+        )
+        df.sort_values(["DisclosedDate", "DisclosedTime", "LocalCode"], inplace=True)
+        return df[cols]
+
+    def get_statements_range(
+        self,
+        start_dt: DatetimeLike = "20170101",
+        end_dt: DatetimeLike = datetime.now(),
+        cache_dir: str = "",
+    ) -> pd.DataFrame:
+        """
+        財務情報を日付範囲指定して取得
+
+        Args:
+            start_dt: 取得開始日
+            end_dt: 取得終了日
+            cache_dir: CSV形式のキャッシュファイルが存在するディレクトリ
+
+        Returns:
+            pd.DataFrame: 財務情報 (DisclosedDate, DisclosedTime, 及びLocalCode列でソートされています)
+        """
+        # pre-load id_token
+        self.get_id_token()
+
+        buff = []
+        futures = {}
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            for s in dates:
+                # fetch data via API or cache file
+                yyyymmdd = s.strftime("%Y%m%d")
+                yyyy = yyyymmdd[:4]
+                cache_file = f"fins_statements_{yyyymmdd}.csv.gz"
+                if (cache_dir != "") and os.path.isfile(
+                    f"{cache_dir}/{yyyy}/{cache_file}"
+                ):
+                    df = pd.read_csv(f"{cache_dir}/{yyyy}/{cache_file}", dtype=str)
+                    df["DisclosedDate"] = pd.to_datetime(
+                        df["DisclosedDate"], format="%Y-%m-%d"
+                    )
+                    df["CurrentPeriodStartDate"] = pd.to_datetime(
+                        df["CurrentPeriodStartDate"], format="%Y-%m-%d"
+                    )
+                    df["CurrentPeriodEndDate"] = pd.to_datetime(
+                        df["CurrentPeriodEndDate"], format="%Y-%m-%d"
+                    )
+                    df["CurrentFiscalYearStartDate"] = pd.to_datetime(
+                        df["CurrentFiscalYearStartDate"], format="%Y-%m-%d"
+                    )
+                    df["CurrentFiscalYearEndDate"] = pd.to_datetime(
+                        df["CurrentFiscalYearEndDate"], format="%Y-%m-%d"
+                    )
+                    df["NextFiscalYearStartDate"] = pd.to_datetime(
+                        df["NextFiscalYearStartDate"], format="%Y-%m-%d"
+                    )
+                    df["NextFiscalYearEndDate"] = pd.to_datetime(
+                        df["NextFiscalYearEndDate"], format="%Y-%m-%d"
+                    )
+                    buff.append(df)
+                else:
+                    future = executor.submit(
+                        self.get_fins_statements, date_yyyymmdd=yyyymmdd
+                    )
+                    futures[future] = yyyymmdd
+            for future in as_completed(futures):
+                df = future.result()
+                buff.append(df)
+                yyyymmdd = futures[future]
+                yyyy = yyyymmdd[:4]
+                cache_file = f"fins_statements_{yyyymmdd}.csv.gz"
+                if cache_dir != "":
+                    # create year directory
+                    os.makedirs(f"{cache_dir}/{yyyy}", exist_ok=True)
+                    # write cache file
+                    df.to_csv(f"{cache_dir}/{yyyy}/{cache_file}", index=False)
+
+        return pd.concat(buff).sort_values(
+            ["DisclosedDate", "DisclosedTime", "LocalCode"]
+        )
 
     def _get_fins_dividend_raw(
         self,
@@ -1336,51 +1280,114 @@ class Client:
             ["AnnouncementDate", "AnnouncementTime", "Code"]
         )
 
-    def _get_prices_prices_am_raw(
-        self,
-        code: str = "",
-    ) -> str:
+    def _get_fins_announcement_raw(self) -> str:
         """
-        get the morning session's high, low, opening, and closing prices for individual stocks raw API returns
+        get fin announcement raw API returns
 
         Args:
-            code: issue code (e.g. 27800 or 2780)
-                If a 4-digit issue code is specified, only the data of common stock will be obtained
-                for the issue on which both common and preferred stocks are listed.
+            N/A
+
         Returns:
-            str: the morning session's OHLC data
+            str: Schedule of financial announcement
         """
-        url = f"{self.JQUANTS_API_BASE}/prices/prices_am"
+        url = f"{self.JQUANTS_API_BASE}/fins/announcement"
+        ret = self._get(url)
+        ret.encoding = self.RAW_ENCODING
+        return ret.text
+
+    def get_fins_announcement(self) -> pd.DataFrame:
+        """
+        get fin announcement
+
+        Args:
+            N/A
+
+        Returns:
+            pd.DataFrame: Schedule of financial announcement
+        """
+        j = self._get_fins_announcement_raw()
+        d = json.loads(j)
+        df = pd.DataFrame.from_dict(d["announcement"])
+        cols = constants.FINS_ANNOUNCEMENT_COLUMNS
+        if len(df) == 0:
+            return pd.DataFrame([], columns=cols)
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
+        df.sort_values(["Date", "Code"], inplace=True)
+        return df[cols]
+
+    # /option
+    def _get_option_index_option_raw(
+        self,
+        date_yyyymmdd,
+    ) -> str:
+        """
+        get information on the OHLC etc. of Nikkei 225 raw API returns
+
+        Args:
+            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
+        Returns:
+            str: Nikkei 225 Options' OHLC etc.
+        """
+        url = f"{self.JQUANTS_API_BASE}/option/index_option"
         params = {
-            "code": code,
+            "date": date_yyyymmdd,
         }
         ret = self._get(url, params)
         ret.encoding = self.RAW_ENCODING
         return ret.text
 
-    def get_prices_prices_am(
+    def get_option_index_option(
         self,
-        code: str = "",
+        date_yyyymmdd,
     ) -> pd.DataFrame:
         """
-        get the morning session's high, low, opening, and closing prices for individual stocks API returns
+        get information on the OHLC etc. of Nikkei 225 API returns
 
         Args:
-            code: issue code (e.g. 27800 or 2780)
-                If a 4-digit issue code is specified, only the data of common stock will be obtained
-                for the issue on which both common and preferred stocks are listed.
-        Returns: pd.DataFrame: the morning session's OHLC data
+            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
+        Returns:
+            pd.DataFrame:
+                Nikkei 225 Options' OHLC etc. (Sorted by "Code")
         """
-        j = self._get_prices_prices_am_raw(
-            code=code,
+        j = self._get_option_index_option_raw(
+            date_yyyymmdd=date_yyyymmdd,
         )
         d = json.loads(j)
-        if d.get("message"):
-            return d["message"]
-        df = pd.DataFrame.from_dict(d["prices_am"])
-        cols = constants.PRICES_PRICES_AM_COLUMNS
+        df = pd.DataFrame.from_dict(d["index_option"])
+        cols = constants.OPTION_INDEX_OPTION_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
         df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
         df.sort_values(["Code"], inplace=True)
         return df[cols]
+
+    def get_index_option_range(
+        self,
+        start_dt: DatetimeLike = "20170101",
+        end_dt: DatetimeLike = datetime.now(),
+    ) -> pd.DataFrame:
+        """
+        指数オプション（Nikkei225）に関するOHLC等の情報を日付範囲指定して取得
+
+        Args:
+            start_dt: 取得開始日
+            end_dt: 取得終了日
+
+        Returns:
+            pd.DataFrame: 指数オプション（Nikkei225）に関するOHLC等 (Code, Date列でソートされています)
+        """
+        # pre-load id_token
+        self.get_id_token()
+        buff = []
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            futures = [
+                executor.submit(
+                    self.get_option_index_option, date_yyyymmdd=s.strftime("%Y-%m-%d")
+                )
+                for s in dates
+            ]
+            for future in as_completed(futures):
+                df = future.result()
+                buff.append(df)
+        return pd.concat(buff).sort_values(["Code", "Date"])

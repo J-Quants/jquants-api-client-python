@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jquants-api-client"
-version = "1.1.0" # use poetry-dynamic-versioning
+version = "0.0.0" # use poetry-dynamic-versioning
 authors = [
     "J-Quants Project Contributors <j-quants@jpx.co.jp>",
 ]
