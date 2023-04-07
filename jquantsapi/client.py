@@ -230,7 +230,8 @@ class Client:
         headers = self._base_headers()
         ret = s.get(url, params=params, headers=headers, timeout=30)
         if ret.status_code == 400:
-            raise HTTPError(ret.status_code, ret.json())
+            msg = f"{ret.status_code} for url: {ret.url} body: {ret.text}"
+            raise HTTPError(msg, response=ret)
         ret.raise_for_status()
         return ret
 
