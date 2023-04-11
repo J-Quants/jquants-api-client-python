@@ -543,6 +543,7 @@ class Client:
             cols = constants.PRICES_DAILY_QUOTES_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
         df.sort_values(["Code", "Date"], inplace=True)
         return df[cols]
 
