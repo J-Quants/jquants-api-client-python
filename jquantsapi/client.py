@@ -315,7 +315,7 @@ class Client:
 
         Params:
             refresh_token: J-Quants API refresh token
-        Retruns:
+        Returns:
             id_token: J-Quants API id token
         """
         if self._id_token_expire > pd.Timestamp.utcnow():
@@ -356,13 +356,16 @@ class Client:
         return self._id_token
 
     # /listed
-    def _get_listed_info_raw(self, code: str = "", date_yyyymmdd: str = "") -> str:
+    def _get_listed_info_raw(
+        self, code: str = "", date_yyyymmdd: str = "", pagination_key: str = ""
+    ) -> str:
         """
         Get listed companies raw API returns
 
         Args:
             code: Issue code (Optional)
             date: YYYYMMDD or YYYY-MM-DD (Optional)
+            pagination_key: ページングキー
 
         Returns:
             str: listed companies raw json string
@@ -373,6 +376,8 @@ class Client:
             params["code"] = code
         if date_yyyymmdd != "":
             params["date"] = date_yyyymmdd
+        if pagination_key != "":
+            params["pagination_key"] = pagination_key
         ret = self._get(url, params)
         ret.encoding = self.RAW_ENCODING
         return ret.text
@@ -390,7 +395,17 @@ class Client:
         """
         j = self._get_listed_info_raw(code=code, date_yyyymmdd=date_yyyymmdd)
         d = json.loads(j)
-        df = pd.DataFrame.from_dict(d["info"])
+        data = d["info"]
+        while "pagination_key" in d:
+            j = self._get_listed_info_raw(
+                code=code,
+                date_yyyymmdd=date_yyyymmdd,
+                pagination_key=d["pagination_key"],
+            )
+            d = json.loads(j)
+            data += d["info"]
+        df = pd.DataFrame.from_dict(data)
+
         cols = constants.LISTED_INFO_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
@@ -481,6 +496,7 @@ class Client:
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        pagination_key: str = "",
     ) -> str:
         """
         get daily quotes raw API returns
@@ -490,6 +506,7 @@ class Client:
             from_yyyymmdd: 取得開始日
             to_yyyymmdd: 取得終了日
             date_yyyymmdd: 取得日
+            pagination_key: ページングキー
 
         Returns:
             str: daily quotes
@@ -505,6 +522,8 @@ class Client:
                 params["from"] = from_yyyymmdd
             if to_yyyymmdd != "":
                 params["to"] = to_yyyymmdd
+        if pagination_key != "":
+            params["pagination_key"] = pagination_key
         ret = self._get(url, params)
         ret.encoding = self.RAW_ENCODING
         return ret.text
@@ -535,7 +554,18 @@ class Client:
             date_yyyymmdd=date_yyyymmdd,
         )
         d = json.loads(j)
-        df = pd.DataFrame.from_dict(d["daily_quotes"])
+        data = d["daily_quotes"]
+        while "pagination_key" in d:
+            j = self._get_prices_daily_quotes_raw(
+                code=code,
+                from_yyyymmdd=from_yyyymmdd,
+                to_yyyymmdd=to_yyyymmdd,
+                date_yyyymmdd=date_yyyymmdd,
+                pagination_key=d["pagination_key"],
+            )
+            d = json.loads(j)
+            data += d["daily_quotes"]
+        df = pd.DataFrame.from_dict(data)
         premium_flag = "MorningClose" in df.columns
         if premium_flag:
             cols = constants.PRICES_DAILY_QUOTES_PREMIUM_COLUMNS
@@ -581,6 +611,7 @@ class Client:
     def _get_prices_prices_am_raw(
         self,
         code: str = "",
+        pagination_key: str = "",
     ) -> str:
         """
         get the morning session's high, low, opening, and closing prices for individual stocks raw API returns
@@ -589,6 +620,8 @@ class Client:
             code: issue code (e.g. 27800 or 2780)
                 If a 4-digit issue code is specified, only the data of common stock will be obtained
                 for the issue on which both common and preferred stocks are listed.
+            pagination_key: ページングキー
+
         Returns:
             str: the morning session's OHLC data
         """
@@ -596,6 +629,8 @@ class Client:
         params = {
             "code": code,
         }
+        if pagination_key != "":
+            params["pagination_key"] = pagination_key
         ret = self._get(url, params)
         ret.encoding = self.RAW_ENCODING
         return ret.text
@@ -617,9 +652,17 @@ class Client:
             code=code,
         )
         d = json.loads(j)
-        if d.get("message"):
-            return d["message"]
-        df = pd.DataFrame.from_dict(d["prices_am"])
+        data = d["prices_am"]
+        while "pagination_key" in d:
+            if d.get("message"):
+                return d["message"]
+            j = self._get_prices_prices_am_raw(
+                code=code,
+                pagination_key=d["pagination_key"],
+            )
+            d = json.loads(j)
+            data += d["prices_am"]
+        df = pd.DataFrame.from_dict(data)
         cols = constants.PRICES_PRICES_AM_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
@@ -633,6 +676,7 @@ class Client:
         section: Union[str, enums.MARKET_API_SECTIONS] = "",
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
+        pagination_key: str = "",
     ) -> str:
         """
         Weekly Trading by Type of Investors raw API returns
@@ -641,6 +685,8 @@ class Client:
             section: section name (e.g. "TSEPrime" or MARKET_API_SECTIONS.TSEPrime)
             from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
             to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
+            pagination_key: ページングキー
+
         Returns:
             str: Weekly Trading by Type of Investors
         """
@@ -652,6 +698,8 @@ class Client:
             params["from"] = from_yyyymmdd
         if to_yyyymmdd != "":
             params["to"] = to_yyyymmdd
+        if pagination_key != "":
+            params["pagination_key"] = pagination_key
         ret = self._get(url, params)
         ret.encoding = self.RAW_ENCODING
         return ret.text
@@ -676,7 +724,17 @@ class Client:
             section=section, from_yyyymmdd=from_yyyymmdd, to_yyyymmdd=to_yyyymmdd
         )
         d = json.loads(j)
-        df = pd.DataFrame.from_dict(d["trades_spec"])
+        data = d["trades_spec"]
+        while "pagination_key" in d:
+            j = self._get_markets_trades_spec_raw(
+                section=section,
+                from_yyyymmdd=from_yyyymmdd,
+                to_yyyymmdd=to_yyyymmdd,
+                pagination_key=d["pagination_key"],
+            )
+            d = json.loads(j)
+            data += d["trades_spec"]
+        df = pd.DataFrame.from_dict(data)
         cols = constants.MARKETS_TRADES_SPEC
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
@@ -692,6 +750,7 @@ class Client:
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        pagination_key: str = "",
     ) -> str:
         """
         get weekly margin interest raw API returns
@@ -703,6 +762,7 @@ class Client:
             from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
             to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
             date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
+            pagination_key: ページングキー
         Returns:
             str: weekly margin interest
         """
@@ -717,6 +777,8 @@ class Client:
                 params["from"] = from_yyyymmdd
             if to_yyyymmdd != "":
                 params["to"] = to_yyyymmdd
+        if pagination_key != "":
+            params["pagination_key"] = pagination_key
         ret = self._get(url, params)
         ret.encoding = self.RAW_ENCODING
         return ret.text
@@ -748,7 +810,18 @@ class Client:
             date_yyyymmdd=date_yyyymmdd,
         )
         d = json.loads(j)
-        df = pd.DataFrame.from_dict(d["weekly_margin_interest"])
+        data = d["weekly_margin_interest"]
+        while "pagination_key" in d:
+            j = self._get_markets_weekly_margin_interest_raw(
+                code=code,
+                from_yyyymmdd=from_yyyymmdd,
+                to_yyyymmdd=to_yyyymmdd,
+                date_yyyymmdd=date_yyyymmdd,
+                pagination_key=d["pagination_key"],
+            )
+            d = json.loads(j)
+            data += d["weekly_margin_interest"]
+        df = pd.DataFrame.from_dict(data)
         cols = constants.MARKETS_WEEKLY_MARGIN_INTEREST
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
@@ -794,6 +867,7 @@ class Client:
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        pagination_key: str = "",
     ) -> str:
         """
         get daily short sale ratios and trading value by industry (sector) raw API returns
@@ -803,6 +877,7 @@ class Client:
             from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
             to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
             date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
+            pagination_key: ページングキー
         Returns:
             str: daily short sale ratios and trading value by industry
         """
@@ -817,6 +892,8 @@ class Client:
                 params["from"] = from_yyyymmdd
             if to_yyyymmdd != "":
                 params["to"] = to_yyyymmdd
+        if pagination_key != "":
+            params["pagination_key"] = date_yyyymmdd
         ret = self._get(url, params)
         ret.encoding = self.RAW_ENCODING
         return ret.text
@@ -846,8 +923,20 @@ class Client:
             to_yyyymmdd=to_yyyymmdd,
             date_yyyymmdd=date_yyyymmdd,
         )
+
         d = json.loads(j)
-        df = pd.DataFrame.from_dict(d["short_selling"])
+        data = d["short_selling"]
+        while "pagination_key" in d:
+            j = self._get_markets_short_selling_raw(
+                sector_33_code=sector_33_code,
+                from_yyyymmdd=from_yyyymmdd,
+                to_yyyymmdd=to_yyyymmdd,
+                date_yyyymmdd=date_yyyymmdd,
+                pagination_key=d["pagination_key"],
+            )
+            d = json.loads(j)
+            data += d["short_selling"]
+        df = pd.DataFrame.from_dict(data)
         cols = constants.MARKET_SHORT_SELLING_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
@@ -892,6 +981,7 @@ class Client:
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        pagination_key: str = "",
     ) -> str:
         """
         get detail breakdown trading data raw API returns
@@ -903,6 +993,7 @@ class Client:
             from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
             to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
             date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
+            pagination_key: ページングキー
         Returns:
             str: detail breakdown trading data
         """
@@ -917,6 +1008,8 @@ class Client:
                 params["from"] = from_yyyymmdd
             if to_yyyymmdd != "":
                 params["to"] = to_yyyymmdd
+        if pagination_key != "":
+            params["pagination_key"] = pagination_key
         ret = self._get(url, params)
         ret.encoding = self.RAW_ENCODING
         return ret.text
@@ -948,7 +1041,18 @@ class Client:
             date_yyyymmdd=date_yyyymmdd,
         )
         d = json.loads(j)
-        df = pd.DataFrame.from_dict(d["breakdown"])
+        data = d["breakdown"]
+        while "pagination_key" in d:
+            j = self._get_markets_breakdown_raw(
+                code=code,
+                from_yyyymmdd=from_yyyymmdd,
+                to_yyyymmdd=to_yyyymmdd,
+                date_yyyymmdd=date_yyyymmdd,
+                pagination_key=d["pagination_key"],
+            )
+            d = json.loads(j)
+            data += d["breakdown"]
+        df = pd.DataFrame.from_dict(data)
         cols = constants.MARKETS_BREAKDOWN_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
@@ -992,6 +1096,7 @@ class Client:
         self,
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
+        pagination_key: str = "",
     ) -> str:
         """
         TOPIX Daily OHLC raw API returns
@@ -999,6 +1104,7 @@ class Client:
         Args:
             from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
             to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
+            pagination_key: ページングキー
         Returns:
             str: TOPIX Daily OHLC
         """
@@ -1008,6 +1114,8 @@ class Client:
             params["from"] = from_yyyymmdd
         if to_yyyymmdd != "":
             params["to"] = to_yyyymmdd
+        if pagination_key != "":
+            params["pagination_key"] = pagination_key
         ret = self._get(url, params)
         ret.encoding = self.RAW_ENCODING
         return ret.text
@@ -1030,7 +1138,16 @@ class Client:
             from_yyyymmdd=from_yyyymmdd, to_yyyymmdd=to_yyyymmdd
         )
         d = json.loads(j)
-        df = pd.DataFrame.from_dict(d["topix"])
+        data = d["topix"]
+        while "pagination_key" in d:
+            j = self._get_indices_topix_raw(
+                from_yyyymmdd=from_yyyymmdd,
+                to_yyyymmdd=to_yyyymmdd,
+                pagination_key=d["pagination_key"],
+            )
+            d = json.loads(j)
+            data += d["topix"]
+        df = pd.DataFrame.from_dict(data)
         cols = constants.INDICES_TOPIX_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
@@ -1039,13 +1156,16 @@ class Client:
         return df[cols]
 
     # /fins
-    def _get_fins_statements_raw(self, code: str = "", date_yyyymmdd: str = "") -> str:
+    def _get_fins_statements_raw(
+        self, code: str = "", date_yyyymmdd: str = "", pagination_key: str = ""
+    ) -> str:
         """
         get fins statements raw API return
 
         Args:
             code: 銘柄コード
             date_yyyymmdd: 日付(YYYYMMDD or YYYY-MM-DD)
+            pagination_key: ページングキー
 
         Returns:
             str: fins statements
@@ -1055,6 +1175,8 @@ class Client:
             "code": code,
             "date": date_yyyymmdd,
         }
+        if pagination_key != "":
+            params["pagination_key"] = pagination_key
         ret = self._get(url, params)
         ret.encoding = self.RAW_ENCODING
 
@@ -1075,7 +1197,16 @@ class Client:
         """
         j = self._get_fins_statements_raw(code=code, date_yyyymmdd=date_yyyymmdd)
         d = json.loads(j)
-        df = pd.DataFrame.from_dict(d["statements"])
+        data = d["statements"]
+        while "pagination_key" in d:
+            j = self._get_fins_statements_raw(
+                code=code,
+                date_yyyymmdd=date_yyyymmdd,
+                pagination_key=d["pagination_key"],
+            )
+            d = json.loads(j)
+            data += d["statements"]
+        df = pd.DataFrame.from_dict(data)
         cols = constants.FINS_STATEMENTS_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
@@ -1183,6 +1314,7 @@ class Client:
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        pagination_key: str = "",
     ) -> str:
         """
         get  information on dividends (determined and forecast) per share of listed companies etc.. raw API returns
@@ -1194,6 +1326,7 @@ class Client:
             from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
             to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
             date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
+            pagination_key: ページングキー
         Returns:
             str: information on dividends data
         """
@@ -1208,6 +1341,8 @@ class Client:
                 params["from"] = from_yyyymmdd
             if to_yyyymmdd != "":
                 params["to"] = to_yyyymmdd
+        if pagination_key != "":
+            params["pagination_key"] = pagination_key
         ret = self._get(url, params)
         ret.encoding = self.RAW_ENCODING
         return ret.text
@@ -1239,7 +1374,18 @@ class Client:
             date_yyyymmdd=date_yyyymmdd,
         )
         d = json.loads(j)
-        df = pd.DataFrame.from_dict(d["dividend"])
+        data = d["dividend"]
+        while "pagination_key" in d:
+            j = self._get_fins_dividend_raw(
+                code=code,
+                from_yyyymmdd=from_yyyymmdd,
+                to_yyyymmdd=to_yyyymmdd,
+                date_yyyymmdd=date_yyyymmdd,
+                pagination_key=d["pagination_key"],
+            )
+            d = json.loads(j)
+            data += d["dividend"]
+        df = pd.DataFrame.from_dict(data)
         cols = constants.FINS_DIVIDEND_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
@@ -1282,18 +1428,24 @@ class Client:
             ["AnnouncementDate", "AnnouncementTime", "Code"]
         )
 
-    def _get_fins_announcement_raw(self) -> str:
+    def _get_fins_announcement_raw(
+        self,
+        pagination_key: str = "",
+    ) -> str:
         """
         get fin announcement raw API returns
 
         Args:
-            N/A
+            pagination_key: ページングキー
 
         Returns:
             str: Schedule of financial announcement
         """
         url = f"{self.JQUANTS_API_BASE}/fins/announcement"
-        ret = self._get(url)
+        params = {}
+        if pagination_key != "":
+            params["pagination_key"] = pagination_key
+        ret = self._get(url, params)
         ret.encoding = self.RAW_ENCODING
         return ret.text
 
@@ -1309,7 +1461,12 @@ class Client:
         """
         j = self._get_fins_announcement_raw()
         d = json.loads(j)
-        df = pd.DataFrame.from_dict(d["announcement"])
+        data = d["announcement"]
+        while "pagination_key" in d:
+            j = self._get_fins_announcement_raw(pagination_key=d["pagination_key"])
+            d = json.loads(j)
+            data += d["announcement"]
+        df = pd.DataFrame.from_dict(data)
         cols = constants.FINS_ANNOUNCEMENT_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
@@ -1321,12 +1478,14 @@ class Client:
     def _get_option_index_option_raw(
         self,
         date_yyyymmdd,
+        pagination_key: str = "",
     ) -> str:
         """
         get information on the OHLC etc. of Nikkei 225 raw API returns
 
         Args:
             date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
+            pagination_key: ページングキー
         Returns:
             str: Nikkei 225 Options' OHLC etc.
         """
@@ -1334,6 +1493,8 @@ class Client:
         params = {
             "date": date_yyyymmdd,
         }
+        if pagination_key != "":
+            params["pagination_key"] = pagination_key
         ret = self._get(url, params)
         ret.encoding = self.RAW_ENCODING
         return ret.text
@@ -1355,7 +1516,15 @@ class Client:
             date_yyyymmdd=date_yyyymmdd,
         )
         d = json.loads(j)
-        df = pd.DataFrame.from_dict(d["index_option"])
+        data = d["index_option"]
+        while "pagination_key" in d:
+            j = self._get_option_index_option_raw(
+                date_yyyymmdd=date_yyyymmdd,
+                pagination_key=d["pagination_key"],
+            )
+            d = json.loads(j)
+            data += d["index_option"]
+        df = pd.DataFrame.from_dict(data)
         cols = constants.OPTION_INDEX_OPTION_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
