@@ -1393,3 +1393,64 @@ class Client:
                 df = future.result()
                 buff.append(df)
         return pd.concat(buff).sort_values(["Code", "Date"])
+
+    # /trading_calendar
+    def _get_markets_trading_calendar_raw(
+        self,
+        holiday_division: str = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+    ) -> str:
+        """
+        get trading calendar raw API returns
+
+        Args:
+            holiday_division: 休日区分
+            from_yyyymmdd: 取得開始日
+            to_yyyymmdd: 取得終了日
+
+        Returns:
+            str: trading calendar
+        """
+        url = f"{self.JQUANTS_API_BASE}/markets/trading_calendar"
+        params = {}
+        if holiday_division != "":
+            params["holidaydivision"] = holiday_division
+        if from_yyyymmdd != "":
+            params["from"] = from_yyyymmdd
+        if to_yyyymmdd != "":
+            params["to"] = to_yyyymmdd
+        ret = self._get(url, params)
+        ret.encoding = self.RAW_ENCODING
+        return ret.text
+
+    def get_markets_trading_calendar(
+        self,
+        holiday_division: str = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+    ) -> pd.DataFrame:
+        """
+        取引カレンダーを取得
+
+        Args:
+            holiday_division: 休日区分
+            from_yyyymmdd: 取得開始日
+            to_yyyymmdd: 取得終了日
+
+        Returns:
+            pd.DataFrame: 取り引きカレンダー (Date列でソートされています)
+        """
+        j = self._get_markets_trading_calendar_raw(
+            holiday_division=holiday_division,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+        )
+        d = json.loads(j)
+        df = pd.DataFrame.from_dict(d["trading_calendar"])
+        cols = constants.MARKETS_TRADING_CALENDAR
+        if len(df) == 0:
+            return pd.DataFrame([], columns=cols)
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
+        df.sort_values(["Date"], inplace=True)
+        return df[cols]

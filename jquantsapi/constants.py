@@ -467,3 +467,8 @@ PRICES_PRICES_AM_COLUMNS = [
     "MorningVolume",
     "MorningTurnoverValue",
 ]
+
+MARKETS_TRADING_CALENDAR = [
+    "Date",
+    "HolidayDivision",
+]
