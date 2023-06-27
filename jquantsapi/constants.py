@@ -13,6 +13,21 @@ LISTED_INFO_COLUMNS = [
     "MarketCodeName",
 ]
 
+LISTED_INFO_STANDARD_PREMIUM_COLUMNS = [
+    "Date",
+    "Code",
+    "CompanyName",
+    "Sector17Code",
+    "Sector17CodeName",
+    "Sector33Code",
+    "Sector33CodeName",
+    "ScaleCategory",
+    "MarketCode",
+    "MarketCodeName",
+    "MarginCode",
+    "MarginCodeName",
+]
+
 # ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/listed_info/sector17code
 # ref. en https://jpx.gitbook.io/j-quants-en/api-reference/listed_info/sector17code
 SECTOR_17_COLUMNS = ["Sector17Code", "Sector17CodeName", "Sector17CodeNameEnglish"]

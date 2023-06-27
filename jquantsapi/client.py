@@ -406,7 +406,11 @@ class Client:
             data += d["info"]
         df = pd.DataFrame.from_dict(data)
 
-        cols = constants.LISTED_INFO_COLUMNS
+        standard_premium_flag = "MarginCode" in df.columns
+        if standard_premium_flag:
+            cols = constants.LISTED_INFO_STANDARD_PREMIUM_COLUMNS
+        else:
+            cols = constants.LISTED_INFO_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
         df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
