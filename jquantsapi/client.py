@@ -652,10 +652,10 @@ class Client:
             code=code,
         )
         d = json.loads(j)
+        if d.get("message"):
+            return d["message"]
         data = d["prices_am"]
         while "pagination_key" in d:
-            if d.get("message"):
-                return d["message"]
             j = self._get_prices_prices_am_raw(
                 code=code,
                 pagination_key=d["pagination_key"],
