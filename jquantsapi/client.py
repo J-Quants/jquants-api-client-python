@@ -1238,7 +1238,7 @@ class Client:
 
     def get_statements_range(
         self,
-        start_dt: DatetimeLike = "20170101",
+        start_dt: DatetimeLike = "20080707",
         end_dt: DatetimeLike = datetime.now(),
         cache_dir: str = "",
     ) -> pd.DataFrame:
@@ -1302,6 +1302,122 @@ class Client:
                 yyyymmdd = futures[future]
                 yyyy = yyyymmdd[:4]
                 cache_file = f"fins_statements_{yyyymmdd}.csv.gz"
+                if cache_dir != "":
+                    # create year directory
+                    os.makedirs(f"{cache_dir}/{yyyy}", exist_ok=True)
+                    # write cache file
+                    df.to_csv(f"{cache_dir}/{yyyy}/{cache_file}", index=False)
+
+        return pd.concat(buff).sort_values(
+            ["DisclosedDate", "DisclosedTime", "LocalCode"]
+        )
+
+    def _get_fins_fs_details_raw(
+        self, code: str = "", date_yyyymmdd: str = "", pagination_key: str = ""
+    ) -> str:
+        """
+        get fins fs_details raw API return
+
+        Args:
+            code: 銘柄コード
+            date_yyyymmdd: 開示日(YYYYMMDD or YYYY-MM-DD)
+            pagination_key: ページングキー
+
+        Returns:
+            str: fins fs_details
+        """
+        url = f"{self.JQUANTS_API_BASE}/fins/fs_details"
+        params = {
+            "code": code,
+            "date": date_yyyymmdd,
+        }
+        if pagination_key != "":
+            params["pagination_key"] = pagination_key
+        ret = self._get(url, params)
+        ret.encoding = self.RAW_ENCODING
+
+        return ret.text
+
+    def get_fins_fs_details(
+        self, code: str = "", date_yyyymmdd: str = ""
+    ) -> pd.DataFrame:
+        """
+        財務諸表(BS/PL)取得
+
+        Args:
+            code: 銘柄コード
+            date_yyyymmdd: 開示日(YYYYMMDD or YYYY-MM-DD)
+
+        Returns:
+            pd.DataFrame: 財務諸表(BS/PL) (DisclosedDate, DisclosedTime, 及びLocalCode列でソートされています)
+        """
+        j = self._get_fins_fs_details_raw(code=code, date_yyyymmdd=date_yyyymmdd)
+        d = json.loads(j)
+        data = d["fs_details"]
+        while "pagination_key" in d:
+            j = self._get_fins_fs_details_raw(
+                code=code,
+                date_yyyymmdd=date_yyyymmdd,
+                pagination_key=d["pagination_key"],
+            )
+            d = json.loads(j)
+            data += d["fs_details"]
+        df = pd.json_normalize(data=data)
+        cols = constants.FINS_FS_DETAILS_COLUMNS
+        if len(df) == 0:
+            return pd.DataFrame([], columns=cols)
+        df["DisclosedDate"] = pd.to_datetime(df["DisclosedDate"], format="%Y-%m-%d")
+        df.sort_values(["DisclosedDate", "DisclosedTime", "LocalCode"], inplace=True)
+        return df
+
+    def get_fs_details_range(
+        self,
+        start_dt: DatetimeLike = "20080707",
+        end_dt: DatetimeLike = datetime.now(),
+        cache_dir: str = "",
+    ) -> pd.DataFrame:
+        """
+        財務諸表(BS/PL)を日付範囲指定して取得
+
+        Args:
+            start_dt: 取得開始日
+            end_dt: 取得終了日
+            cache_dir: CSV形式のキャッシュファイルが存在するディレクトリ
+
+        Returns:
+            pd.DataFrame: 財務諸表(BS/PL) (DisclosedDate, DisclosedTime, 及びLocalCode列でソートされています) 
+        """
+        # pre-load id_token
+        self.get_id_token()
+
+        buff = []
+        futures = {}
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            for s in dates:
+                # fetch data via API or cache file
+                yyyymmdd = s.strftime("%Y%m%d")
+                yyyy = yyyymmdd[:4]
+                cache_file = f"fins_fs_details_{yyyymmdd}.csv.gz"
+                if (cache_dir != "") and os.path.isfile(
+                    f"{cache_dir}/{yyyy}/{cache_file}"
+                ):
+                    df = pd.read_csv(f"{cache_dir}/{yyyy}/{cache_file}", dtype=str)
+                    df["DisclosedDate"] = pd.to_datetime(
+                        df["DisclosedDate"], format="%Y-%m-%d"
+                    )
+                    buff.append(df)
+                else:
+                    future = executor.submit(
+                        self.get_fins_fs_details, date_yyyymmdd=yyyymmdd
+                    )
+                    futures[future] = yyyymmdd
+            for future in as_completed(futures):
+                df = future.result()
+                buff.append(df)
+                yyyymmdd = futures[future]
+                yyyy = yyyymmdd[:4]
+                cache_file = f"fins_fs_details_{yyyymmdd}.csv.gz"
                 if cache_dir != "":
                     # create year directory
                     os.makedirs(f"{cache_dir}/{yyyy}", exist_ok=True)

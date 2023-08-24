@@ -495,3 +495,11 @@ MARKETS_TRADING_CALENDAR = [
     "Date",
     "HolidayDivision",
 ]
+
+FINS_FS_DETAILS_COLUMNS = [
+    "DisclosedDate",
+    "DisclosedTime",
+    "LocalCode",
+    "DisclosureNumber",
+    "TypeOfDocument",
+]
