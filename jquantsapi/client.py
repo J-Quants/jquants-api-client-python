@@ -1385,7 +1385,7 @@ class Client:
             cache_dir: CSV形式のキャッシュファイルが存在するディレクトリ
 
         Returns:
-            pd.DataFrame: 財務諸表(BS/PL) (DisclosedDate, DisclosedTime, 及びLocalCode列でソートされています) 
+            pd.DataFrame: 財務諸表(BS/PL) (DisclosedDate, DisclosedTime, 及びLocalCode列でソートされています)
         """
         # pre-load id_token
         self.get_id_token()
