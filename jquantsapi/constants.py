@@ -4,6 +4,7 @@ LISTED_INFO_COLUMNS = [
     "Date",
     "Code",
     "CompanyName",
+    "CompanyNameEnglish",
     "Sector17Code",
     "Sector17CodeName",
     "Sector33Code",
@@ -17,6 +18,7 @@ LISTED_INFO_STANDARD_PREMIUM_COLUMNS = [
     "Date",
     "Code",
     "CompanyName",
+    "CompanyNameEnglish",
     "Sector17Code",
     "Sector17CodeName",
     "Sector33Code",
@@ -30,7 +32,8 @@ LISTED_INFO_STANDARD_PREMIUM_COLUMNS = [
 
 # ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/listed_info/sector17code
 # ref. en https://jpx.gitbook.io/j-quants-en/api-reference/listed_info/sector17code
-SECTOR_17_COLUMNS = ["Sector17Code", "Sector17CodeName", "Sector17CodeNameEnglish"]
+SECTOR_17_COLUMNS = ["Sector17Code",
+                     "Sector17CodeName", "Sector17CodeNameEnglish"]
 SECTOR_17_DATA = [
     ("1", "食品", "FOODS"),
     ("2", "エネルギー資源", "ENERGY RESOURCES"),
