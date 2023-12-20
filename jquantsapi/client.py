@@ -1096,6 +1096,88 @@ class Client:
         return pd.concat(buff).sort_values(["Code", "Date"])
 
     # /indices
+
+    def _get_indices_raw(
+        self,
+        code: str = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+        date_yyyymmdd: str = "",
+        pagination_key: str = "",
+    ) -> str:
+        """
+        Indices Daily OHLC raw API returns
+
+        Args:
+            code: 指数コード
+            from_yyyymmdd: 取得開始日
+            to_yyyymmdd: 取得終了日
+            date_yyyymmdd: 取得日
+            pagination_key: ページングキー
+        Returns:
+            str: Indices Daily OHLC
+        """
+        url = f"{self.JQUANTS_API_BASE}/indices"
+        params = {
+            "code": code,
+        }
+        if date_yyyymmdd != "":
+            params["date"] = date_yyyymmdd
+        else:
+            if from_yyyymmdd != "":
+                params["from"] = from_yyyymmdd
+            if to_yyyymmdd != "":
+                params["to"] = to_yyyymmdd
+        if pagination_key != "":
+            params["pagination_key"] = pagination_key
+        ret = self._get(url, params)
+        ret.encoding = self.RAW_ENCODING
+        return ret.text
+
+    def get_indices(
+        self,
+        code: str = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+        date_yyyymmdd: str = "",
+    ) -> pd.DataFrame:
+        """
+        Indices Daily OHLC
+
+        Args:
+            code: 指数コード
+            from_yyyymmdd: 取得開始日
+            to_yyyymmdd: 取得終了日
+            date_yyyymmdd: 取得日
+        Returns:
+            pd.DataFrame: Indices Daily OHLC (Sorted by "Code", "Date" column)
+        """
+        j = self._get_indices_raw(
+            code=code,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+            date_yyyymmdd=date_yyyymmdd,
+        )
+        d = json.loads(j)
+        data = d["indices"]
+        while "pagination_key" in d:
+            j = self._get_indices_raw(
+                code=code,
+                from_yyyymmdd=from_yyyymmdd,
+                to_yyyymmdd=to_yyyymmdd,
+                date_yyyymmdd=date_yyyymmdd,
+                pagination_key=d["pagination_key"],
+            )
+            d = json.loads(j)
+            data += d["indices"]
+        df = pd.DataFrame.from_dict(data)
+        cols = constants.INDICES_COLUMNS
+        if len(df) == 0:
+            return pd.DataFrame([], columns=cols)
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
+        df.sort_values(["Code", "Date"], inplace=True)
+        return df[cols]
+
     def _get_indices_topix_raw(
         self,
         from_yyyymmdd: str = "",

@@ -165,6 +165,17 @@ PRICES_DAILY_QUOTES_PREMIUM_COLUMNS = [
     "AfternoonAdjustmentVolume",
 ]
 
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/indices
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/indices
+INDICES_COLUMNS = [
+    "Date",
+    "Code",
+    "Open",
+    "High",
+    "Low",
+    "Close",
+]
+
 # ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/topix
 # ref. en https://jpx.gitbook.io/j-quants-en/api-reference/topix
 INDICES_TOPIX_COLUMNS = [
