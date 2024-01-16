@@ -158,6 +158,7 @@ PRICES_DAILY_QUOTES_PREMIUM_COLUMNS = [
     "AfternoonUpperLimit",
     "AfternoonLowerLimit",
     "AfternoonVolume",
+    "AfternoonTurnoverValue",
     "AfternoonAdjustmentOpen",
     "AfternoonAdjustmentHigh",
     "AfternoonAdjustmentLow",
