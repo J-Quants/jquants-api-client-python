@@ -11,13 +11,11 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v4
       - name: Install Poetry
         run: pipx install poetry
       - name: Setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "poetry"
@@ -31,16 +29,14 @@ jobs:
       fail-fast: false
       matrix:
         os: [ "ubuntu-latest" ]
-        python-version: [ "3.7", "3.8", "3.9", "3.10", "3.11", "3.12-dev" ]
+        python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12" ]
     runs-on: ${{ matrix.os }}
     steps:
       #----------------------------------------------
       #       check-out repo 
       #----------------------------------------------
       - name: Check out repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v4
       #----------------------------------------------
       #         install poetry
       #----------------------------------------------
@@ -51,7 +47,7 @@ jobs:
       #----------------------------------------------
       - name: Set up python ${{ matrix.python-version }}
         id: setup-python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: "poetry"
@@ -59,7 +55,6 @@ jobs:
       # install dependencies if cache does not exist
       #----------------------------------------------
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install
       #----------------------------------------------
       #               run test suite
