@@ -19,7 +19,7 @@ from tenacity import (
 )
 from urllib3.util import Retry
 
-from jquantsapi import constants, enums
+from jquantsapi import __version__, constants, enums
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -44,7 +44,7 @@ class Client:
     JQUANTS_API_BASE = "https://api.jquants.com/v1"
     MAX_WORKERS = 5
     USER_AGENT = "jqapi-python"
-    USER_AGENT_VERSION = "0.0.0"
+    USER_AGENT_VERSION = __version__
     RAW_ENCODING = "utf-8"
 
     def __init__(
