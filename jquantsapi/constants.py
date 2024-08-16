@@ -355,6 +355,7 @@ FINS_STATEMENTS_COLUMNS = [
     "NextYearForecastProfit",
     "NextYearForecastEarningsPerShare",
     "MaterialChangesInSubsidiaries",
+    "SignificantChangesInTheScopeOfConsolidation",
     "ChangesBasedOnRevisionsOfAccountingStandard",
     "ChangesOtherThanOnesBasedOnRevisionsOfAccountingStandard",
     "ChangesInAccountingEstimates",
