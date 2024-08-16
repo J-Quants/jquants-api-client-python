@@ -87,12 +87,16 @@ J-Quants API の各 API エンドポイントに対応しています。
 - get_option_index_option
 - get_markets_weekly_margin_interest
 - get_markets_short_selling
+- get_indices
 
 ------------------ Premium plan or higher is required ------------------
 
 - get_markets_breakdown
 - get_prices_prices_am
 - get_fins_dividend
+- get_fins_fs_details
+- get_derivatives_futures
+- get_derivatives_options
 
 ### ユーティリティ群
 
@@ -120,6 +124,9 @@ J-Quants API の各 API エンドポイントに対応しています。
 
 - get_breakdown_range
 - get_dividend_range
+- get_fins_fs_details_range
+- get_derivatives_futures_range
+- get_derivatives_options_range
 
 ## 設定
 
