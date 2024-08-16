@@ -1825,3 +1825,217 @@ class Client:
         df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
         df.sort_values(["Date"], inplace=True)
         return df[cols]
+
+    # /derivatives
+    def _get_derivatives_futures_raw(
+        self,
+        date_yyyymmdd,
+        category,
+        contract_flag,
+        pagination_key: str = "",
+    ) -> str:
+        """
+        get information on the OHLC etc. of  futures raw API returns
+
+        Args:
+            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
+            pagination_key: ページングキー
+        Returns:
+            str: Futures' OHLC etc.
+        """
+        url = f"{self.JQUANTS_API_BASE}/derivatives/futures"
+        params = {
+            "category": category,
+            "date": date_yyyymmdd,
+            "contract_flag": contract_flag,
+        }
+        if pagination_key != "":
+            params["pagination_key"] = pagination_key
+        ret = self._get(url, params)
+        ret.encoding = self.RAW_ENCODING
+        return ret.text
+
+    def get_derivatives_futures(
+        self,
+        date_yyyymmdd: str,
+        category: str = "",
+        contract_flag: str = "",
+    ) -> pd.DataFrame:
+        """
+        get information on the OHLC etc. of Futures API returns
+
+        Args:
+            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
+        Returns:
+            pd.DataFrame:
+                Futures' OHLC etc. (Sorted by "Code")
+        """
+        j = self._get_derivatives_futures_raw(
+            category=category,
+            date_yyyymmdd=date_yyyymmdd,
+            contract_flag=contract_flag,
+        )
+        d = json.loads(j)
+        data = d["futures"]
+        while "pagination_key" in d:
+            j = self._get_derivatives_futures_raw(
+                category=category,
+                date_yyyymmdd=date_yyyymmdd,
+                contract_flag=contract_flag,
+                pagination_key=d["pagination_key"],
+            )
+            d = json.loads(j)
+            data += d["futures"]
+        df = pd.DataFrame.from_dict(data)
+        cols = constants.DERIVATIVES_FUTURES_COLUMNS
+        if len(df) == 0:
+            return pd.DataFrame([], columns=cols)
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
+        df.sort_values(["Code"], inplace=True)
+        return df[cols]
+
+    def get_derivatives_futures_range(
+        self,
+        start_dt: DatetimeLike = "20170101",
+        end_dt: DatetimeLike = datetime.now(),
+        category: str = "",
+        contract_flag: str = "",
+    ) -> pd.DataFrame:
+        """
+        先物に関するOHLC等の情報を日付範囲指定して取得
+
+        Args:
+            start_dt: 取得開始日
+            end_dt: 取得終了日
+
+        Returns:
+            pd.DataFrame: 先物に関するOHLC等 (Code, Date列でソートされています)
+        """
+        # pre-load id_token
+        self.get_id_token()
+        buff = []
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            futures = [
+                executor.submit(
+                    self.get_derivatives_futures,
+                    date_yyyymmdd=s.strftime("%Y-%m-%d"),
+                    category=category,
+                    contract_flag=contract_flag,
+                )
+                for s in dates
+            ]
+            for future in as_completed(futures):
+                df = future.result()
+                buff.append(df)
+        return pd.concat(buff).sort_values(["Code", "Date"])
+
+    def _get_derivatives_options_raw(
+        self,
+        date_yyyymmdd,
+        category,
+        contract_flag,
+        code,
+        pagination_key: str = "",
+    ) -> str:
+        """
+        get information on the OHLC etc. of  options raw API returns
+
+        Args:
+            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
+            pagination_key: ページングキー
+        Returns:
+            str: Options' OHLC etc.
+        """
+        url = f"{self.JQUANTS_API_BASE}/derivatives/options"
+        params = {
+            "category": category,
+            "date": date_yyyymmdd,
+            "contract_flag": contract_flag,
+            "code": code,
+        }
+        if pagination_key != "":
+            params["pagination_key"] = pagination_key
+        ret = self._get(url, params)
+        ret.encoding = self.RAW_ENCODING
+        return ret.text
+
+    def get_derivatives_options(
+        self,
+        date_yyyymmdd: str,
+        category: str = "",
+        contract_flag: str = "",
+        code: str = "",
+    ) -> pd.DataFrame:
+        """
+        get information on the OHLC etc. of Option API returns
+
+        Args:
+            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
+        Returns:
+            pd.DataFrame:
+                Futures' OHLC etc. (Sorted by "Code")
+        """
+        j = self._get_derivatives_options_raw(
+            category=category,
+            date_yyyymmdd=date_yyyymmdd,
+            contract_flag=contract_flag,
+            code=code,
+        )
+        d = json.loads(j)
+        data = d["options"]
+        while "pagination_key" in d:
+            j = self._get_derivatives_options_raw(
+                category=category,
+                date_yyyymmdd=date_yyyymmdd,
+                contract_flag=contract_flag,
+                code=code,
+                pagination_key=d["pagination_key"],
+            )
+            d = json.loads(j)
+            data += d["options"]
+        df = pd.DataFrame.from_dict(data)
+        cols = constants.DERIVATIVES_OPTIONS_COLUMNS
+        if len(df) == 0:
+            return pd.DataFrame([], columns=cols)
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
+        df.sort_values(["Code"], inplace=True)
+        return df[cols]
+
+    def get_derivatives_options_range(
+        self,
+        start_dt: DatetimeLike = "20170101",
+        end_dt: DatetimeLike = datetime.now(),
+        category: str = "",
+        contract_flag: str = "",
+        code: str = "",
+    ) -> pd.DataFrame:
+        """
+        オプションに関するOHLC等の情報を日付範囲指定して取得
+
+        Args:
+            start_dt: 取得開始日
+            end_dt: 取得終了日
+
+        Returns:
+            pd.DataFrame: オプションに関するOHLC等 (Code, Date列でソートされています)
+        """
+        # pre-load id_token
+        self.get_id_token()
+        buff = []
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            options = [
+                executor.submit(
+                    self.get_derivatives_options,
+                    date_yyyymmdd=s.strftime("%Y-%m-%d"),
+                    category=category,
+                    contract_flag=contract_flag,
+                    code=code,
+                )
+                for s in dates
+            ]
+            for option in as_completed(options):
+                df = option.result()
+                buff.append(df)
+        return pd.concat(buff).sort_values(["Code", "Date"])
