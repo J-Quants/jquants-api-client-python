@@ -243,7 +243,7 @@ class Client:
         headers: Optional[dict] = None,
     ) -> requests.Response:
         """
-        requests の get 用ラッパー
+        requests の post 用ラッパー
 
         タイムアウトを設定
 
