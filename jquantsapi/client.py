@@ -2131,8 +2131,12 @@ class Client:
         cols = constants.SHORT_SELLING_POSITIONS_COLUMNS
         if len(df) == 0:
             return pd.DataFrame([], columns=cols)
-        df["DisclosedDate"] = pd.to_datetime(df["DisclosedDate"], format="%Y-%m-%d", errors="coerce")
-        df["CalculatedDate"] = pd.to_datetime(df["CalculatedDate"], format="%Y-%m-%d", errors="coerce")
+        df["DisclosedDate"] = pd.to_datetime(
+            df["DisclosedDate"], format="%Y-%m-%d", errors="coerce"
+        )
+        df["CalculatedDate"] = pd.to_datetime(
+            df["CalculatedDate"], format="%Y-%m-%d", errors="coerce"
+        )
         df["CalculationInPreviousReportingDate"] = pd.to_datetime(
             df["CalculationInPreviousReportingDate"], format="%Y-%m-%d", errors="coerce"
         )
@@ -2163,7 +2167,7 @@ class Client:
             futures = [
                 executor.submit(
                     self.get_markets_short_selling_positions,
-                    disclosed_date=s.strftime("%Y-%m-%d")
+                    disclosed_date=s.strftime("%Y-%m-%d"),
                 )
                 for s in dates
             ]
