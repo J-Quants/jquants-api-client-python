@@ -2039,3 +2039,135 @@ class Client:
                 df = option.result()
                 buff.append(df)
         return pd.concat(buff).sort_values(["Code", "Date"])
+
+    def _get_markets_short_selling_positions_raw(
+        self,
+        code: str = "",
+        disclosed_date: str = "",
+        disclosed_date_from: str = "",
+        disclosed_date_to: str = "",
+        calculated_date: str = "",
+        pagination_key: str = "",
+    ) -> str:
+        """
+        get short selling positions raw API returns
+
+        Args:
+            code: issue code (e.g. 27800 or 2780)
+                If a 4-character issue code is specified, only the data of common stock
+                will be obtained for the issue on which both common and preferred stocks
+                are listed.
+            disclosed_date: disclosed date (e.g. 20240301 or 2024-03-01)
+            disclosed_date_from: disclosed date from (e.g. 20240301 or 2024-03-01)
+            disclosed_date_to: disclosed date to (e.g. 20240301 or 2024-03-01)
+            calculated_date: calculated date (e.g. 20240301 or 2024-03-01)
+            pagination_key: pagination key
+        Returns:
+            str: short selling positions
+        """
+        url = f"{self.JQUANTS_API_BASE}/markets/short_selling_positions"
+        params = {}
+        if code != "":
+            params["code"] = code
+        if disclosed_date != "":
+            params["disclosed_date"] = disclosed_date
+        if disclosed_date_from != "":
+            params["disclosed_date_from"] = disclosed_date_from
+        if disclosed_date_to != "":
+            params["disclosed_date_to"] = disclosed_date_to
+        if calculated_date != "":
+            params["calculated_date"] = calculated_date
+        if pagination_key != "":
+            params["pagination_key"] = pagination_key
+        ret = self._get(url, params)
+        ret.encoding = self.RAW_ENCODING
+        return ret.text
+
+    def get_markets_short_selling_positions(
+        self,
+        code: str = "",
+        disclosed_date: str = "",
+        disclosed_date_from: str = "",
+        disclosed_date_to: str = "",
+        calculated_date: str = "",
+    ) -> pd.DataFrame:
+        """
+        get short selling positions API returns
+
+        Args:
+            code: issue code (e.g. 27800 or 2780)
+                If a 4-character issue code is specified, only the data of common stock
+                will be obtained for the issue on which both common and preferred stocks
+                are listed.
+            disclosed_date: disclosed date (e.g. 20240301 or 2024-03-01)
+            disclosed_date_from: disclosed date from (e.g. 20240301 or 2024-03-01)
+            disclosed_date_to: disclosed date to (e.g. 20240301 or 2024-03-01)
+            calculated_date: calculated date (e.g. 20240301 or 2024-03-01)
+        Returns:
+            pd.DataFrame: short selling positions (Sorted by "DisclosedDate",
+            "CalculatedDate", and "Code" columns)
+        """
+        j = self._get_markets_short_selling_positions_raw(
+            code=code,
+            disclosed_date=disclosed_date,
+            disclosed_date_from=disclosed_date_from,
+            disclosed_date_to=disclosed_date_to,
+            calculated_date=calculated_date,
+        )
+        d = json.loads(j)
+        data = d["short_selling_positions"]
+        while "pagination_key" in d:
+            j = self._get_markets_short_selling_positions_raw(
+                code=code,
+                disclosed_date=disclosed_date,
+                disclosed_date_from=disclosed_date_from,
+                disclosed_date_to=disclosed_date_to,
+                calculated_date=calculated_date,
+                pagination_key=d["pagination_key"],
+            )
+            d = json.loads(j)
+            data += d["short_selling_positions"]
+        df = pd.DataFrame.from_dict(data)
+        cols = constants.SHORT_SELLING_POSITIONS_COLUMNS
+        if len(df) == 0:
+            return pd.DataFrame([], columns=cols)
+        df["DisclosedDate"] = pd.to_datetime(df["DisclosedDate"], format="%Y-%m-%d", errors="coerce")
+        df["CalculatedDate"] = pd.to_datetime(df["CalculatedDate"], format="%Y-%m-%d", errors="coerce")
+        df["CalculationInPreviousReportingDate"] = pd.to_datetime(
+            df["CalculationInPreviousReportingDate"], format="%Y-%m-%d", errors="coerce"
+        )
+        df.sort_values(["DisclosedDate", "CalculatedDate", "Code"], inplace=True)
+        return df[cols]
+
+    def get_markets_short_selling_positions_range(
+        self,
+        start_dt: DatetimeLike = "20131107",
+        end_dt: DatetimeLike = datetime.now(),
+    ) -> pd.DataFrame:
+        """
+        空売り残高報告データを日付範囲指定して取得
+
+        Args:
+            start_dt: 取得開始日
+            end_dt: 取得終了日
+
+        Returns:
+            pd.DataFrame: 空売り残高報告データ (DisclosedDate, CalculatedDate,
+            Code列でソートされています)
+        """
+        # pre-load id_token
+        self.get_id_token()
+        buff = []
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            futures = [
+                executor.submit(
+                    self.get_markets_short_selling_positions,
+                    disclosed_date=s.strftime("%Y-%m-%d")
+                )
+                for s in dates
+            ]
+            for future in as_completed(futures):
+                df = future.result()
+                buff.append(df)
+        return pd.concat(buff).sort_values(["DisclosedDate", "CalculatedDate", "Code"])
