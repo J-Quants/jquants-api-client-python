@@ -590,3 +590,20 @@ DERIVATIVES_OPTIONS_COLUMNS = [
     "InterestRate",
     "CentralContractMonthFlag",
 ]
+
+SHORT_SELLING_POSITIONS_COLUMNS = [
+    "DisclosedDate",
+    "CalculatedDate",
+    "Code",
+    "ShortSellerName",
+    "ShortSellerAddress",
+    "DiscretionaryInvestmentContractorName",
+    "DiscretionaryInvestmentContractorAddress",
+    "InvestmentFundName",
+    "ShortPositionsToSharesOutstandingRatio",
+    "ShortPositionsInSharesNumber",
+    "ShortPositionsInTradingUnitsNumber",
+    "CalculationInPreviousReportingDate",
+    "ShortPositionsInPreviousReportingRatio",
+    "Notes",
+]

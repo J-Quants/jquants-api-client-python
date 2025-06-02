@@ -88,6 +88,7 @@ J-Quants API の各 API エンドポイントに対応しています。
 - get_markets_weekly_margin_interest
 - get_markets_short_selling
 - get_indices
+- get_short_selling_positions
 
 ------------------ Premium plan or higher is required ------------------
 
@@ -119,6 +120,7 @@ J-Quants API の各 API エンドポイントに対応しています。
 - get_weekly_margin_range
 - get_short_selling_range
 - get_index_option_range
+- get_short_selling_positions_range
 
 ------------------ Premium plan or higher is required ------------------
 
