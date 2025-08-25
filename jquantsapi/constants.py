@@ -607,3 +607,33 @@ SHORT_SELLING_POSITIONS_COLUMNS = [
     "ShortPositionsInPreviousReportingRatio",
     "Notes",
 ]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/daily_margin_interest
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/daily_margin_interest
+DAILY_MARGIN_INTEREST_COLUMNS = [
+    "PublishedDate",
+    "Code",
+    "ApplicationDate",
+    "PublishReason.Restricted",
+    "PublishReason.DailyPublication",
+    "PublishReason.Monitoring",
+    "PublishReason.RestrictedByJSF",
+    "PublishReason.PrecautionByJSF",
+    "PublishReason.UnclearOrSecOnAlert",
+    "ShortMarginOutstanding",
+    "DailyChangeShortMarginOutstanding",
+    "ShortMarginOutstandingListedShareRatio",
+    "LongMarginOutstanding",
+    "DailyChangeLongMarginOutstanding",
+    "LongMarginOutstandingListedShareRatio",
+    "ShortLongRatio",
+    "ShortNegotiableMarginOutstanding",
+    "DailyChangeShortNegotiableMarginOutstanding",
+    "ShortStandardizedMarginOutstanding",
+    "DailyChangeShortStandardizedMarginOutstanding",
+    "LongNegotiableMarginOutstanding",
+    "DailyChangeLongNegotiableMarginOutstanding",
+    "LongStandardizedMarginOutstanding",
+    "DailyChangeLongStandardizedMarginOutstanding",
+    "TSEMarginBorrowingAndLendingRegulationClassification",
+]
