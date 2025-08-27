@@ -2175,3 +2175,124 @@ class Client:
                 df = future.result()
                 buff.append(df)
         return pd.concat(buff).sort_values(["DisclosedDate", "CalculatedDate", "Code"])
+
+    # /markets/daily_margin_interest
+    def _get_markets_daily_margin_interest_raw(
+        self,
+        code: str = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+        date_yyyymmdd: str = "",
+        pagination_key: str = "",
+    ) -> str:
+        """
+        get daily margin interest raw API returns
+
+        Args:
+            code: issue code (e.g. 27800 or 2780)
+                If a 4-character issue code is specified, only the data of common stock
+                will be obtained for the issue on which both common and preferred stocks
+                are listed.
+            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
+            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
+            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
+            pagination_key: pagination key
+        Returns:
+            str: daily margin interest
+        """
+        url = f"{self.JQUANTS_API_BASE}/markets/daily_margin_interest"
+        params = {}
+        if code != "":
+            params["code"] = code
+        if date_yyyymmdd != "":
+            params["date"] = date_yyyymmdd
+        else:
+            if from_yyyymmdd != "":
+                params["from"] = from_yyyymmdd
+            if to_yyyymmdd != "":
+                params["to"] = to_yyyymmdd
+        if pagination_key != "":
+            params["pagination_key"] = pagination_key
+        ret = self._get(url, params)
+        ret.encoding = self.RAW_ENCODING
+        return ret.text
+
+    def get_markets_daily_margin_interest(
+        self,
+        code: str = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+        date_yyyymmdd: str = "",
+    ) -> pd.DataFrame:
+        """
+        get daily margin interest API returns
+
+        Args:
+            code: issue code (e.g. 27800 or 2780)
+                If a 4-character issue code is specified, only the data of common stock
+                will be obtained for the issue on which both common and preferred stocks
+                are listed.
+            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
+            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
+            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
+        Returns:
+            pd.DataFrame: daily margin interest (Sorted by "Code" and "PublishedDate" columns)
+        """
+        j = self._get_markets_daily_margin_interest_raw(
+            code=code,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+            date_yyyymmdd=date_yyyymmdd,
+        )
+        d = json.loads(j)
+        data = d["daily_margin_interest"]
+        while "pagination_key" in d:
+            j = self._get_markets_daily_margin_interest_raw(
+                code=code,
+                from_yyyymmdd=from_yyyymmdd,
+                to_yyyymmdd=to_yyyymmdd,
+                date_yyyymmdd=date_yyyymmdd,
+                pagination_key=d["pagination_key"],
+            )
+            d = json.loads(j)
+            data += d["daily_margin_interest"]
+        df = pd.json_normalize(data=data)
+        cols = constants.DAILY_MARGIN_INTEREST_COLUMNS
+        if len(df) == 0:
+            return pd.DataFrame([], columns=cols)
+        df["PublishedDate"] = pd.to_datetime(df["PublishedDate"], format="%Y-%m-%d")
+        df["ApplicationDate"] = pd.to_datetime(df["ApplicationDate"], format="%Y-%m-%d")
+        df.sort_values(["Code", "PublishedDate"], inplace=True)
+        return df[cols]
+
+    def get_daily_margin_interest_range(
+        self,
+        start_dt: DatetimeLike = "20080508",
+        end_dt: DatetimeLike = datetime.now(),
+    ) -> pd.DataFrame:
+        """
+        全銘柄の日々公表信用取引残高を日付範囲指定して取得
+
+        Args:
+            start_dt: 取得開始日
+            end_dt: 取得終了日
+
+        Returns:
+            pd.DataFrame: 日々公表信用取引残高 (Code, PublishedDate列でソートされています)
+        """
+        # pre-load id_token
+        self.get_id_token()
+        buff = []
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            futures = [
+                executor.submit(
+                    self.get_markets_daily_margin_interest,
+                    date_yyyymmdd=s.strftime("%Y-%m-%d"),
+                )
+                for s in dates
+            ]
+            for future in as_completed(futures):
+                df = future.result()
+                buff.append(df)
+        return pd.concat(buff).sort_values(["Code", "PublishedDate"])
