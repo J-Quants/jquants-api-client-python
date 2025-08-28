@@ -584,7 +584,7 @@ class Client:
     def get_price_range(
         self,
         start_dt: DatetimeLike = "20170101",
-        end_dt: DatetimeLike = datetime.now(),
+        end_dt: DatetimeLike = None,
     ) -> pd.DataFrame:
         """
         全銘柄の株価情報を日付範囲指定して取得
@@ -596,6 +596,10 @@ class Client:
         Returns:
             pd.DataFrame: 株価情報 (Code, Date列でソートされています)
         """
+
+        if end_dt is None:
+            end_dt = datetime.now()
+
         # pre-load id_token
         self.get_id_token()
         buff = []
@@ -836,7 +840,7 @@ class Client:
     def get_weekly_margin_range(
         self,
         start_dt: DatetimeLike = "20170101",
-        end_dt: DatetimeLike = datetime.now(),
+        end_dt: DatetimeLike = None,
     ) -> pd.DataFrame:
         """
         信用取引週末残高を日付範囲を指定して取得
@@ -848,6 +852,10 @@ class Client:
         Returns:
             pd.DataFrame: 信用取引週末残高(Code, Date列でソートされています)
         """
+
+        if end_dt is None:
+            end_dt = datetime.now()
+
         # pre-load id_token
         self.get_id_token()
         buff = []
@@ -951,7 +959,7 @@ class Client:
     def get_short_selling_range(
         self,
         start_dt: DatetimeLike = "20170101",
-        end_dt: DatetimeLike = datetime.now(),
+        end_dt: DatetimeLike = None,
     ) -> pd.DataFrame:
         """
         全３３業種の空売り比率に関する売買代金を日付範囲指定して取得
@@ -963,6 +971,10 @@ class Client:
         Returns:
             pd.DataFrame: 空売り比率に関する売買代金 (Sector33Code, Date列でソートされています)
         """
+
+        if end_dt is None:
+            end_dt = datetime.now()
+
         # pre-load id_token
         self.get_id_token()
         buff = []
@@ -1067,7 +1079,7 @@ class Client:
     def get_breakdown_range(
         self,
         start_dt: DatetimeLike = "20170101",
-        end_dt: DatetimeLike = datetime.now(),
+        end_dt: DatetimeLike = None,
     ) -> pd.DataFrame:
         """
         売買内訳データを日付範囲指定して取得
@@ -1079,6 +1091,10 @@ class Client:
         Returns:
             pd.DataFrame: 売買内訳データ(Code, Date列でソートされています)
         """
+
+        if end_dt is None:
+            end_dt = datetime.now()
+
         # pre-load id_token
         self.get_id_token()
         buff = []
@@ -1321,7 +1337,7 @@ class Client:
     def get_statements_range(
         self,
         start_dt: DatetimeLike = "20080707",
-        end_dt: DatetimeLike = datetime.now(),
+        end_dt: DatetimeLike = None,
         cache_dir: str = "",
     ) -> pd.DataFrame:
         """
@@ -1335,6 +1351,10 @@ class Client:
         Returns:
             pd.DataFrame: 財務情報 (DisclosedDate, DisclosedTime, 及びLocalCode列でソートされています)
         """
+
+        if end_dt is None:
+            end_dt = datetime.now()
+
         # pre-load id_token
         self.get_id_token()
 
@@ -1455,7 +1475,7 @@ class Client:
     def get_fs_details_range(
         self,
         start_dt: DatetimeLike = "20080707",
-        end_dt: DatetimeLike = datetime.now(),
+        end_dt: DatetimeLike = None,
         cache_dir: str = "",
     ) -> pd.DataFrame:
         """
@@ -1469,6 +1489,10 @@ class Client:
         Returns:
             pd.DataFrame: 財務諸表(BS/PL) (DisclosedDate, DisclosedTime, 及びLocalCode列でソートされています)
         """
+
+        if end_dt is None:
+            end_dt = datetime.now()
+
         # pre-load id_token
         self.get_id_token()
 
@@ -1600,7 +1624,7 @@ class Client:
     def get_dividend_range(
         self,
         start_dt: DatetimeLike = "20170101",
-        end_dt: DatetimeLike = datetime.now(),
+        end_dt: DatetimeLike = None,
     ) -> pd.DataFrame:
         """
         配当金データを日付範囲指定して取得
@@ -1612,6 +1636,10 @@ class Client:
         Returns:
             pd.DataFrame: 配当金データ(Code, AnnouncementDate, AnnouncementTime列でソートされています)
         """
+
+        if end_dt is None:
+            end_dt = datetime.now()
+
         # pre-load id_token
         self.get_id_token()
         buff = []
@@ -1737,7 +1765,7 @@ class Client:
     def get_index_option_range(
         self,
         start_dt: DatetimeLike = "20170101",
-        end_dt: DatetimeLike = datetime.now(),
+        end_dt: DatetimeLike = None,
     ) -> pd.DataFrame:
         """
         指数オプション（Nikkei225）に関するOHLC等の情報を日付範囲指定して取得
@@ -1749,6 +1777,10 @@ class Client:
         Returns:
             pd.DataFrame: 指数オプション（Nikkei225）に関するOHLC等 (Code, Date列でソートされています)
         """
+
+        if end_dt is None:
+            end_dt = datetime.now()
+
         # pre-load id_token
         self.get_id_token()
         buff = []
@@ -1897,7 +1929,7 @@ class Client:
     def get_derivatives_futures_range(
         self,
         start_dt: DatetimeLike = "20170101",
-        end_dt: DatetimeLike = datetime.now(),
+        end_dt: DatetimeLike = None,
         category: str = "",
         contract_flag: str = "",
     ) -> pd.DataFrame:
@@ -1911,6 +1943,10 @@ class Client:
         Returns:
             pd.DataFrame: 先物に関するOHLC等 (Code, Date列でソートされています)
         """
+
+        if end_dt is None:
+            end_dt = datetime.now()
+
         # pre-load id_token
         self.get_id_token()
         buff = []
@@ -2005,7 +2041,7 @@ class Client:
     def get_derivatives_options_range(
         self,
         start_dt: DatetimeLike = "20170101",
-        end_dt: DatetimeLike = datetime.now(),
+        end_dt: DatetimeLike = None,
         category: str = "",
         contract_flag: str = "",
         code: str = "",
@@ -2020,6 +2056,10 @@ class Client:
         Returns:
             pd.DataFrame: オプションに関するOHLC等 (Code, Date列でソートされています)
         """
+
+        if end_dt is None:
+            end_dt = datetime.now()
+
         # pre-load id_token
         self.get_id_token()
         buff = []
@@ -2146,7 +2186,7 @@ class Client:
     def get_markets_short_selling_positions_range(
         self,
         start_dt: DatetimeLike = "20131107",
-        end_dt: DatetimeLike = datetime.now(),
+        end_dt: DatetimeLike = None,
     ) -> pd.DataFrame:
         """
         空売り残高報告データを日付範囲指定して取得
@@ -2159,6 +2199,10 @@ class Client:
             pd.DataFrame: 空売り残高報告データ (DisclosedDate, CalculatedDate,
             Code列でソートされています)
         """
+
+        if end_dt is None:
+            end_dt = datetime.now()
+
         # pre-load id_token
         self.get_id_token()
         buff = []
