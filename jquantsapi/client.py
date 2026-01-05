@@ -49,6 +49,11 @@ if sys.version_info >= (3, 11):
 else:
     import tomli as tomllib
 
+if sys.version_info >= (3, 13):
+    from warnings import deprecated
+else:
+    from typing_extensions import deprecated
+
 
 DatetimeLike = Union[datetime, pd.Timestamp, str]
 _Data = Union[str, Mapping[str, Any]]
@@ -58,10 +63,14 @@ class TokenAuthRefreshBadRequestException(Exception):
     pass
 
 
+@deprecated("Client (V1) is deprecated and will be removed in a future version. Please use ClientV2 instead.")
 class Client:
     """
     J-Quants API からデータを取得する
     ref. https://jpx.gitbook.io/j-quants-ja/
+
+    .. deprecated::
+        This class is deprecated. Use :class:`ClientV2` instead.
     """
 
     JQUANTS_API_BASE = "https://api.jquants.com/v1"

@@ -2,7 +2,7 @@
 
 [![PyPI version](https://badge.fury.io/py/jquants-api-client.svg)](https://badge.fury.io/py/jquants-api-client)
 
-個人投資家向けデータ API 配信サービス「 [J-Quants API](https://jpx-jquants.com/#jquants-api) 」の Python クライアントライブラリです。
+個人投資家向けデータ API 配信サービス「 [J-Quants API](https://jpx-jquants.com/) 」の Python クライアントライブラリです。
 J-Quants や API 仕様についての詳細を知りたい方は [公式ウェブサイト](https://jpx-jquants.com/) をご参照ください。
 現在、J-Quants API は有償版サービスとして提供されています。
 
@@ -16,13 +16,13 @@ pip install jquants-api-client
 
 ### J-Quants API の利用
 
-To use J-Quants API, you need to "Applications for J-Quants API" from [J-Quants API Web site](https://jpx-jquants.com/?lang=en) and to select a plan.
+To use J-Quants API, you need to "Applications for J-Quants API" from [J-Quants API Web site](https://jpx-jquants.com/) and to select a plan.
 
 J-Quants API を利用するためには[J-Quants API の Web サイト](https://jpx-jquants.com/) から「J-Quants API 申し込み」及び利用プランの選択が必要になります。
 
 jquants-api-client-python を使用するためには「J-Quants API ログインページで使用するメールアドレスおよびパスワード」または「J-Quants API メニューページから取得したリフレッシュトークン」が必要になります。必要に応じて下記の Web サイトより取得してください。
 
-[J-Quants API ログインページ](https://jpx-jquants.com/auth/signin/)
+[J-Quants API ログインページ](https://jpx-jquants.com/login)
 
 ### サンプルコード
 

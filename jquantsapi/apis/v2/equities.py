@@ -175,6 +175,80 @@ class EqBarsDailyAmApiV2(BaseApi):
         return df[cols].reset_index(drop=True)
 
 
+class EqBarsMinuteApiV2(BaseApi):
+    """
+    v2 の分足 API (`/equities/bars/minute`) を担当するクラス。
+    """
+
+    name = "eq_bars_minute"
+    version = "v2"
+
+    def execute(
+        self,
+        client: SupportsRequest,
+        *,
+        code: str = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+        date_yyyymmdd: str = "",
+    ) -> pd.DataFrame:
+        """
+        v2 `/equities/bars/minute` を実行し、分足を DataFrame で返す。
+
+        Args:
+            client: v2 `ClientV2` インスタンスを想定
+            code: 銘柄コード (5桁 or 4桁)
+            from_yyyymmdd: 取得開始日
+            to_yyyymmdd: 取得終了日
+            date_yyyymmdd: 取得日
+        """
+        url = f"{client.JQUANTS_API_BASE}/equities/bars/minute"
+
+        params: Dict[str, Any] = {}
+        if code:
+            params["code"] = code
+        if date_yyyymmdd:
+            params["date"] = date_yyyymmdd
+        else:
+            if from_yyyymmdd:
+                params["from"] = from_yyyymmdd
+            if to_yyyymmdd:
+                params["to"] = to_yyyymmdd
+
+        all_data: List[Dict[str, Any]] = []
+        pagination_key = ""
+
+        while True:
+            req_params = dict(params)
+            if pagination_key:
+                req_params["pagination_key"] = pagination_key
+
+            resp = client._get(url, req_params)  # type: ignore[arg-type]
+            payload = resp.json()
+
+            batch = payload.get("data", [])
+            if isinstance(batch, list):
+                all_data.extend(batch)
+
+            pagination_key = payload.get("pagination_key", "")
+            if not pagination_key:
+                break
+
+        cols = constants.EQ_BARS_MINUTE_COLUMNS_V2
+        if not all_data:
+            return pd.DataFrame(columns=cols)
+
+        df = pd.DataFrame.from_records(all_data)
+        if "Date" in df.columns:
+            df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+
+        sort_cols = [c for c in ["Code", "Date", "Time"] if c in df.columns]
+        if sort_cols:
+            df.sort_values(sort_cols, inplace=True)
+
+        return df[cols].reset_index(drop=True)
+
+
 class EqInvestorTypesApiV2(BaseApi):
     """
     v2 の投資部門別売買状況 API (`/equities/investor-types`) を担当するクラス。

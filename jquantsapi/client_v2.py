@@ -13,6 +13,7 @@ from jquantsapi import __version__, constants
 from jquantsapi.apis.v2.equities import (
     EqBarsDailyAmApiV2,
     EqBarsDailyApiV2,
+    EqBarsMinuteApiV2,
     EqEarningsCalApiV2,
     EqInvestorTypesApiV2,
     EqMasterApiV2,
@@ -32,6 +33,8 @@ from jquantsapi.apis.v2.derivatives import (
     DrvBarsDailyOptApiV2,
     DrvBarsDailyOpt225ApiV2,
 )
+from jquantsapi.apis.v2.bulk import BulkGetApiV2, BulkListApiV2
+from jquantsapi.enums import BulkEndpoint
 
 
 DatetimeLike = Union[datetime, pd.Timestamp, str]
@@ -74,6 +77,7 @@ class ClientV2:
         self._eq_master_api = EqMasterApiV2()
         self._eq_bars_daily_api = EqBarsDailyApiV2()
         self._eq_bars_daily_am_api = EqBarsDailyAmApiV2()
+        self._eq_bars_minute_api = EqBarsMinuteApiV2()
         self._eq_investor_types_api = EqInvestorTypesApiV2()
         self._fin_summary_api = FinSummaryApiV2()
         self._fin_details_api = FinDetailsApiV2()
@@ -90,6 +94,8 @@ class ClientV2:
         self._drv_bars_daily_fut_api = DrvBarsDailyFutApiV2()
         self._drv_bars_daily_opt_api = DrvBarsDailyOptApiV2()
         self._drv_bars_daily_opt_225_api = DrvBarsDailyOpt225ApiV2()
+        self._bulk_list_api = BulkListApiV2()
+        self._bulk_get_api = BulkGetApiV2()
 
     # ------------------------------------------------------------------
     # 内部ユーティリティ
@@ -335,6 +341,138 @@ class ClientV2:
             pd.DataFrame: 前場の株価データ
         """
         return self._eq_bars_daily_am_api.execute(self, code=code)
+
+    # ------------------------------------------------------------------
+    # eq-bars-minute (/equities/bars/minute)
+    # ------------------------------------------------------------------
+    def get_eq_bars_minute(
+        self,
+        code: str = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+        date_yyyymmdd: str = "",
+    ) -> pd.DataFrame:
+        """
+        eq-bars-minute: 分足 (v2: /equities/bars/minute)
+
+        Args:
+            code: 銘柄コード (5桁 or 4桁)
+            from_yyyymmdd: 期間開始日 (YYYYMMDD or YYYY-MM-DD)
+            to_yyyymmdd: 期間終了日 (YYYYMMDD or YYYY-MM-DD)
+            date_yyyymmdd: 特定日付 (YYYYMMDD or YYYY-MM-DD)
+        Returns:
+            pd.DataFrame: 1分足データ (v2のフィールド名で返却)
+        """
+        return self._eq_bars_minute_api.execute(
+            self,
+            code=code,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+            date_yyyymmdd=date_yyyymmdd,
+        )
+
+    def _aggregate_bars_n_minute(
+        self,
+        df: pd.DataFrame,
+        n: int = 5,
+    ) -> pd.DataFrame:
+        """
+        1分足データをn分足に集約する (private)
+
+        Args:
+            df: 1分足データ (Date, Time, Code, O, H, L, C, Vo, Va を含む)
+            n: 集約する分数 (デフォルト: 5)
+        Returns:
+            pd.DataFrame: n分足データ
+        """
+        if df.empty:
+            return df.copy()
+
+        df = df.copy()
+
+        # DateTime列を作成 (Date + Time)
+        df["DateTime"] = pd.to_datetime(
+            df["Date"].astype(str) + " " + df["Time"].astype(str),
+            errors="coerce",
+        )
+
+        # n分間隔でグループ化するためのキーを作成
+        df["TimeGroup"] = df["DateTime"].dt.floor(f"{n}min")
+
+        # 銘柄ごと・n分間隔ごとに集約
+        agg_funcs = {
+            "Date": "first",
+            "Time": "first",
+            "Code": "first",
+            "O": "first",      # 始値: 最初の値
+            "H": "max",        # 高値: 最大値
+            "L": "min",        # 安値: 最小値
+            "C": "last",       # 終値: 最後の値
+            "Vo": "sum",       # 出来高: 合計
+            "Va": "sum",       # 売買代金: 合計
+        }
+
+        result = (
+            df.groupby(["Code", "TimeGroup"], as_index=False)
+            .agg(agg_funcs)
+            .drop(columns=["TimeGroup"])
+        )
+
+        # ソートして返却
+        result.sort_values(["Code", "Date", "Time"], inplace=True)
+        return result.reset_index(drop=True)
+
+    def get_eq_bars_5minute(
+        self,
+        code: str = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+        date_yyyymmdd: str = "",
+    ) -> pd.DataFrame:
+        """
+        eq-bars-minute から5分足データを算出して取得
+
+        Args:
+            code: 銘柄コード (5桁 or 4桁)
+            from_yyyymmdd: 期間開始日 (YYYYMMDD or YYYY-MM-DD)
+            to_yyyymmdd: 期間終了日 (YYYYMMDD or YYYY-MM-DD)
+            date_yyyymmdd: 特定日付 (YYYYMMDD or YYYY-MM-DD)
+        Returns:
+            pd.DataFrame: 5分足データ
+        """
+        df_1min = self.get_eq_bars_minute(
+            code=code,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+            date_yyyymmdd=date_yyyymmdd,
+        )
+        return self._aggregate_bars_n_minute(df_1min, n=5)
+
+    def get_eq_bars_15minute(
+        self,
+        code: str = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+        date_yyyymmdd: str = "",
+    ) -> pd.DataFrame:
+        """
+        eq-bars-minute から15分足データを算出して取得
+
+        Args:
+            code: 銘柄コード (5桁 or 4桁)
+            from_yyyymmdd: 期間開始日 (YYYYMMDD or YYYY-MM-DD)
+            to_yyyymmdd: 期間終了日 (YYYYMMDD or YYYY-MM-DD)
+            date_yyyymmdd: 特定日付 (YYYYMMDD or YYYY-MM-DD)
+        Returns:
+            pd.DataFrame: 15分足データ
+        """
+        df_1min = self.get_eq_bars_minute(
+            code=code,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+            date_yyyymmdd=date_yyyymmdd,
+        )
+        return self._aggregate_bars_n_minute(df_1min, n=15)
 
     # ------------------------------------------------------------------
     # eq-investor-types (/equities/investor-types)
@@ -1064,4 +1202,32 @@ class ClientV2:
             return pd.DataFrame()
         return pd.concat(buff).sort_values(["Code", "Date"]).reset_index(drop=True)
 
+    # ------------------------------------------------------------------
+    # Bulk API
+    # ------------------------------------------------------------------
+    def get_bulk_list(
+        self,
+        endpoint: Union[str, BulkEndpoint],
+    ) -> pd.DataFrame:
+        """
+        bulk-list: 取得可能なデータ一覧 (v2: /bulk/list)
+
+        Args:
+            endpoint: 取得したいデータのエンドポイント
+                      (例: BulkEndpoint.EQ_MASTER または "/equities/master")
+        Returns:
+            pd.DataFrame: データ一覧 (Key, Size, LastModified)
+        """
+        return self._bulk_list_api.execute(self, endpoint=endpoint)
+
+    def get_bulk(self, key: str) -> str:
+        """
+        bulk-get: データダウンロードURL取得 (v2: /bulk/get)
+
+        Args:
+            key: get_bulk_listで取得したKey
+        Returns:
+            str: ダウンロードURL
+        """
+        return self._bulk_get_api.execute(self, key=key)
 
