@@ -1,14 +1,40 @@
 import os
 import platform
-from typing import Any, Dict, List, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd  # type: ignore
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
-from jquantsapi import __version__
+from jquantsapi import __version__, constants
+from jquantsapi.apis.v2.equities import (
+    EqBarsDailyAmApiV2,
+    EqBarsDailyApiV2,
+    EqEarningsCalApiV2,
+    EqInvestorTypesApiV2,
+    EqMasterApiV2,
+)
+from jquantsapi.apis.v2.fins import FinDetailsApiV2, FinDividendApiV2, FinSummaryApiV2
+from jquantsapi.apis.v2.markets import (
+    MktBreakdownApiV2,
+    MktCalendarApiV2,
+    MktMarginAlertApiV2,
+    MktMarginInterestApiV2,
+    MktShortRatioApiV2,
+    MktShortSaleReportApiV2,
+)
+from jquantsapi.apis.v2.indices import IdxBarsDailyApiV2, IdxBarsDailyTopixApiV2
+from jquantsapi.apis.v2.derivatives import (
+    DrvBarsDailyFutApiV2,
+    DrvBarsDailyOptApiV2,
+    DrvBarsDailyOpt225ApiV2,
+)
 
+
+DatetimeLike = Union[datetime, pd.Timestamp, str]
 
 class ClientV2:
     """
@@ -25,6 +51,7 @@ class ClientV2:
     USER_AGENT = "jqapi-python-v2"
     USER_AGENT_VERSION = __version__
     RAW_ENCODING = "utf-8"
+    MAX_WORKERS = 5
 
     def __init__(self, api_key: Optional[str] = None) -> None:
         """
@@ -42,6 +69,27 @@ class ClientV2:
 
         self._api_key = api_key
         self._session: Optional[requests.Session] = None
+
+        # API 実装 (v2)
+        self._eq_master_api = EqMasterApiV2()
+        self._eq_bars_daily_api = EqBarsDailyApiV2()
+        self._eq_bars_daily_am_api = EqBarsDailyAmApiV2()
+        self._eq_investor_types_api = EqInvestorTypesApiV2()
+        self._fin_summary_api = FinSummaryApiV2()
+        self._fin_details_api = FinDetailsApiV2()
+        self._fin_dividend_api = FinDividendApiV2()
+        self._eq_earnings_cal_api = EqEarningsCalApiV2()
+        self._mkt_short_ratio_api = MktShortRatioApiV2()
+        self._mkt_margin_interest_api = MktMarginInterestApiV2()
+        self._mkt_breakdown_api = MktBreakdownApiV2()
+        self._mkt_calendar_api = MktCalendarApiV2()
+        self._mkt_short_sale_report_api = MktShortSaleReportApiV2()
+        self._mkt_margin_alert_api = MktMarginAlertApiV2()
+        self._idx_bars_daily_api = IdxBarsDailyApiV2()
+        self._idx_bars_daily_topix_api = IdxBarsDailyTopixApiV2()
+        self._drv_bars_daily_fut_api = DrvBarsDailyFutApiV2()
+        self._drv_bars_daily_opt_api = DrvBarsDailyOptApiV2()
+        self._drv_bars_daily_opt_225_api = DrvBarsDailyOpt225ApiV2()
 
     # ------------------------------------------------------------------
     # 内部ユーティリティ
@@ -66,8 +114,8 @@ class ClientV2:
                 allowed_methods=allowed_methods,
             )
             adapter = HTTPAdapter(
-                pool_connections=10,
-                pool_maxsize=10,
+                pool_connections=self.MAX_WORKERS + 10,
+                pool_maxsize=self.MAX_WORKERS + 10,
                 max_retries=retry_strategy,
             )
             self._session = requests.Session()
@@ -130,18 +178,15 @@ class ClientV2:
         return all_data
 
     # ------------------------------------------------------------------
-    # /equities/master (path_old: /listed/info)
+    # eq-master (/equities/master)
     # ------------------------------------------------------------------
-    def get_listed_info(
+    def get_eq_master(
         self,
         code: str = "",
         date: str = "",
     ) -> pd.DataFrame:
         """
-        上場銘柄一覧 (v2: /equities/master)
-
-        v1 の `get_listed_info` と同等の目的ですが、カラム名は v2 仕様
-        (例: CoName, CoNameEn, S17 など) になります。
+        eq-master: 上場銘柄一覧 (v2: /equities/master)
 
         Args:
             code: 5桁の銘柄コード (例: 27800)。4桁指定も可能。
@@ -149,27 +194,78 @@ class ClientV2:
         Returns:
             pd.DataFrame: 上場銘柄情報
         """
-        params: Dict[str, Any] = {}
-        if code:
-            params["code"] = code
-        if date:
-            params["date"] = date
-
-        data = self._get_paginated("/equities/master", params=params)
-        if not data:
-            return pd.DataFrame()
-
-        df = pd.DataFrame.from_records(data)
-        if "Date" in df.columns:
-            df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        if "Code" in df.columns:
-            df.sort_values("Code", inplace=True)
-        return df.reset_index(drop=True)
+        return self._eq_master_api.execute(self, code=code, date=date)
 
     # ------------------------------------------------------------------
-    # /equities/bars/daily (path_old: /prices/daily_quotes)
+    # ユーティリティ: 業種・市場区分マスタ (v1 と同様のローカル定義)
     # ------------------------------------------------------------------
-    def get_prices_daily_quotes(
+    def get_market_segments() -> pd.DataFrame:
+        """
+        市場区分コードと名称 (v2 でも v1 と同様にローカル定義を利用)
+        """
+        df = pd.DataFrame(
+            constants.MARKET_SEGMENT_DATA, columns=constants.MARKET_SEGMENT_COLUMNS
+        )
+        df.sort_values(constants.MARKET_SEGMENT_COLUMNS[0], inplace=True)
+        return df
+
+    def get_17_sectors(self) -> pd.DataFrame:
+        """
+        17 業種コードと名称
+        """
+        df = pd.DataFrame(constants.SECTOR_17_DATA, columns=constants.SECTOR_17_COLUMNS)
+        df.sort_values(constants.SECTOR_17_COLUMNS[0], inplace=True)
+        return df
+
+    def get_33_sectors(self) -> pd.DataFrame:
+        """
+        33 業種コードと名称
+        """
+        df = pd.DataFrame(constants.SECTOR_33_DATA, columns=constants.SECTOR_33_COLUMNS)
+        df.sort_values(constants.SECTOR_33_COLUMNS[0], inplace=True)
+        return df
+
+    # ------------------------------------------------------------------
+    # get_list (v1 と同名のユーティリティ, eq-master ベース)
+    # ------------------------------------------------------------------
+    def get_list(self, code: str = "", date_yyyymmdd: str = "") -> pd.DataFrame:
+        """
+        上場銘柄一覧 (業種・市場区分の英語名を付与したユーティリティ)
+
+        v2 の eq-master を利用し、v2 フィールド名で返却します。
+
+        Args:
+            code: 銘柄コード (任意)
+            date_yyyymmdd: 基準日 (YYYYMMDD or YYYY-MM-DD, 任意)
+        Returns:
+            pd.DataFrame: 上場銘柄情報 (v2 フィールド名)
+        """
+        df_list = self.get_eq_master(code=code, date=date_yyyymmdd)
+        if df_list.empty:
+            return pd.DataFrame([], columns=constants.EQ_MASTER_COLUMNS_V2)
+
+        # 17/33 業種 & 市場区分の英語名を付与
+        df_17_sectors = self.get_17_sectors()[
+            ["S17", "S17En"]
+        ]
+        df_33_sectors = self.get_33_sectors()[
+            ["S33", "S33En"]
+        ]
+        df_segments = self.get_market_segments()[
+            ["Mkt", "MktEn"]
+        ]
+
+        df_list = pd.merge(df_list, df_17_sectors, how="left", on=["S17"])
+        df_list = pd.merge(df_list, df_33_sectors, how="left", on=["S33"])
+        df_list = pd.merge(df_list, df_segments, how="left", on=["Mkt"])
+
+        df_list.sort_values("Code", inplace=True)
+        return df_list
+
+    # ------------------------------------------------------------------
+    # eq-bars-daily (/equities/bars/daily)
+    # ------------------------------------------------------------------
+    def get_eq_bars_daily(
         self,
         code: str = "",
         from_yyyymmdd: str = "",
@@ -177,7 +273,7 @@ class ClientV2:
         date_yyyymmdd: str = "",
     ) -> pd.DataFrame:
         """
-        株価四本値 (v2: /equities/bars/daily)
+        eq-bars-daily: 株価四本値 (v2: /equities/bars/daily)
 
         Args:
             code: 銘柄コード (5桁 or 4桁)
@@ -187,67 +283,70 @@ class ClientV2:
         Returns:
             pd.DataFrame: 株価データ (v2のフィールド名で返却)
         """
-        params: Dict[str, Any] = {}
-        if code:
-            params["code"] = code
-        if date_yyyymmdd:
-            params["date"] = date_yyyymmdd
-        else:
-            if from_yyyymmdd:
-                params["from"] = from_yyyymmdd
-            if to_yyyymmdd:
-                params["to"] = to_yyyymmdd
+        return self._eq_bars_daily_api.execute(
+            self,
+            code=code,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+            date_yyyymmdd=date_yyyymmdd,
+        )
 
-        data = self._get_paginated("/equities/bars/daily", params=params)
-        if not data:
-            return pd.DataFrame()
-
-        df = pd.DataFrame.from_records(data)
-        if "Date" in df.columns:
-            df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        sort_cols = [c for c in ["Code", "Date"] if c in df.columns]
-        if sort_cols:
-            df.sort_values(sort_cols, inplace=True)
-        return df.reset_index(drop=True)
-
-    # ------------------------------------------------------------------
-    # /equities/bars/daily/am (path_old: /prices/prices_am)
-    # ------------------------------------------------------------------
-    def get_prices_prices_am(self, code: str = "") -> pd.DataFrame:
+    def get_eq_bars_daily_range(
+        self,
+        start_dt: DatetimeLike = "20170101",
+        end_dt: DatetimeLike = datetime.now(),
+    ) -> pd.DataFrame:
         """
-        前場四本値 (v2: /equities/bars/daily/am)
+        全銘柄の株価四本値を日付範囲指定して取得 (v2: /equities/bars/daily)
+
+        Args:
+            start_dt: 取得開始日
+            end_dt: 取得終了日
+        Returns:
+            pd.DataFrame: 株価データ (Code, Date 列でソート)
+        """
+        buff: list[pd.DataFrame] = []
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            futures = [
+                executor.submit(
+                    self.get_eq_bars_daily, date_yyyymmdd=s.strftime("%Y-%m-%d")
+                )
+                for s in dates
+            ]
+            for future in as_completed(futures):
+                df = future.result()
+                if not df.empty:
+                    buff.append(df)
+        if not buff:
+            return pd.DataFrame()
+        return pd.concat(buff).sort_values(["Code", "Date"]).reset_index(drop=True)
+
+    # ------------------------------------------------------------------
+    # eq-bars-daily-am (/equities/bars/daily/am)
+    # ------------------------------------------------------------------
+    def get_eq_bars_daily_am(self, code: str = "") -> pd.DataFrame:
+        """
+        eq-bars-daily-am: 前場四本値 (v2: /equities/bars/daily/am)
 
         Args:
             code: 銘柄コード (5桁 or 4桁)。空文字の場合は全銘柄。
         Returns:
             pd.DataFrame: 前場の株価データ
         """
-        params: Dict[str, Any] = {}
-        if code:
-            params["code"] = code
-
-        data = self._get_paginated("/equities/bars/daily/am", params=params)
-        if not data:
-            return pd.DataFrame()
-
-        df = pd.DataFrame.from_records(data)
-        if "Date" in df.columns:
-            df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        if "Code" in df.columns:
-            df.sort_values("Code", inplace=True)
-        return df.reset_index(drop=True)
+        return self._eq_bars_daily_am_api.execute(self, code=code)
 
     # ------------------------------------------------------------------
-    # /equities/investor-types (path_old: /markets/trades_spec)
+    # eq-investor-types (/equities/investor-types)
     # ------------------------------------------------------------------
-    def get_markets_trades_spec(
+    def get_eq_investor_types(
         self,
         section: str = "",
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
     ) -> pd.DataFrame:
         """
-        投資部門別売買状況 (v2: /equities/investor-types)
+        eq-investor-types: 投資部門別売買状況 (v2: /equities/investor-types)
 
         Args:
             section: 市場区分 (例: \"TSEPrime\")
@@ -256,30 +355,17 @@ class ClientV2:
         Returns:
             pd.DataFrame: 投資部門別売買データ
         """
-        params: Dict[str, Any] = {}
-        if section:
-            params["section"] = section
-        if from_yyyymmdd:
-            params["from"] = from_yyyymmdd
-        if to_yyyymmdd:
-            params["to"] = to_yyyymmdd
-
-        data = self._get_paginated("/equities/investor-types", params=params)
-        if not data:
-            return pd.DataFrame()
-
-        df = pd.DataFrame.from_records(data)
-        if "PubDate" in df.columns:
-            df["PubDate"] = pd.to_datetime(df["PubDate"], errors="coerce")
-        sort_cols = [c for c in ["PubDate", "Section"] if c in df.columns]
-        if sort_cols:
-            df.sort_values(sort_cols, inplace=True)
-        return df.reset_index(drop=True)
+        return self._eq_investor_types_api.execute(
+            self,
+            section=section,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+        )
 
     # ------------------------------------------------------------------
     # /fins/summary (path_old: /fins/statements)
     # ------------------------------------------------------------------
-    def get_fins_statements(
+    def get_fin_summary(
         self,
         code: str = "",
         date_yyyymmdd: str = "",
@@ -293,29 +379,82 @@ class ClientV2:
         Returns:
             pd.DataFrame: 財務情報 (v2のフィールド名で返却)
         """
-        params: Dict[str, Any] = {}
-        if code:
-            params["code"] = code
-        if date_yyyymmdd:
-            params["date"] = date_yyyymmdd
+        return self._fin_summary_api.execute(
+            self,
+            code=code,
+            date_yyyymmdd=date_yyyymmdd,
+        )
 
-        data = self._get_paginated("/fins/summary", params=params)
-        if not data:
+    def get_fin_summary_range(
+        self,
+        start_dt: DatetimeLike = "20080707",
+        end_dt: DatetimeLike = datetime.now(),
+        cache_dir: str = "",
+    ) -> pd.DataFrame:
+        """
+        財務情報サマリを日付範囲指定して取得 (v2: /fins/summary)
+
+        Args:
+            start_dt: 取得開始日
+            end_dt: 取得終了日
+            cache_dir: キャッシュディレクトリ (未指定時は ~/.jquants/cache/v2 を使用)
+        """
+        if not cache_dir:
+            cache_dir = os.path.expanduser("~/.jquants/cache/v2")
+
+        buff: list[pd.DataFrame] = []
+        futures: dict[Any, str] = {}
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            for s in dates:
+                yyyymmdd = s.strftime("%Y%m%d")
+                yyyy = yyyymmdd[:4]
+                cache_file = f"fin_summary_{yyyymmdd}.csv.gz"
+                cache_path = os.path.join(cache_dir, yyyy, cache_file)
+
+                if os.path.isfile(cache_path):
+                    df = pd.read_csv(cache_path, dtype=str)
+                    # 日付カラムをdatetimeに変換
+                    date_cols = [
+                        "DiscDate",
+                        "CurPerSt",
+                        "CurPerEn",
+                        "CurFYSt",
+                        "CurFYEn",
+                        "NxtFYSt",
+                        "NxtFYEn",
+                    ]
+                    for col in date_cols:
+                        if col in df.columns:
+                            df[col] = pd.to_datetime(df[col], errors="coerce")
+                    buff.append(df)
+                else:
+                    future = executor.submit(
+                        self.get_fin_summary, date_yyyymmdd=yyyymmdd
+                    )
+                    futures[future] = cache_path
+
+            for future in as_completed(futures):
+                df = future.result()
+                if df.empty:
+                    continue
+                buff.append(df)
+                cache_path = futures[future]
+                os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+                df.to_csv(cache_path, index=False)
+
+        if not buff:
             return pd.DataFrame()
 
-        df = pd.DataFrame.from_records(data)
-        for col in ("DiscDate", "CurPerSt", "CurPerEn", "CurFYSt", "CurFYEn", "NxtFYSt", "NxtFYEn"):
-            if col in df.columns:
-                df[col] = pd.to_datetime(df[col], errors="coerce")
-        sort_cols = [c for c in ["DiscDate", "DiscTime", "Code"] if c in df.columns]
-        if sort_cols:
-            df.sort_values(sort_cols, inplace=True)
-        return df.reset_index(drop=True)
+        return pd.concat(buff).sort_values(
+            ["DiscDate", "DiscTime", "Code"]
+        ).reset_index(drop=True)
 
     # ------------------------------------------------------------------
     # /fins/details (path_old: /fins/fs_details)
     # ------------------------------------------------------------------
-    def get_fins_fs_details(
+    def get_fin_details(
         self,
         code: str = "",
         date_yyyymmdd: str = "",
@@ -329,28 +468,71 @@ class ClientV2:
         Returns:
             pd.DataFrame: 財務諸表詳細 (FS列に各項目が含まれる)
         """
-        params: Dict[str, Any] = {}
-        if code:
-            params["code"] = code
-        if date_yyyymmdd:
-            params["date"] = date_yyyymmdd
+        return self._fin_details_api.execute(
+            self,
+            code=code,
+            date_yyyymmdd=date_yyyymmdd,
+        )
 
-        data = self._get_paginated("/fins/details", params=params)
-        if not data:
+    def get_fin_details_range(
+        self,
+        start_dt: DatetimeLike = "20080707",
+        end_dt: DatetimeLike = datetime.now(),
+        cache_dir: str = "",
+    ) -> pd.DataFrame:
+        """
+        財務諸表詳細を日付範囲指定して取得 (v2: /fins/details)
+
+        Args:
+            start_dt: 取得開始日
+            end_dt: 取得終了日
+            cache_dir: キャッシュディレクトリ (未指定時は ~/.jquants/cache/v2 を使用)
+        """
+        if not cache_dir:
+            cache_dir = os.path.expanduser("~/.jquants/cache/v2")
+
+        buff: list[pd.DataFrame] = []
+        futures: dict[Any, str] = {}
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            for s in dates:
+                yyyymmdd = s.strftime("%Y%m%d")
+                yyyy = yyyymmdd[:4]
+                cache_file = f"fin_details_{yyyymmdd}.csv.gz"
+                cache_path = os.path.join(cache_dir, yyyy, cache_file)
+
+                if os.path.isfile(cache_path):
+                    df = pd.read_csv(cache_path, dtype=str)
+                    if "DiscDate" in df.columns:
+                        df["DiscDate"] = pd.to_datetime(df["DiscDate"], errors="coerce")
+                    buff.append(df)
+                else:
+                    future = executor.submit(
+                        self.get_fin_details, date_yyyymmdd=yyyymmdd
+                    )
+                    futures[future] = cache_path
+
+            for future in as_completed(futures):
+                df = future.result()
+                if df.empty:
+                    continue
+                buff.append(df)
+                cache_path = futures[future]
+                os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+                df.to_csv(cache_path, index=False)
+
+        if not buff:
             return pd.DataFrame()
 
-        df = pd.DataFrame.from_records(data)
-        if "DiscDate" in df.columns:
-            df["DiscDate"] = pd.to_datetime(df["DiscDate"], errors="coerce")
-        sort_cols = [c for c in ["DiscDate", "DiscTime", "Code"] if c in df.columns]
-        if sort_cols:
-            df.sort_values(sort_cols, inplace=True)
-        return df.reset_index(drop=True)
+        return pd.concat(buff).sort_values(
+            ["DiscDate", "DiscTime", "Code"]
+        ).reset_index(drop=True)
 
     # ------------------------------------------------------------------
     # /fins/dividend (path_old: /fins/dividend)
     # ------------------------------------------------------------------
-    def get_fins_dividend(
+    def get_fin_dividend(
         self,
         code: str = "",
         from_yyyymmdd: str = "",
@@ -368,55 +550,30 @@ class ClientV2:
         Returns:
             pd.DataFrame: 配当金データ
         """
-        params: Dict[str, Any] = {}
-        if code:
-            params["code"] = code
-        if date_yyyymmdd:
-            params["date"] = date_yyyymmdd
-        else:
-            if from_yyyymmdd:
-                params["from"] = from_yyyymmdd
-            if to_yyyymmdd:
-                params["to"] = to_yyyymmdd
-
-        data = self._get_paginated("/fins/dividend", params=params)
-        if not data:
-            return pd.DataFrame()
-
-        df = pd.DataFrame.from_records(data)
-        if "PubDate" in df.columns:
-            df["PubDate"] = pd.to_datetime(df["PubDate"], errors="coerce")
-        sort_cols = [c for c in ["PubDate", "Code"] if c in df.columns]
-        if sort_cols:
-            df.sort_values(sort_cols, inplace=True)
-        return df.reset_index(drop=True)
+        return self._fin_dividend_api.execute(
+            self,
+            code=code,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+            date_yyyymmdd=date_yyyymmdd,
+        )
 
     # ------------------------------------------------------------------
     # /equities/earnings-calendar (path_old: /fins/announcement)
     # ------------------------------------------------------------------
-    def get_fins_announcement(self) -> pd.DataFrame:
+    def get_eq_earnings_cal(self) -> pd.DataFrame:
         """
         決算発表予定日 (v2: /equities/earnings-calendar)
 
         Returns:
             pd.DataFrame: 決算発表予定データ
         """
-        data = self._get_paginated("/equities/earnings-calendar", params={})
-        if not data:
-            return pd.DataFrame()
-
-        df = pd.DataFrame.from_records(data)
-        if "Date" in df.columns:
-            df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        sort_cols = [c for c in ["Date", "Code"] if c in df.columns]
-        if sort_cols:
-            df.sort_values(sort_cols, inplace=True)
-        return df.reset_index(drop=True)
+        return self._eq_earnings_cal_api.execute(self)
 
     # ------------------------------------------------------------------
     # /markets/short-ratio (path_old: /markets/short_selling)
     # ------------------------------------------------------------------
-    def get_markets_short_selling(
+    def get_mkt_short_ratio(
         self,
         sector_33_code: str = "",
         from_yyyymmdd: str = "",
@@ -434,33 +591,45 @@ class ClientV2:
         Returns:
             pd.DataFrame: 業種別空売り比率データ
         """
-        params: Dict[str, Any] = {}
-        if sector_33_code:
-            params["s33"] = sector_33_code
-        if date_yyyymmdd:
-            params["date"] = date_yyyymmdd
-        else:
-            if from_yyyymmdd:
-                params["from"] = from_yyyymmdd
-            if to_yyyymmdd:
-                params["to"] = to_yyyymmdd
+        return self._mkt_short_ratio_api.execute(
+            self,
+            sector_33_code=sector_33_code,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+            date_yyyymmdd=date_yyyymmdd,
+        )
 
-        data = self._get_paginated("/markets/short-ratio", params=params)
-        if not data:
+    def get_mkt_short_ratio_range(
+        self,
+        start_dt: DatetimeLike = "20170101",
+        end_dt: DatetimeLike = datetime.now(),
+    ) -> pd.DataFrame:
+        """
+        全33業種の空売り比率データを日付範囲指定して取得 (v2: /markets/short-ratio)
+        """
+        buff: list[pd.DataFrame] = []
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            futures = [
+                executor.submit(
+                    self.get_mkt_short_ratio, date_yyyymmdd=s.strftime("%Y-%m-%d")
+                )
+                for s in dates
+            ]
+            for future in as_completed(futures):
+                df = future.result()
+                if not df.empty:
+                    buff.append(df)
+        if not buff:
             return pd.DataFrame()
-
-        df = pd.DataFrame.from_records(data)
-        if "Date" in df.columns:
-            df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        sort_cols = [c for c in ["Date", "S33"] if c in df.columns]
-        if sort_cols:
-            df.sort_values(sort_cols, inplace=True)
-        return df.reset_index(drop=True)
+        return pd.concat(buff).sort_values(
+            ["Date", "S33"]
+        ).reset_index(drop=True)
 
     # ------------------------------------------------------------------
     # /markets/short-sale-report (path_old: /markets/short_selling_positions)
     # ------------------------------------------------------------------
-    def get_markets_short_selling_positions(
+    def get_mkt_short_sale_report(
         self,
         code: str = "",
         disclosed_date: str = "",
@@ -480,35 +649,47 @@ class ClientV2:
         Returns:
             pd.DataFrame: 空売り残高報告データ
         """
-        params: Dict[str, Any] = {}
-        if code:
-            params["code"] = code
-        if disclosed_date:
-            params["disc_date"] = disclosed_date
-        if disclosed_date_from:
-            params["disc_date_from"] = disclosed_date_from
-        if disclosed_date_to:
-            params["disc_date_to"] = disclosed_date_to
-        if calculated_date:
-            params["calc_date"] = calculated_date
+        return self._mkt_short_sale_report_api.execute(
+            self,
+            code=code,
+            disclosed_date=disclosed_date,
+            disclosed_date_from=disclosed_date_from,
+            disclosed_date_to=disclosed_date_to,
+            calculated_date=calculated_date,
+        )
 
-        data = self._get_paginated("/markets/short-sale-report", params=params)
-        if not data:
+    def get_mkt_short_sale_report_range(
+        self,
+        start_dt: DatetimeLike = "20131107",
+        end_dt: DatetimeLike = datetime.now(),
+    ) -> pd.DataFrame:
+        """
+        空売り残高報告データを日付範囲指定して取得 (v2: /markets/short-sale-report)
+        """
+        buff: list[pd.DataFrame] = []
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            futures = [
+                executor.submit(
+                    self.get_mkt_short_sale_report,
+                    disclosed_date=s.strftime("%Y-%m-%d"),
+                )
+                for s in dates
+            ]
+            for future in as_completed(futures):
+                df = future.result()
+                if not df.empty:
+                    buff.append(df)
+        if not buff:
             return pd.DataFrame()
-
-        df = pd.DataFrame.from_records(data)
-        for col in ("DiscDate", "CalcDate", "PrevRptDate"):
-            if col in df.columns:
-                df[col] = pd.to_datetime(df[col], errors="coerce")
-        sort_cols = [c for c in ["DiscDate", "CalcDate", "Code"] if c in df.columns]
-        if sort_cols:
-            df.sort_values(sort_cols, inplace=True)
-        return df.reset_index(drop=True)
+        return pd.concat(buff).sort_values(
+            ["DiscDate", "CalcDate", "Code"]
+        ).reset_index(drop=True)
 
     # ------------------------------------------------------------------
     # /markets/margin-interest (path_old: /markets/weekly_margin_interest)
     # ------------------------------------------------------------------
-    def get_markets_weekly_margin_interest(
+    def get_mkt_margin_interest(
         self,
         code: str = "",
         from_yyyymmdd: str = "",
@@ -526,33 +707,46 @@ class ClientV2:
         Returns:
             pd.DataFrame: 信用取引週末残高データ
         """
-        params: Dict[str, Any] = {}
-        if code:
-            params["code"] = code
-        if date_yyyymmdd:
-            params["date"] = date_yyyymmdd
-        else:
-            if from_yyyymmdd:
-                params["from"] = from_yyyymmdd
-            if to_yyyymmdd:
-                params["to"] = to_yyyymmdd
+        return self._mkt_margin_interest_api.execute(
+            self,
+            code=code,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+            date_yyyymmdd=date_yyyymmdd,
+        )
 
-        data = self._get_paginated("/markets/margin-interest", params=params)
-        if not data:
+    def get_mkt_margin_interest_range(
+        self,
+        start_dt: DatetimeLike = "20170101",
+        end_dt: DatetimeLike = datetime.now(),
+    ) -> pd.DataFrame:
+        """
+        信用取引週末残高を日付範囲指定して取得 (v2: /markets/margin-interest)
+        """
+        buff: list[pd.DataFrame] = []
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            futures = [
+                executor.submit(
+                    self.get_mkt_margin_interest,
+                    date_yyyymmdd=s.strftime("%Y-%m-%d"),
+                )
+                for s in dates
+            ]
+            for future in as_completed(futures):
+                df = future.result()
+                if not df.empty:
+                    buff.append(df)
+        if not buff:
             return pd.DataFrame()
-
-        df = pd.DataFrame.from_records(data)
-        if "Date" in df.columns:
-            df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        sort_cols = [c for c in ["Date", "Code"] if c in df.columns]
-        if sort_cols:
-            df.sort_values(sort_cols, inplace=True)
-        return df.reset_index(drop=True)
+        return pd.concat(buff).sort_values(
+            ["Date", "Code"]
+        ).reset_index(drop=True)
 
     # ------------------------------------------------------------------
     # /markets/margin-alert (path_old: /markets/daily_margin_interest)
     # ------------------------------------------------------------------
-    def get_markets_daily_margin_interest(
+    def get_mkt_margin_alert(
         self,
         code: str = "",
         from_yyyymmdd: str = "",
@@ -570,33 +764,46 @@ class ClientV2:
         Returns:
             pd.DataFrame: 日々公表信用取引残高データ
         """
-        params: Dict[str, Any] = {}
-        if code:
-            params["code"] = code
-        if date_yyyymmdd:
-            params["date"] = date_yyyymmdd
-        else:
-            if from_yyyymmdd:
-                params["from"] = from_yyyymmdd
-            if to_yyyymmdd:
-                params["to"] = to_yyyymmdd
+        return self._mkt_margin_alert_api.execute(
+            self,
+            code=code,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+            date_yyyymmdd=date_yyyymmdd,
+        )
 
-        data = self._get_paginated("/markets/margin-alert", params=params)
-        if not data:
+    def get_mkt_margin_alert_range(
+        self,
+        start_dt: DatetimeLike = "20170101",
+        end_dt: DatetimeLike = datetime.now(),
+    ) -> pd.DataFrame:
+        """
+        日々公表信用取引残高を日付範囲指定して取得 (v2: /markets/margin-alert)
+        """
+        buff: list[pd.DataFrame] = []
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            futures = [
+                executor.submit(
+                    self.get_mkt_margin_alert,
+                    date_yyyymmdd=s.strftime("%Y-%m-%d"),
+                )
+                for s in dates
+            ]
+            for future in as_completed(futures):
+                df = future.result()
+                if not df.empty:
+                    buff.append(df)
+        if not buff:
             return pd.DataFrame()
-
-        df = pd.DataFrame.from_records(data)
-        if "PubDate" in df.columns:
-            df["PubDate"] = pd.to_datetime(df["PubDate"], errors="coerce")
-        sort_cols = [c for c in ["Code", "PubDate"] if c in df.columns]
-        if sort_cols:
-            df.sort_values(sort_cols, inplace=True)
-        return df.reset_index(drop=True)
+        return pd.concat(buff).sort_values(
+            ["Date", "Code"]
+        ).reset_index(drop=True)
 
     # ------------------------------------------------------------------
     # /markets/breakdown (path_old: /markets/breakdown)
     # ------------------------------------------------------------------
-    def get_markets_breakdown(
+    def get_mkt_breakdown(
         self,
         code: str = "",
         from_yyyymmdd: str = "",
@@ -614,32 +821,45 @@ class ClientV2:
         Returns:
             pd.DataFrame: 売買内訳データ
         """
-        params: Dict[str, Any] = {}
-        if code:
-            params["code"] = code
-        if date_yyyymmdd:
-            params["date"] = date_yyyymmdd
-        else:
-            if from_yyyymmdd:
-                params["from"] = from_yyyymmdd
-            if to_yyyymmdd:
-                params["to"] = to_yyyymmdd
+        return self._mkt_breakdown_api.execute(
+            self,
+            code=code,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+            date_yyyymmdd=date_yyyymmdd,
+        )
 
-        data = self._get_paginated("/markets/breakdown", params=params)
-        if not data:
+    def get_mkt_breakdown_range(
+        self,
+        start_dt: DatetimeLike = "20170101",
+        end_dt: DatetimeLike = datetime.now(),
+    ) -> pd.DataFrame:
+        """
+        売買内訳データを日付範囲指定して取得 (v2: /markets/breakdown)
+        """
+        buff: list[pd.DataFrame] = []
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            futures = [
+                executor.submit(
+                    self.get_mkt_breakdown, date_yyyymmdd=s.strftime("%Y-%m-%d")
+                )
+                for s in dates
+            ]
+            for future in as_completed(futures):
+                df = future.result()
+                if not df.empty:
+                    buff.append(df)
+        if not buff:
             return pd.DataFrame()
-
-        df = pd.DataFrame.from_records(data)
-        if "Date" in df.columns:
-            df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        if "Code" in df.columns:
-            df.sort_values(["Code", "Date"], inplace=True)
-        return df.reset_index(drop=True)
+        return pd.concat(buff).sort_values(
+            ["Code", "Date"]
+        ).reset_index(drop=True)
 
     # ------------------------------------------------------------------
     # /markets/calendar (path_old: /markets/trading_calendar)
     # ------------------------------------------------------------------
-    def get_markets_trading_calendar(
+    def get_mkt_calendar(
         self,
         holiday_division: str = "",
         from_yyyymmdd: str = "",
@@ -655,23 +875,193 @@ class ClientV2:
         Returns:
             pd.DataFrame: 取引カレンダーデータ
         """
-        params: Dict[str, Any] = {}
-        if holiday_division:
-            params["hol_div"] = holiday_division
-        if from_yyyymmdd:
-            params["from"] = from_yyyymmdd
-        if to_yyyymmdd:
-            params["to"] = to_yyyymmdd
+        return self._mkt_calendar_api.execute(
+            self,
+            holiday_division=holiday_division,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+        )
 
-        data = self._get_paginated("/markets/calendar", params=params)
-        if not data:
+    # ------------------------------------------------------------------
+    # indices (v2: /indices/bars/daily, /indices/bars/daily/topix)
+    # ------------------------------------------------------------------
+    def get_idx_bars_daily(
+        self,
+        code: str = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+        date_yyyymmdd: str = "",
+    ) -> pd.DataFrame:
+        """
+        指数四本値 (v2: /indices/bars/daily)
+
+        Args:
+            code: 指数コード
+            from_yyyymmdd: 取得開始日
+            to_yyyymmdd: 取得終了日
+            date_yyyymmdd: 取得日
+        """
+        return self._idx_bars_daily_api.execute(
+            self,
+            code=code,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+            date_yyyymmdd=date_yyyymmdd,
+        )
+
+    def get_idx_bars_daily_topix(
+        self,
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+    ) -> pd.DataFrame:
+        """
+        TOPIX 指数四本値 (v2: /indices/bars/daily/topix)
+
+        Args:
+            from_yyyymmdd: 取得開始日
+            to_yyyymmdd: 取得終了日
+        """
+        return self._idx_bars_daily_topix_api.execute(
+            self,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+        )
+
+    # ------------------------------------------------------------------
+    # derivatives (v2: /derivatives/bars/daily/*)
+    # ------------------------------------------------------------------
+    def get_drv_bars_daily_fut(
+        self,
+        date_yyyymmdd: str,
+        category: str = "",
+        contract_flag: str = "",
+    ) -> pd.DataFrame:
+        """
+        先物四本値 (v2: /derivatives/bars/daily/futures)
+        """
+        return self._drv_bars_daily_fut_api.execute(
+            self,
+            date_yyyymmdd=date_yyyymmdd,
+            category=category,
+            contract_flag=contract_flag,
+        )
+
+    def get_drv_bars_daily_opt(
+        self,
+        date_yyyymmdd: str,
+        category: str = "",
+        contract_flag: str = "",
+        code: str = "",
+    ) -> pd.DataFrame:
+        """
+        オプション四本値 (v2: /derivatives/bars/daily/options)
+        """
+        return self._drv_bars_daily_opt_api.execute(
+            self,
+            date_yyyymmdd=date_yyyymmdd,
+            category=category,
+            contract_flag=contract_flag,
+            code=code,
+        )
+
+    def get_drv_bars_daily_opt_225(
+        self,
+        date_yyyymmdd: str,
+    ) -> pd.DataFrame:
+        """
+        日経225オプション四本値 (v2: /derivatives/bars/daily/options/225)
+        """
+        return self._drv_bars_daily_opt_225_api.execute(
+            self,
+            date_yyyymmdd=date_yyyymmdd,
+        )
+
+    def get_drv_bars_daily_fut_range(
+        self,
+        start_dt: DatetimeLike = "20170101",
+        end_dt: DatetimeLike = datetime.now(),
+        category: str = "",
+        contract_flag: str = "",
+    ) -> pd.DataFrame:
+        """
+        先物四本値を日付範囲指定して取得 (v2: /derivatives/bars/daily/futures)
+        """
+        buff: list[pd.DataFrame] = []
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            futures = [
+                executor.submit(
+                    self.get_drv_bars_daily_fut,
+                    date_yyyymmdd=s.strftime("%Y-%m-%d"),
+                    category=category,
+                    contract_flag=contract_flag,
+                )
+                for s in dates
+            ]
+            for future in as_completed(futures):
+                df = future.result()
+                if not df.empty:
+                    buff.append(df)
+        if not buff:
             return pd.DataFrame()
+        return pd.concat(buff).sort_values(["Code", "Date"]).reset_index(drop=True)
 
-        df = pd.DataFrame.from_records(data)
-        if "Date" in df.columns:
-            df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        if "Date" in df.columns:
-            df.sort_values("Date", inplace=True)
-        return df.reset_index(drop=True)
+    def get_drv_bars_daily_opt_range(
+        self,
+        start_dt: DatetimeLike = "20170101",
+        end_dt: DatetimeLike = datetime.now(),
+        category: str = "",
+        contract_flag: str = "",
+        code: str = "",
+    ) -> pd.DataFrame:
+        """
+        オプション四本値を日付範囲指定して取得 (v2: /derivatives/bars/daily/options)
+        """
+        buff: list[pd.DataFrame] = []
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            options = [
+                executor.submit(
+                    self.get_drv_bars_daily_opt,
+                    date_yyyymmdd=s.strftime("%Y-%m-%d"),
+                    category=category,
+                    contract_flag=contract_flag,
+                    code=code,
+                )
+                for s in dates
+            ]
+            for option in as_completed(options):
+                df = option.result()
+                if not df.empty:
+                    buff.append(df)
+        if not buff:
+            return pd.DataFrame()
+        return pd.concat(buff).sort_values(["Code", "Date"]).reset_index(drop=True)
+
+    def get_drv_bars_daily_opt_225_range(
+        self,
+        start_dt: DatetimeLike = "20170101",
+        end_dt: DatetimeLike = datetime.now(),
+    ) -> pd.DataFrame:
+        """
+        日経225オプション四本値を日付範囲指定して取得 (v2: /derivatives/bars/daily/options/225)
+        """
+        buff: list[pd.DataFrame] = []
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            futures = [
+                executor.submit(
+                    self.get_drv_bars_daily_opt_225,
+                    date_yyyymmdd=s.strftime("%Y-%m-%d"),
+                )
+                for s in dates
+            ]
+            for future in as_completed(futures):
+                df = future.result()
+                if not df.empty:
+                    buff.append(df)
+        if not buff:
+            return pd.DataFrame()
+        return pd.concat(buff).sort_values(["Code", "Date"]).reset_index(drop=True)
 
 

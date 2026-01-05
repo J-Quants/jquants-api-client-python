@@ -1,34 +1,6 @@
-# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/listed_info
-# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/listed_info
-LISTED_INFO_COLUMNS = [
-    "Date",
-    "Code",
-    "CompanyName",
-    "CompanyNameEnglish",
-    "Sector17Code",
-    "Sector17CodeName",
-    "Sector33Code",
-    "Sector33CodeName",
-    "ScaleCategory",
-    "MarketCode",
-    "MarketCodeName",
-]
-
-LISTED_INFO_STANDARD_PREMIUM_COLUMNS = [
-    "Date",
-    "Code",
-    "CompanyName",
-    "CompanyNameEnglish",
-    "Sector17Code",
-    "Sector17CodeName",
-    "Sector33Code",
-    "Sector33CodeName",
-    "ScaleCategory",
-    "MarketCode",
-    "MarketCodeName",
-    "MarginCode",
-    "MarginCodeName",
-]
+# ============================================================================
+# 共通データ（V1/V2両方で使用）
+# ============================================================================
 
 # ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/listed_info/sector17code
 # ref. en https://jpx.gitbook.io/j-quants-en/api-reference/listed_info/sector17code
@@ -100,6 +72,63 @@ SECTOR_33_DATA = [
     ("9999", "その他", "Other", "99"),
 ]
 
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/listed_info/marketcode
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/listed_info/marketcode
+MARKET_SEGMENT_COLUMNS = [
+    "MarketCode",
+    "MarketCodeName",
+    "MarketCodeNameEnglish",
+]
+MARKET_SEGMENT_DATA = [
+    ("0101", "東証一部", "1st Section"),
+    ("0102", "東証二部", "2nd Section"),
+    ("0104", "マザーズ", "Mothers"),
+    ("0105", "TOKYO PRO MARKET", "TOKYO PRO MARKET"),
+    ("0106", "JASDAQ スタンダード", "JASDAQ Standard"),
+    ("0107", "JASDAQ グロース", "JASDAQ Growth"),
+    ("0109", "その他", "Others"),
+    ("0111", "プライム", "Prime"),
+    ("0112", "スタンダード", "Standard"),
+    ("0113", "グロース", "Growth"),
+]
+
+
+# ============================================================================
+# V1 API用カラム定義
+# ============================================================================
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/listed_info
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/listed_info
+LISTED_INFO_COLUMNS = [
+    "Date",
+    "Code",
+    "CompanyName",
+    "CompanyNameEnglish",
+    "Sector17Code",
+    "Sector17CodeName",
+    "Sector33Code",
+    "Sector33CodeName",
+    "ScaleCategory",
+    "MarketCode",
+    "MarketCodeName",
+]
+
+LISTED_INFO_STANDARD_PREMIUM_COLUMNS = [
+    "Date",
+    "Code",
+    "CompanyName",
+    "CompanyNameEnglish",
+    "Sector17Code",
+    "Sector17CodeName",
+    "Sector33Code",
+    "Sector33CodeName",
+    "ScaleCategory",
+    "MarketCode",
+    "MarketCodeName",
+    "MarginCode",
+    "MarginCodeName",
+]
+
 # ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/daily_quotes
 # ref. en https://jpx.gitbook.io/j-quants-en/api-reference/daily_quotes
 PRICES_DAILY_QUOTES_COLUMNS = [
@@ -164,6 +193,17 @@ PRICES_DAILY_QUOTES_PREMIUM_COLUMNS = [
     "AfternoonAdjustmentLow",
     "AfternoonAdjustmentClose",
     "AfternoonAdjustmentVolume",
+]
+
+PRICES_PRICES_AM_COLUMNS = [
+    "Date",
+    "Code",
+    "MorningOpen",
+    "MorningHigh",
+    "MorningLow",
+    "MorningClose",
+    "MorningVolume",
+    "MorningTurnoverValue",
 ]
 
 # ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/indices
@@ -262,24 +302,38 @@ MARKETS_WEEKLY_MARGIN_INTEREST = [
     "IssueType",
 ]
 
-# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/listed_info/marketcode
-# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/listed_info/marketcode
-MARKET_SEGMENT_COLUMNS = [
-    "MarketCode",
-    "MarketCodeName",
-    "MarketCodeNameEnglish",
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/short_selling
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/short_selling
+MARKET_SHORT_SELLING_COLUMNS = [
+    "Date",
+    "Sector33Code",
+    "SellingExcludingShortSellingTurnoverValue",
+    "ShortSellingWithRestrictionsTurnoverValue",
+    "ShortSellingWithoutRestrictionsTurnoverValue",
 ]
-MARKET_SEGMENT_DATA = [
-    ("0101", "東証一部", "1st Section"),
-    ("0102", "東証二部", "2nd Section"),
-    ("0104", "マザーズ", "Mothers"),
-    ("0105", "TOKYO PRO MARKET", "TOKYO PRO MARKET"),
-    ("0106", "JASDAQ スタンダード", "JASDAQ Standard"),
-    ("0107", "JASDAQ グロース", "JASDAQ Growth"),
-    ("0109", "その他", "Others"),
-    ("0111", "プライム", "Prime"),
-    ("0112", "スタンダード", "Standard"),
-    ("0113", "グロース", "Growth"),
+
+MARKETS_BREAKDOWN_COLUMNS = [
+    "Date",
+    "Code",
+    "LongSellValue",
+    "ShortSellWithoutMarginValue",
+    "MarginSellNewValue",
+    "MarginSellCloseValue",
+    "LongBuyValue",
+    "MarginBuyNewValue",
+    "MarginBuyCloseValue",
+    "LongSellVolume",
+    "ShortSellWithoutMarginVolume",
+    "MarginSellNewVolume",
+    "MarginSellCloseVolume",
+    "LongBuyVolume",
+    "MarginBuyNewVolume",
+    "MarginBuyCloseVolume",
+]
+
+MARKETS_TRADING_CALENDAR = [
+    "Date",
+    "HolidayDivision",
 ]
 
 # ref ja https://jpx.gitbook.io/j-quants-ja/api-reference/statements
@@ -394,6 +448,40 @@ FINS_STATEMENTS_COLUMNS = [
     "NextYearForecastNonConsolidatedEarningsPerShare",
 ]
 
+FINS_FS_DETAILS_COLUMNS = [
+    "DisclosedDate",
+    "DisclosedTime",
+    "LocalCode",
+    "DisclosureNumber",
+    "TypeOfDocument",
+]
+
+FINS_DIVIDEND_COLUMNS = [
+    "AnnouncementDate",
+    "AnnouncementTime",
+    "Code",
+    "ReferenceNumber",
+    "StatusCode",
+    "BoardMeetingDate",
+    "InterimFinalCode",
+    "ForecastResultCode",
+    "InterimFinalTerm",
+    "GrossDividendRate",
+    "RecordDate",
+    "ExDate",
+    "ActualRecordDate",
+    "PayableDate",
+    "CAReferenceNumber",
+    "DistributionAmount",
+    "RetainedEarnings",
+    "DeemedDividend",
+    "DeemedCapitalGains",
+    "NetAssetDecreaseRatio",
+    "CommemorativeSpecialCode",
+    "CommemorativeDividendRate",
+    "SpecialDividendRate",
+]
+
 # ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/announcement
 # ref. en https://jpx.gitbook.io/j-quants-en/api-reference/announcement
 FINS_ANNOUNCEMENT_COLUMNS = [
@@ -406,15 +494,6 @@ FINS_ANNOUNCEMENT_COLUMNS = [
     "Section",
 ]
 
-# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/short_selling
-# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/short_selling
-MARKET_SHORT_SELLING_COLUMNS = [
-    "Date",
-    "Sector33Code",
-    "SellingExcludingShortSellingTurnoverValue",
-    "ShortSellingWithRestrictionsTurnoverValue",
-    "ShortSellingWithoutRestrictionsTurnoverValue",
-]
 # ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/index_option
 # ref. en https://jpx.gitbook.io/j-quants-en/api-reference/index_option
 OPTION_INDEX_OPTION_COLUMNS = [
@@ -448,75 +527,6 @@ OPTION_INDEX_OPTION_COLUMNS = [
     "UnderlyingPrice",
     "ImpliedVolatility",
     "InterestRate",
-]
-
-MARKETS_BREAKDOWN_COLUMNS = [
-    "Date",
-    "Code",
-    "LongSellValue",
-    "ShortSellWithoutMarginValue",
-    "MarginSellNewValue",
-    "MarginSellCloseValue",
-    "LongBuyValue",
-    "MarginBuyNewValue",
-    "MarginBuyCloseValue",
-    "LongSellVolume",
-    "ShortSellWithoutMarginVolume",
-    "MarginSellNewVolume",
-    "MarginSellCloseVolume",
-    "LongBuyVolume",
-    "MarginBuyNewVolume",
-    "MarginBuyCloseVolume",
-]
-
-FINS_DIVIDEND_COLUMNS = [
-    "AnnouncementDate",
-    "AnnouncementTime",
-    "Code",
-    "ReferenceNumber",
-    "StatusCode",
-    "BoardMeetingDate",
-    "InterimFinalCode",
-    "ForecastResultCode",
-    "InterimFinalTerm",
-    "GrossDividendRate",
-    "RecordDate",
-    "ExDate",
-    "ActualRecordDate",
-    "PayableDate",
-    "CAReferenceNumber",
-    "DistributionAmount",
-    "RetainedEarnings",
-    "DeemedDividend",
-    "DeemedCapitalGains",
-    "NetAssetDecreaseRatio",
-    "CommemorativeSpecialCode",
-    "CommemorativeDividendRate",
-    "SpecialDividendRate",
-]
-
-PRICES_PRICES_AM_COLUMNS = [
-    "Date",
-    "Code",
-    "MorningOpen",
-    "MorningHigh",
-    "MorningLow",
-    "MorningClose",
-    "MorningVolume",
-    "MorningTurnoverValue",
-]
-
-MARKETS_TRADING_CALENDAR = [
-    "Date",
-    "HolidayDivision",
-]
-
-FINS_FS_DETAILS_COLUMNS = [
-    "DisclosedDate",
-    "DisclosedTime",
-    "LocalCode",
-    "DisclosureNumber",
-    "TypeOfDocument",
 ]
 
 DERIVATIVES_FUTURES_COLUMNS = [
@@ -636,4 +646,502 @@ DAILY_MARGIN_INTEREST_COLUMNS = [
     "LongStandardizedMarginOutstanding",
     "DailyChangeLongStandardizedMarginOutstanding",
     "TSEMarginBorrowingAndLendingRegulationClassification",
+]
+
+
+# ============================================================================
+# V2 API用カラム定義
+# ============================================================================
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/eq-master
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/eq-master
+EQ_MASTER_COLUMNS_V2 = [
+    "Date",
+    "Code",
+    "CoName",
+    "CoNameEn",
+    "S17",
+    "S17Nm",
+    "S33",
+    "S33Nm",
+    "ScaleCat",
+    "Mkt",
+    "MktNm",
+    "Mrgn",
+    "MrgnNm",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/eq-bars-daily
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/eq-bars-daily
+EQ_BARS_DAILY_COLUMNS_V2 = [
+    "Date",
+    "Code",
+    "O",
+    "H",
+    "L",
+    "C",
+    "UL",
+    "LL",
+    "Vo",
+    "Va",
+    "AdjFactor",
+    "AdjO",
+    "AdjH",
+    "AdjL",
+    "AdjC",
+    "AdjVo",
+    "MO",
+    "MH",
+    "ML",
+    "MC",
+    "MUL",
+    "MLL",
+    "MVo",
+    "MVa",
+    "MAdjO",
+    "MAdjH",
+    "MAdjL",
+    "MAdjC",
+    "MAdjVo",
+    "AO",
+    "AH",
+    "AL",
+    "AC",
+    "AUL",
+    "ALL",
+    "AVo",
+    "AVa",
+    "AAdjO",
+    "AAdjH",
+    "AAdjL",
+    "AAdjC",
+    "AAdjVo",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/eq-bars-daily
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/eq-bars-daily
+PRICES_PRICES_AM_COLUMNS_V2 = [
+    "Date",
+    "Code",
+    "MO",
+    "MH",
+    "ML",
+    "MC",
+    "MVo",
+    "MVa",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/indices-bars-daily
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/indices-bars-daily
+INDICES_COLUMNS_V2 = [
+    "Date",
+    "Code",
+    "O",
+    "H",
+    "L",
+    "C",
+]
+
+INDICES_TOPIX_COLUMNS_V2 = [
+    "Date",
+    "O",
+    "H",
+    "L",
+    "C",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/eq-investor-types
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/eq-investor-types
+EQ_INVESTOR_TYPES_COLUMNS_V2 = [
+    "PubDate",
+    "StDate",
+    "EnDate",
+    "Section",
+    "PropSell",
+    "PropBuy",
+    "PropTot",
+    "PropBal",
+    "BrkSell",
+    "BrkBuy",
+    "BrkTot",
+    "BrkBal",
+    "TotSell",
+    "TotBuy",
+    "TotTot",
+    "TotBal",
+    "IndSell",
+    "IndBuy",
+    "IndTot",
+    "IndBal",
+    "FrgnSell",
+    "FrgnBuy",
+    "FrgnTot",
+    "FrgnBal",
+    "SecCoSell",
+    "SecCoBuy",
+    "SecCoTot",
+    "SecCoBal",
+    "InvTrSell",
+    "InvTrBuy",
+    "InvTrTot",
+    "InvTrBal",
+    "BusCoSell",
+    "BusCoBuy",
+    "BusCoTot",
+    "BusCoBal",
+    "OthCoSell",
+    "OthCoBuy",
+    "OthCoTot",
+    "OthCoBal",
+    "InsCoSell",
+    "InsCoBuy",
+    "InsCoTot",
+    "InsCoBal",
+    "BankSell",
+    "BankBuy",
+    "BankTot",
+    "BankBal",
+    "TrstBnkSell",
+    "TrstBnkBuy",
+    "TrstBnkTot",
+    "TrstBnkBal",
+    "OthFinSell",
+    "OthFinBuy",
+    "OthFinTot",
+    "OthFinBal",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/markets/margin-interest
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/markets/margin-interest
+MARKETS_WEEKLY_MARGIN_INTEREST_COLUMNS_V2 = [
+    "Date",
+    "Code",
+    "ShrtVol",
+    "LongVol",
+    "ShrtNegVol",
+    "LongNegVol",
+    "ShrtStdVol",
+    "LongStdVol",
+    "IssType",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/mkt-short-ratio
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/mkt-short-ratio
+MKT_SHORT_RATIO_COLUMNS_V2 = [
+    "Date",
+    "S33",
+    "SellExShortVa",
+    "ShrtWithResVa",
+    "ShrtNoResVa",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/mkt-breakdown
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/mkt-breakdown
+MKT_BREAKDOWN_COLUMNS_V2 = [
+    "Date",
+    "Code",
+    "LongSellVa",
+    "ShrtNoMrgnVa",
+    "MrgnSellNewVa",
+    "MrgnSellCloseVa",
+    "LongBuyVa",
+    "MrgnBuyNewVa",
+    "MrgnBuyCloseVa",
+    "LongSellVo",
+    "ShrtNoMrgnVo",
+    "MrgnSellNewVo",
+    "MrgnSellCloseVo",
+    "LongBuyVo",
+    "MrgnBuyNewVo",
+    "MrgnBuyCloseVo",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/markets/calendar
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/markets/calendar
+MARKETS_TRADING_CALENDAR_COLUMNS_V2 = [
+    "Date",
+    "HolDiv",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/fin-summary
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/fin-summary
+FIN_SUMMARY_COLUMNS_V2 = [
+    "DiscDate",
+    "DiscTime",
+    "Code",
+    "DiscNo",
+    "DocType",
+    "CurPerType",
+    "CurPerSt",
+    "CurPerEn",
+    "CurFYSt",
+    "CurFYEn",
+    "NxtFYSt",
+    "NxtFYEn",
+    "Sales",
+    "OP",
+    "OdP",
+    "NP",
+    "EPS",
+    "DEPS",
+    "TA",
+    "Eq",
+    "EqAR",
+    "BPS",
+    "CFO",
+    "CFI",
+    "CFF",
+    "CashEq",
+    "Div1Q",
+    "Div2Q",
+    "Div3Q",
+    "DivFY",
+    "DivAnn",
+    "DivUnit",
+    "DivTotalAnn",
+    "PayoutRatioAnn",
+    "FDiv1Q",
+    "FDiv2Q",
+    "FDiv3Q",
+    "FDivFY",
+    "FDivAnn",
+    "FDivUnit",
+    "FDivTotalAnn",
+    "FPayoutRatioAnn",
+    "NxFDiv1Q",
+    "NxFDiv2Q",
+    "NxFDiv3Q",
+    "NxFDivFY",
+    "NxFDivAnn",
+    "NxFDivUnit",
+    "NxFPayoutRatioAnn",
+    "FSales2Q",
+    "FOP2Q",
+    "FOdP2Q",
+    "FNP2Q",
+    "FEPS2Q",
+    "NxFSales2Q",
+    "NxFOP2Q",
+    "NxFOdP2Q",
+    "NxFNp2Q",
+    "NxFEPS2Q",
+    "FSales",
+    "FOP",
+    "FOdP",
+    "FNP",
+    "FEPS",
+    "NxFSales",
+    "NxFOP",
+    "NxFOdP",
+    "NxFNp",
+    "NxFEPS",
+    "MatChgSub",
+    "SigChgInC",
+    "ChgByASRev",
+    "ChgNoASRev",
+    "ChgAcEst",
+    "RetroRst",
+    "ShOutFY",
+    "TrShFY",
+    "AvgSh",
+    "NCSales",
+    "NCOP",
+    "NCOdP",
+    "NCNP",
+    "NCEPS",
+    "NCTA",
+    "NCEq",
+    "NCEqAR",
+    "NCBPS",
+    "FNCSales2Q",
+    "FNCOP2Q",
+    "FNCOdP2Q",
+    "FNCNP2Q",
+    "FNCEPS2Q",
+    "NxFNCSales2Q",
+    "NxFNCOP2Q",
+    "NxFNCOdP2Q",
+    "NxFNCNP2Q",
+    "NxFNCEPS2Q",
+    "FNCSales",
+    "FNCOP",
+    "FNCOdP",
+    "FNCNP",
+    "FNCEPS",
+    "NxFNCSales",
+    "NxFNCOP",
+    "NxFNCOdP",
+    "NxFNCNP",
+    "NxFNCEPS",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/fins/details
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/fins/details
+FINS_FS_DETAILS_COLUMNS_V2 = [
+    "DiscDate",
+    "DiscTime",
+    "Code",
+    "DiscNo",
+    "DocType",
+    "FS",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/fins/dividend
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/fins/dividend
+FINS_DIVIDEND_COLUMNS_V2 = [
+    "PubDate",
+    "PubTime",
+    "Code",
+    "RefNo",
+    "StatCode",
+    "BoardDate",
+    "IFCode",
+    "FRCode",
+    "IFTerm",
+    "DivRate",
+    "RecDate",
+    "ExDate",
+    "ActRecDate",
+    "PayDate",
+    "CARefNo",
+    "DistAmt",
+    "RetEarn",
+    "DeemDiv",
+    "DeemCapGains",
+    "NetAssetDecRatio",
+    "CommSpecCode",
+    "CommDivRate",
+    "SpecDivRate",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/equities/earnings-calendar
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/equities/earnings-calendar
+FINS_ANNOUNCEMENT_COLUMNS_V2 = [
+    "Date",
+    "Code",
+    "CoName",
+    "FY",
+    "SectorNm",
+    "FQ",
+    "Section",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/derivatives/bars/daily/futures
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/derivatives/bars/daily/futures
+DERIVATIVES_FUTURES_COLUMNS_V2 = [
+    "Code",
+    "ProdCat",
+    "Date",
+    "O",
+    "H",
+    "L",
+    "C",
+    "MO",
+    "MH",
+    "ML",
+    "MC",
+    "EO",
+    "EH",
+    "EL",
+    "EC",
+    "AO",
+    "AH",
+    "AL",
+    "AC",
+    "Vo",
+    "OI",
+    "Va",
+    "CM",
+    "VoOA",
+    "EmMrgnTrgDiv",
+    "LTD",
+    "SQD",
+    "Settle",
+    "CCMFlag",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/derivatives/bars/daily/options
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/derivatives/bars/daily/options
+DERIVATIVES_OPTIONS_COLUMNS_V2 = [
+    "Code",
+    "ProdCat",
+    "UndSSO",
+    "Date",
+    "O",
+    "H",
+    "L",
+    "C",
+    "MO",
+    "MH",
+    "ML",
+    "MC",
+    "EO",
+    "EH",
+    "EL",
+    "EC",
+    "AO",
+    "AH",
+    "AL",
+    "AC",
+    "Vo",
+    "OI",
+    "Va",
+    "CM",
+    "Strike",
+    "VoOA",
+    "EmMrgnTrgDiv",
+    "PCDiv",
+    "LTD",
+    "SQD",
+    "Settle",
+    "Theo",
+    "BaseVol",
+    "UnderPx",
+    "IV",
+    "IR",
+    "CCMFlag",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/markets/short-sale-report
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/markets/short-sale-report
+SHORT_SELLING_POSITIONS_COLUMNS_V2 = [
+    "DiscDate",
+    "CalcDate",
+    "Code",
+    "SSName",
+    "SSAddr",
+    "DICName",
+    "DICAddr",
+    "FundName",
+    "ShrtPosToSO",
+    "ShrtPosShares",
+    "ShrtPosUnits",
+    "PrevRptDate",
+    "PrevRptRatio",
+    "Notes",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/markets/margin-alert
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/markets/margin-alert
+DAILY_MARGIN_INTEREST_COLUMNS_V2 = [
+    "PubDate",
+    "Code",
+    "AppDate",
+    "PubReason",
+    "ShrtOut",
+    "ShrtOutChg",
+    "ShrtOutRatio",
+    "LongOut",
+    "LongOutChg",
+    "LongOutRatio",
+    "SLRatio",
+    "ShrtNegOut",
+    "ShrtNegOutChg",
+    "ShrtStdOut",
+    "ShrtStdOutChg",
+    "LongNegOut",
+    "LongNegOutChg",
+    "LongStdOut",
+    "LongStdOutChg",
+    "TSEMrgnRegCls",
 ]
