@@ -1,13 +1,20 @@
 import os
 import platform
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd  # type: ignore
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 from jquantsapi import __version__, constants
 from jquantsapi.apis.v2.equities import (
@@ -60,17 +67,27 @@ class ClientV2:
         """
         Args:
             api_key: J-Quants API v2 の API キー
-                     未指定の場合は環境変数 `JQUANTS_API_KEY` を参照します。
-        """
-        if api_key is None:
-            api_key = os.environ.get("JQUANTS_API_KEY", "")
+                     未指定の場合は設定ファイルまたは環境変数から取得します。
 
-        if not api_key:
+        設定の読み込み順序（後のものが優先）:
+            1. /content/drive/MyDrive/drive_ws/secret/jquants-api.toml (Google Colab のみ)
+            2. ${HOME}/.jquants-api/jquants-api.toml
+            3. jquants-api.toml (カレントディレクトリ)
+            4. os.environ["JQUANTS_API_CLIENT_CONFIG_FILE"] で指定されたファイル
+            5. 環境変数 JQUANTS_API_KEY
+        """
+        config = self._load_config()
+
+        if api_key is not None:
+            self._api_key = api_key
+        else:
+            self._api_key = config.get("api_key", "")
+
+        if not self._api_key:
             raise ValueError(
-                "api_key is required. Set it via argument or JQUANTS_API_KEY env var."
+                "api_key is required. Set it via argument, config file, or JQUANTS_API_KEY env var."
             )
 
-        self._api_key = api_key
         self._session: Optional[requests.Session] = None
 
         # API 実装 (v2)
@@ -100,6 +117,68 @@ class ClientV2:
     # ------------------------------------------------------------------
     # 内部ユーティリティ
     # ------------------------------------------------------------------
+    def _is_colab(self) -> bool:
+        """
+        Return True if running in colab
+        """
+        return "google.colab" in sys.modules
+
+    def _load_config(self) -> dict:
+        """
+        load config from files and environment variables
+
+        Args:
+            N/A
+        Returns:
+            dict: configurations
+        """
+        config: dict = {}
+
+        # colab config
+        if self._is_colab():
+            colab_config_path = (
+                "/content/drive/MyDrive/drive_ws/secret/jquants-api.toml"
+            )
+            config = {**config, **self._read_config(colab_config_path)}
+
+        # user default config
+        user_config_path = f"{Path.home()}/.jquants-api/jquants-api.toml"
+        config = {**config, **self._read_config(user_config_path)}
+
+        # current dir config
+        current_config_path = "jquants-api.toml"
+        config = {**config, **self._read_config(current_config_path)}
+
+        # env specified config
+        if "JQUANTS_API_CLIENT_CONFIG_FILE" in os.environ:
+            env_config_path = os.environ["JQUANTS_API_CLIENT_CONFIG_FILE"]
+            config = {**config, **self._read_config(env_config_path)}
+
+        # env var (highest priority)
+        config["api_key"] = os.environ.get(
+            "JQUANTS_API_KEY", config.get("api_key", "")
+        )
+
+        return config
+
+    def _read_config(self, config_path: str) -> dict:
+        """
+        read config from a toml file
+
+        Params:
+            config_path: a path to a toml file
+        """
+        if not os.path.isfile(config_path):
+            return {}
+
+        with open(config_path, mode="rb") as f:
+            ret = tomllib.load(f)
+
+        if "jquants-api-client" not in ret:
+            return {}
+
+        return ret["jquants-api-client"]
+
     def _request_session(
         self,
         status_forcelist: Optional[List[int]] = None,
