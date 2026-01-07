@@ -330,9 +330,9 @@ class ClientV2:
             return pd.DataFrame([], columns=constants.EQ_MASTER_COLUMNS_V2)
 
         # 17/33 業種 & 市場区分の英語名を付与
-        df_17_sectors = self.get_17_sectors()[["S17", "S17En"]]
-        df_33_sectors = self.get_33_sectors()[["S33", "S33En"]]
-        df_segments = self.get_market_segments()[["Mkt", "MktEn"]]
+        df_17_sectors = self.get_17_sectors()[["S17", "S17NmEn"]]
+        df_33_sectors = self.get_33_sectors()[["S33", "S33NmEn"]]
+        df_segments = self.get_market_segments()[["Mkt", "MktNmEn"]]
 
         df_list = pd.merge(df_list, df_17_sectors, how="left", on=["S17"])
         df_list = pd.merge(df_list, df_33_sectors, how="left", on=["S33"])
@@ -1305,4 +1305,28 @@ class ClientV2:
             str: ダウンロードURL
         """
         return self._bulk_get_api.execute(self, key=key)
+
+    def download_bulk(self, key: str, output_path: str) -> None:
+        """
+        bulk-get で取得した URL からファイルをダウンロードして保存
+
+        Args:
+            key: get_bulk_listで取得したKey
+            output_path: ダウンロードファイルの保存先パス
+        """
+        # ダウンロード URL を取得
+        url = self._bulk_get_api.execute(self, key=key)
+
+        # ディレクトリが存在しない場合は作成
+        os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+
+        # ファイルをダウンロード
+        session = self._request_session()
+        response = session.get(url, stream=True, timeout=300)
+        response.raise_for_status()
+
+        # ファイルに書き込み
+        with open(output_path, "wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
 

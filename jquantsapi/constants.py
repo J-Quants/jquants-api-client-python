@@ -681,15 +681,15 @@ DAILY_MARGIN_INTEREST_COLUMNS = [
 
 # ref. ja https://jpx-jquants.com/ja/spec/eq-master/sector17code
 # ref. en https://jpx-jquants.com/en/spec/eq-master/sector17code
-SECTOR_17_COLUMNS_V2 = ["S17", "S17Nm", "S17En"]
+SECTOR_17_COLUMNS_V2 = ["S17", "S17Nm", "S17NmEn"]
 
 # ref. ja https://jpx-jquants.com/ja/spec/eq-master/sector33code
 # ref. en https://jpx-jquants.com/en/spec/eq-master/sector33code
-SECTOR_33_COLUMNS_V2 = ["S33", "S33Nm", "S33En", "S17"]
+SECTOR_33_COLUMNS_V2 = ["S33", "S33Nm", "S33NmEn", "S17"]
 
 # ref. ja https://jpx-jquants.com/ja/spec/eq-master/marketcode
 # ref. en https://jpx-jquants.com/en/spec/eq-master/marketcode
-MARKET_SEGMENT_COLUMNS_V2 = ["Mkt", "MktNm", "MktEn"]
+MARKET_SEGMENT_COLUMNS_V2 = ["Mkt", "MktNm", "MktNmEn"]
 
 # ref. ja https://jpx-jquants.com/ja/spec/eq-master
 # ref. en https://jpx-jquants.com/en/spec/eq-master
