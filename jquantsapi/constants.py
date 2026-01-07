@@ -4,7 +4,6 @@
 
 # ref. ja https://jpx-jquants.com/ja/spec/eq-master/sector17code
 # ref. en https://jpx-jquants.com/en/spec/eq-master/sector17code
-SECTOR_17_COLUMNS = ["Sector17Code", "Sector17CodeName", "Sector17CodeNameEnglish"]
 SECTOR_17_DATA = [
     ("1", "食品", "FOODS"),
     ("2", "エネルギー資源", "ENERGY RESOURCES"),
@@ -29,12 +28,6 @@ SECTOR_17_DATA = [
 # ref. ja https://jpx-jquants.com/ja/spec/eq-master/sector33code
 # ref. en https://jpx-jquants.com/en/spec/eq-master/sector33code
 # ref. 33-17 mapping https://www.jpx.co.jp/markets/indices/line-up/files/fac_13_sector.pdf
-SECTOR_33_COLUMNS = [
-    "Sector33Code",
-    "Sector33CodeName",
-    "Sector33CodeNameEnglish",
-    "Sector17Code",
-]
 SECTOR_33_DATA = [
     ("0050", "水産・農林業", "Fishery, Agriculture & Forestry", "1"),
     ("1050", "鉱業", "Mining", "2"),
@@ -74,11 +67,6 @@ SECTOR_33_DATA = [
 
 # ref. ja https://jpx-jquants.com/ja/spec/eq-master/marketcode
 # ref. en https://jpx-jquants.com/en/spec/eq-master/marketcode
-MARKET_SEGMENT_COLUMNS = [
-    "MarketCode",
-    "MarketCodeName",
-    "MarketCodeNameEnglish",
-]
 MARKET_SEGMENT_DATA = [
     ("0101", "東証一部", "1st Section"),
     ("0102", "東証二部", "2nd Section"),
@@ -96,6 +84,27 @@ MARKET_SEGMENT_DATA = [
 # ============================================================================
 # V1 API用カラム定義
 # ============================================================================
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/listed_info/sector17code
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/listed_info/sector17code
+SECTOR_17_COLUMNS = ["Sector17Code", "Sector17CodeName", "Sector17CodeNameEnglish"]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/listed_info/sector33code
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/listed_info/sector33code
+SECTOR_33_COLUMNS = [
+    "Sector33Code",
+    "Sector33CodeName",
+    "Sector33CodeNameEnglish",
+    "Sector17Code",
+]
+
+# ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/listed_info/marketcode
+# ref. en https://jpx.gitbook.io/j-quants-en/api-reference/listed_info/marketcode
+MARKET_SEGMENT_COLUMNS = [
+    "MarketCode",
+    "MarketCodeName",
+    "MarketCodeNameEnglish",
+]
 
 # ref. ja https://jpx.gitbook.io/j-quants-ja/api-reference/listed_info
 # ref. en https://jpx.gitbook.io/j-quants-en/api-reference/listed_info
@@ -669,6 +678,18 @@ DAILY_MARGIN_INTEREST_COLUMNS = [
 # ============================================================================
 # V2 API用カラム定義
 # ============================================================================
+
+# ref. ja https://jpx-jquants.com/ja/spec/eq-master/sector17code
+# ref. en https://jpx-jquants.com/en/spec/eq-master/sector17code
+SECTOR_17_COLUMNS_V2 = ["S17", "S17Nm", "S17En"]
+
+# ref. ja https://jpx-jquants.com/ja/spec/eq-master/sector33code
+# ref. en https://jpx-jquants.com/en/spec/eq-master/sector33code
+SECTOR_33_COLUMNS_V2 = ["S33", "S33Nm", "S33En", "S17"]
+
+# ref. ja https://jpx-jquants.com/ja/spec/eq-master/marketcode
+# ref. en https://jpx-jquants.com/en/spec/eq-master/marketcode
+MARKET_SEGMENT_COLUMNS_V2 = ["Mkt", "MktNm", "MktEn"]
 
 # ref. ja https://jpx-jquants.com/ja/spec/eq-master
 # ref. en https://jpx-jquants.com/en/spec/eq-master

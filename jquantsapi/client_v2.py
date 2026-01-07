@@ -284,30 +284,30 @@ class ClientV2:
     # ------------------------------------------------------------------
     # ユーティリティ: 業種・市場区分マスタ (v1 と同様のローカル定義)
     # ------------------------------------------------------------------
-    def get_market_segments() -> pd.DataFrame:
+    def get_market_segments(self) -> pd.DataFrame:
         """
-        市場区分コードと名称 (v2 でも v1 と同様にローカル定義を利用)
+        市場区分コードと名称 (V2 カラム名)
         """
         df = pd.DataFrame(
-            constants.MARKET_SEGMENT_DATA, columns=constants.MARKET_SEGMENT_COLUMNS
+            constants.MARKET_SEGMENT_DATA, columns=constants.MARKET_SEGMENT_COLUMNS_V2
         )
-        df.sort_values(constants.MARKET_SEGMENT_COLUMNS[0], inplace=True)
+        df.sort_values(constants.MARKET_SEGMENT_COLUMNS_V2[0], inplace=True)
         return df
 
     def get_17_sectors(self) -> pd.DataFrame:
         """
-        17 業種コードと名称
+        17 業種コードと名称 (V2 カラム名)
         """
-        df = pd.DataFrame(constants.SECTOR_17_DATA, columns=constants.SECTOR_17_COLUMNS)
-        df.sort_values(constants.SECTOR_17_COLUMNS[0], inplace=True)
+        df = pd.DataFrame(constants.SECTOR_17_DATA, columns=constants.SECTOR_17_COLUMNS_V2)
+        df.sort_values(constants.SECTOR_17_COLUMNS_V2[0], inplace=True)
         return df
 
     def get_33_sectors(self) -> pd.DataFrame:
         """
-        33 業種コードと名称
+        33 業種コードと名称 (V2 カラム名)
         """
-        df = pd.DataFrame(constants.SECTOR_33_DATA, columns=constants.SECTOR_33_COLUMNS)
-        df.sort_values(constants.SECTOR_33_COLUMNS[0], inplace=True)
+        df = pd.DataFrame(constants.SECTOR_33_DATA, columns=constants.SECTOR_33_COLUMNS_V2)
+        df.sort_values(constants.SECTOR_33_COLUMNS_V2[0], inplace=True)
         return df
 
     # ------------------------------------------------------------------
@@ -330,15 +330,9 @@ class ClientV2:
             return pd.DataFrame([], columns=constants.EQ_MASTER_COLUMNS_V2)
 
         # 17/33 業種 & 市場区分の英語名を付与
-        df_17_sectors = self.get_17_sectors()[
-            ["S17", "S17En"]
-        ]
-        df_33_sectors = self.get_33_sectors()[
-            ["S33", "S33En"]
-        ]
-        df_segments = self.get_market_segments()[
-            ["Mkt", "MktEn"]
-        ]
+        df_17_sectors = self.get_17_sectors()[["S17", "S17En"]]
+        df_33_sectors = self.get_33_sectors()[["S33", "S33En"]]
+        df_segments = self.get_market_segments()[["Mkt", "MktEn"]]
 
         df_list = pd.merge(df_list, df_17_sectors, how="left", on=["S17"])
         df_list = pd.merge(df_list, df_33_sectors, how="left", on=["S33"])
@@ -614,11 +608,8 @@ class ClientV2:
         Args:
             start_dt: 取得開始日
             end_dt: 取得終了日
-            cache_dir: キャッシュディレクトリ (未指定時は ~/.jquants/cache/v2 を使用)
+            cache_dir: CSV形式のキャッシュファイルが存在するディレクトリ (未指定時はキャッシュしない)
         """
-        if not cache_dir:
-            cache_dir = os.path.expanduser("~/.jquants/cache/v2")
-
         buff: list[pd.DataFrame] = []
         futures: dict[Any, str] = {}
         dates = pd.date_range(start_dt, end_dt, freq="D")
@@ -627,11 +618,12 @@ class ClientV2:
             for s in dates:
                 yyyymmdd = s.strftime("%Y%m%d")
                 yyyy = yyyymmdd[:4]
-                cache_file = f"fin_summary_{yyyymmdd}.csv.gz"
-                cache_path = os.path.join(cache_dir, yyyy, cache_file)
+                cache_file = f"v2_fin_summary_{yyyymmdd}.csv.gz"
 
-                if os.path.isfile(cache_path):
-                    df = pd.read_csv(cache_path, dtype=str)
+                if (cache_dir != "") and os.path.isfile(
+                    f"{cache_dir}/{yyyy}/{cache_file}"
+                ):
+                    df = pd.read_csv(f"{cache_dir}/{yyyy}/{cache_file}", dtype=str)
                     # 日付カラムをdatetimeに変換
                     date_cols = [
                         "DiscDate",
@@ -650,16 +642,19 @@ class ClientV2:
                     future = executor.submit(
                         self.get_fin_summary, date_yyyymmdd=yyyymmdd
                     )
-                    futures[future] = cache_path
+                    futures[future] = yyyymmdd
 
             for future in as_completed(futures):
                 df = future.result()
                 if df.empty:
                     continue
                 buff.append(df)
-                cache_path = futures[future]
-                os.makedirs(os.path.dirname(cache_path), exist_ok=True)
-                df.to_csv(cache_path, index=False)
+                yyyymmdd = futures[future]
+                yyyy = yyyymmdd[:4]
+                cache_file = f"v2_fin_summary_{yyyymmdd}.csv.gz"
+                if cache_dir != "":
+                    os.makedirs(f"{cache_dir}/{yyyy}", exist_ok=True)
+                    df.to_csv(f"{cache_dir}/{yyyy}/{cache_file}", index=False)
 
         if not buff:
             return pd.DataFrame()
@@ -703,11 +698,8 @@ class ClientV2:
         Args:
             start_dt: 取得開始日
             end_dt: 取得終了日
-            cache_dir: キャッシュディレクトリ (未指定時は ~/.jquants/cache/v2 を使用)
+            cache_dir: CSV形式のキャッシュファイルが存在するディレクトリ (未指定時はキャッシュしない)
         """
-        if not cache_dir:
-            cache_dir = os.path.expanduser("~/.jquants/cache/v2")
-
         buff: list[pd.DataFrame] = []
         futures: dict[Any, str] = {}
         dates = pd.date_range(start_dt, end_dt, freq="D")
@@ -716,11 +708,12 @@ class ClientV2:
             for s in dates:
                 yyyymmdd = s.strftime("%Y%m%d")
                 yyyy = yyyymmdd[:4]
-                cache_file = f"fin_details_{yyyymmdd}.csv.gz"
-                cache_path = os.path.join(cache_dir, yyyy, cache_file)
+                cache_file = f"v2_fin_details_{yyyymmdd}.csv.gz"
 
-                if os.path.isfile(cache_path):
-                    df = pd.read_csv(cache_path, dtype=str)
+                if (cache_dir != "") and os.path.isfile(
+                    f"{cache_dir}/{yyyy}/{cache_file}"
+                ):
+                    df = pd.read_csv(f"{cache_dir}/{yyyy}/{cache_file}", dtype=str)
                     if "DiscDate" in df.columns:
                         df["DiscDate"] = pd.to_datetime(df["DiscDate"], errors="coerce")
                     buff.append(df)
@@ -728,16 +721,19 @@ class ClientV2:
                     future = executor.submit(
                         self.get_fin_details, date_yyyymmdd=yyyymmdd
                     )
-                    futures[future] = cache_path
+                    futures[future] = yyyymmdd
 
             for future in as_completed(futures):
                 df = future.result()
                 if df.empty:
                     continue
                 buff.append(df)
-                cache_path = futures[future]
-                os.makedirs(os.path.dirname(cache_path), exist_ok=True)
-                df.to_csv(cache_path, index=False)
+                yyyymmdd = futures[future]
+                yyyy = yyyymmdd[:4]
+                cache_file = f"v2_fin_details_{yyyymmdd}.csv.gz"
+                if cache_dir != "":
+                    os.makedirs(f"{cache_dir}/{yyyy}", exist_ok=True)
+                    df.to_csv(f"{cache_dir}/{yyyy}/{cache_file}", index=False)
 
         if not buff:
             return pd.DataFrame()
