@@ -11,9 +11,7 @@ from jquantsapi.apis.base import BaseApi, SupportsRequest
 
 class IndicesApiV1(BaseApi):
     """
-    v1 `/indices` のラッパ。
-
-    既存の `Client.get_indices` のロジックをそのまま移植する。
+    v1 の指数四本値 API (`/indices`) のラッパークラス。
     """
 
     name = "indices"
@@ -63,9 +61,7 @@ class IndicesApiV1(BaseApi):
 
 class IndicesTopixApiV1(BaseApi):
     """
-    v1 `/indices/topix` のラッパ。
-
-    既存の `Client.get_indices_topix` のロジックをそのまま移植する。
+    v1 の TOPIX 指数四本値 API (`/indices/topix`) のラッパークラス。
     """
 
     name = "indices_topix"

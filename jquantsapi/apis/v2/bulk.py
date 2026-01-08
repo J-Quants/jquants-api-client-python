@@ -11,7 +11,7 @@ from jquantsapi.enums import BulkEndpoint
 
 class BulkListApiV2(BaseApi):
     """
-    v2 の Bulk List API (`/bulk/list`) を担当するクラス。
+    v2 の Bulk List API (`/bulk/list`) のラッパークラス。
 
     指定したエンドポイントで取得可能なデータ一覧を取得します。
     """
@@ -57,7 +57,7 @@ class BulkListApiV2(BaseApi):
 
 class BulkGetApiV2(BaseApi):
     """
-    v2 の Bulk Get API (`/bulk/get`) を担当するクラス。
+    v2 の Bulk Get API (`/bulk/get`) のラッパークラス。
 
     指定したキーのデータをダウンロードするためのURLを取得します。
     """

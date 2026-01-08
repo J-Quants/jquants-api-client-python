@@ -11,9 +11,7 @@ from jquantsapi.apis.base import BaseApi, SupportsRequest
 
 class DerivativesFuturesApiV1(BaseApi):
     """
-    v1 `/derivatives/futures` のラッパ。
-
-    既存の `Client.get_derivatives_futures` のロジックをそのまま移植する。
+    v1 の先物四本値 API (`/derivatives/futures`) のラッパークラス。
     """
 
     name = "derivatives_futures"
@@ -59,9 +57,7 @@ class DerivativesFuturesApiV1(BaseApi):
 
 class DerivativesOptionsApiV1(BaseApi):
     """
-    v1 `/derivatives/options` のラッパ。
-
-    既存の `Client.get_derivatives_options` のロジックをそのまま移植する。
+    v1 のオプション四本値 API (`/derivatives/options`) のラッパークラス。
     """
 
     name = "derivatives_options"
@@ -109,9 +105,7 @@ class DerivativesOptionsApiV1(BaseApi):
 
 class OptionIndexOptionApiV1(BaseApi):
     """
-    v1 `/option/index_option` のラッパ。
-
-    既存の `Client.get_option_index_option` のロジックをそのまま移植する。
+    v1 のオプション指数四本値 API (`/option/index_option`) のラッパークラス。
     """
 
     name = "option_index_option"

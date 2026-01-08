@@ -10,9 +10,7 @@ from jquantsapi.apis.base import BaseApi, SupportsRequest
 
 class FinSummaryApiV2(BaseApi):
     """
-    v2 の財務情報サマリ API (`/fins/summary`) を担当するクラス。
-
-    既存の `ClientV2.get_fins_statements` のロジックをそのまま移植します。
+    v2 の財務情報サマリ API (`/fins/summary`) のラッパークラス。
     """
 
     name = "fin_summary"
@@ -80,9 +78,7 @@ class FinSummaryApiV2(BaseApi):
 
 class FinDetailsApiV2(BaseApi):
     """
-    v2 の財務諸表詳細 API (`/fins/details`) を担当するクラス。
-
-    既存の `ClientV2.get_fins_fs_details` のロジックをそのまま移植します。
+    v2 の財務諸表詳細 API (`/fins/details`) のラッパークラス。
     """
 
     name = "fin_details"
@@ -138,9 +134,7 @@ class FinDetailsApiV2(BaseApi):
 
 class FinDividendApiV2(BaseApi):
     """
-    v2 の配当金情報 API (`/fins/dividend`) を担当するクラス。
-
-    既存の `ClientV2.get_fins_dividend` のロジックをそのまま移植します。
+    v2 の配当金情報 API (`/fins/dividend`) のラッパークラス。
     """
 
     name = "fin_dividend"

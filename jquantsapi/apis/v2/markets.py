@@ -10,9 +10,7 @@ from jquantsapi.apis.base import BaseApi, SupportsRequest
 
 class MktShortRatioApiV2(BaseApi):
     """
-    v2 の業種別空売り比率 API (`/markets/short-ratio`) を担当するクラス。
-
-    既存の `ClientV2.get_markets_short_selling` のロジックをそのまま移植します。
+    v2 の業種別空売り比率 API (`/markets/short-ratio`) のラッパークラス。
     """
 
     name = "mkt_short_ratio"
@@ -78,9 +76,7 @@ class MktShortRatioApiV2(BaseApi):
 
 class MktShortSaleReportApiV2(BaseApi):
     """
-    v2 の空売り残高報告 API (`/markets/short-sale-report`) を担当するクラス。
-
-    既存の `ClientV2.get_markets_short_selling_positions` のロジックをそのまま移植します。
+    v2 の空売り残高報告 API (`/markets/short-sale-report`) のラッパークラス。
     """
 
     name = "mkt_short_sale_report"
@@ -146,7 +142,7 @@ class MktShortSaleReportApiV2(BaseApi):
 
 class MktMarginInterestApiV2(BaseApi):
     """
-    v2 の信用取引週末残高 API (`/markets/margin-interest`) を担当するクラス。
+    v2 の信用取引週末残高 API (`/markets/margin-interest`) のラッパークラス。
     """
 
     name = "mkt_margin_interest"
@@ -193,7 +189,7 @@ class MktMarginInterestApiV2(BaseApi):
 
 class MktBreakdownApiV2(BaseApi):
     """
-    v2 の売買内訳 API (`/markets/breakdown`) を担当するクラス。
+    v2 の売買内訳 API (`/markets/breakdown`) のラッパークラス。
     """
 
     name = "mkt_breakdown"
@@ -243,7 +239,7 @@ class MktBreakdownApiV2(BaseApi):
 
 class MktMarginAlertApiV2(BaseApi):
     """
-    v2 の日々公表信用取引残高 API (`/markets/margin-alert`) を担当するクラス。
+    v2 の日々公表信用取引残高 API (`/markets/margin-alert`) のラッパークラス。
     """
 
     name = "mkt_margin_alert"
@@ -290,9 +286,7 @@ class MktMarginAlertApiV2(BaseApi):
 
 class MktCalendarApiV2(BaseApi):
     """
-    v2 の取引カレンダー API (`/markets/calendar`) を担当するクラス。
-
-    既存の `ClientV2.get_markets_trading_calendar` のロジックをそのまま移植します。
+    v2 の取引カレンダー API (`/markets/calendar`) のラッパークラス。
     """
 
     name = "markets_trading_calendar"

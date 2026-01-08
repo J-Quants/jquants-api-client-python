@@ -11,9 +11,7 @@ from jquantsapi.apis.base import BaseApi, SupportsRequest
 
 class FinsStatementsApiV1(BaseApi):
     """
-    v1 の財務情報 API (`/fins/statements`) を担当するクラス。
-
-    既存の `Client.get_fins_statements` のロジックをそのまま移植します。
+    v1 の財務情報 API (`/fins/statements`) のラッパークラス。
     """
 
     name = "fins_statements"
@@ -78,9 +76,7 @@ class FinsStatementsApiV1(BaseApi):
 
 class FinsFsDetailsApiV1(BaseApi):
     """
-    v1 の財務諸表(BS/PL) API (`/fins/fs_details`) を担当するクラス。
-
-    既存の `Client.get_fins_fs_details` のロジックをそのまま移植します。
+    v1 の財務諸表(BS/PL) API (`/fins/fs_details`) のラッパークラス。
     """
 
     name = "fins_fs_details"
@@ -127,9 +123,7 @@ class FinsFsDetailsApiV1(BaseApi):
 
 class FinsDividendApiV1(BaseApi):
     """
-    v1 の配当金情報 API (`/fins/dividend`) を担当するクラス。
-
-    既存の `Client.get_fins_dividend` のロジックをそのまま移植します。
+    v1 の配当金情報 API (`/fins/dividend`) のラッパークラス。
     """
 
     name = "fins_dividend"
@@ -187,9 +181,7 @@ class FinsDividendApiV1(BaseApi):
 
 class FinsAnnouncementApiV1(BaseApi):
     """
-    v1 の決算発表予定 API (`/fins/announcement`) を担当するクラス。
-
-    既存の `Client.get_fins_announcement` のロジックをそのまま移植します。
+    v1 の決算発表予定 API (`/fins/announcement`) のラッパークラス。
     """
 
     name = "fins_announcement"

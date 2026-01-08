@@ -9,7 +9,7 @@ from jquantsapi.apis.base import BaseApi, SupportsRequest
 
 class IdxBarsDailyApiV2(BaseApi):
     """
-    v2 `/indices/bars/daily` のラッパ。
+    v2 の指数四本値 API (`/indices/bars/daily`) のラッパークラス。
 
     v1 `/indices` に対応する指数四本値エンドポイント。
     """
@@ -55,7 +55,7 @@ class IdxBarsDailyApiV2(BaseApi):
 
 class IdxBarsDailyTopixApiV2(BaseApi):
     """
-    v2 `/indices/bars/daily/topix` のラッパ。
+    v2 の TOPIX 指数四本値 API (`/indices/bars/daily/topix`) のラッパークラス。
 
     v1 `/indices/topix` に対応する TOPIX 指数四本値エンドポイント。
     """

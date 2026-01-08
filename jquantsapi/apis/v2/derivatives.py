@@ -9,7 +9,7 @@ from jquantsapi.apis.base import BaseApi, SupportsRequest
 
 class DrvBarsDailyFutApiV2(BaseApi):
     """
-    v2 `/derivatives/bars/daily/futures` のラッパ。
+    v2 の先物四本値 API (`/derivatives/bars/daily/futures`) のラッパークラス。
 
     v1 `/derivatives/futures` に対応する先物四本値エンドポイント。
     """
@@ -52,7 +52,7 @@ class DrvBarsDailyFutApiV2(BaseApi):
 
 class DrvBarsDailyOptApiV2(BaseApi):
     """
-    v2 `/derivatives/bars/daily/options` のラッパ。
+    v2 のオプション四本値 API (`/derivatives/bars/daily/options`) のラッパークラス。
 
     v1 `/derivatives/options` に対応するオプション四本値エンドポイント。
     """
@@ -99,7 +99,7 @@ class DrvBarsDailyOptApiV2(BaseApi):
 
 class DrvBarsDailyOpt225ApiV2(BaseApi):
     """
-    v2 `/derivatives/bars/daily/options/225` のラッパ。
+    v2 の日経225オプション四本値 API (`/derivatives/bars/daily/options/225`) のラッパークラス。
 
     v1 `/option/index_option` に対応する日経225オプション四本値エンドポイント。
     """

@@ -10,7 +10,7 @@ from jquantsapi.apis.base import BaseApi, SupportsRequest
 
 class EqMasterApiV2(BaseApi):
     """
-    v2: eq-master (/equities/master)
+    v2 の銘柄マスタ API (`/equities/master`) のラッパークラス。
 
     上場銘柄一覧 (v2) を取得します。
     """
@@ -44,7 +44,7 @@ class EqMasterApiV2(BaseApi):
 
 class EqBarsDailyApiV2(BaseApi):
     """
-    v2 の株価四本値 API (`/equities/bars/daily`) を担当するクラス。
+    v2 の株価四本値 API (`/equities/bars/daily`) のラッパークラス。
     """
 
     name = "eq_bars_daily"
@@ -117,7 +117,7 @@ class EqBarsDailyApiV2(BaseApi):
 
 class EqBarsDailyAmApiV2(BaseApi):
     """
-    v2 の前場四本値 API (`/equities/bars/daily/am`) を担当するクラス。
+    v2 の前場四本値 API (`/equities/bars/daily/am`) のラッパークラス。
     """
 
     name = "eq_bars_daily_am"
@@ -177,7 +177,7 @@ class EqBarsDailyAmApiV2(BaseApi):
 
 class EqBarsMinuteApiV2(BaseApi):
     """
-    v2 の分足 API (`/equities/bars/minute`) を担当するクラス。
+    v2 の分足 API (`/equities/bars/minute`) のラッパークラス。
     """
 
     name = "eq_bars_minute"
@@ -251,7 +251,7 @@ class EqBarsMinuteApiV2(BaseApi):
 
 class EqInvestorTypesApiV2(BaseApi):
     """
-    v2 の投資部門別売買状況 API (`/equities/investor-types`) を担当するクラス。
+    v2 の投資部門別売買状況 API (`/equities/investor-types`) のラッパークラス。
     """
 
     name = "eq_investor_types"
@@ -320,9 +320,7 @@ class EqInvestorTypesApiV2(BaseApi):
 
 class EqEarningsCalApiV2(BaseApi):
     """
-    v2 の決算発表予定日 API (`/equities/earnings-calendar`) を担当するクラス。
-
-    既存の `ClientV2.get_fins_announcement` のロジックをそのまま移植します。
+    v2 の決算発表予定日 API (`/equities/earnings-calendar`) のラッパークラス。
     """
 
     name = "eq_earnings_cal"

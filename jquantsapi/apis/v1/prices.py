@@ -11,10 +11,7 @@ from jquantsapi.apis.base import BaseApi, SupportsRequest
 
 class PricesDailyQuotesApiV1(BaseApi):
     """
-    v1 の株価四本値 API (`/prices/daily_quotes`) を担当するクラス。
-
-    既存の `Client._get_prices_daily_quotes_raw` と
-    `Client.get_prices_daily_quotes` のロジックをそのまま移植します。
+    v1 の株価四本値 API (`/prices/daily_quotes`) のラッパークラス。
     """
 
     name = "prices_daily_quotes"
@@ -84,10 +81,7 @@ class PricesDailyQuotesApiV1(BaseApi):
 
 class PricesPricesAmApiV1(BaseApi):
     """
-    v1 の前場四本値 API (`/prices/prices_am`) を担当するクラス。
-
-    既存の `Client._get_prices_prices_am_raw` と
-    `Client.get_prices_prices_am` のロジックをそのまま移植します。
+    v1 の前場四本値 API (`/prices/prices_am`) のラッパークラス。
     """
 
     name = "prices_prices_am"

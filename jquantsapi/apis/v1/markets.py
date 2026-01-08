@@ -11,10 +11,7 @@ from jquantsapi.apis.base import BaseApi, SupportsRequest
 
 class MarketsTradesSpecApiV1(BaseApi):
     """
-    v1 の投資部門別売買状況 API (`/markets/trades_spec`) を担当するクラス。
-
-    既存の `Client._get_markets_trades_spec_raw` と
-    `Client.get_markets_trades_spec` のロジックをそのまま移植します。
+    v1 の投資部門別売買状況 API (`/markets/trades_spec`) のラッパークラス。
     """
 
     name = "markets_trades_spec"
@@ -72,9 +69,7 @@ class MarketsTradesSpecApiV1(BaseApi):
 
 class MarketsWeeklyMarginInterestApiV1(BaseApi):
     """
-    v1 の信用取引週末残高 API (`/markets/weekly_margin_interest`) を担当するクラス。
-
-    既存の `Client.get_markets_weekly_margin_interest` のロジックをそのまま移植します。
+    v1 の信用取引週末残高 API (`/markets/weekly_margin_interest`) のラッパークラス。
     """
 
     name = "markets_weekly_margin_interest"
@@ -126,9 +121,7 @@ class MarketsWeeklyMarginInterestApiV1(BaseApi):
 
 class MarketsTradingCalendarApiV1(BaseApi):
     """
-    v1 の取引カレンダー API (`/markets/trading_calendar`) を担当するクラス。
-
-    既存の `Client.get_markets_trading_calendar` のロジックをそのまま移植します。
+    v1 の取引カレンダー API (`/markets/trading_calendar`) のラッパークラス。
     """
 
     name = "markets_trading_calendar"
@@ -170,9 +163,7 @@ class MarketsTradingCalendarApiV1(BaseApi):
 
 class MarketsShortSellingApiV1(BaseApi):
     """
-    v1 の業種別空売り比率 API (`/markets/short_selling`) を担当するクラス。
-
-    既存の `Client.get_markets_short_selling` のロジックをそのまま移植します。
+    v1 の業種別空売り比率 API (`/markets/short_selling`) のラッパークラス。
     """
 
     name = "markets_short_selling"
@@ -224,9 +215,7 @@ class MarketsShortSellingApiV1(BaseApi):
 
 class MarketsBreakdownApiV1(BaseApi):
     """
-    v1 の売買内訳 API (`/markets/breakdown`) を担当するクラス。
-
-    既存の `Client.get_markets_breakdown` のロジックをそのまま移植します。
+    v1 の売買内訳 API (`/markets/breakdown`) のラッパークラス。
     """
 
     name = "markets_breakdown"
@@ -278,9 +267,7 @@ class MarketsBreakdownApiV1(BaseApi):
 
 class MarketsShortSellingPositionsApiV1(BaseApi):
     """
-    v1 の空売り残高報告 API (`/markets/short_selling_positions`) を担当するクラス。
-
-    既存の `Client.get_markets_short_selling_positions` のロジックをそのまま移植します。
+    v1 の空売り残高報告 API (`/markets/short_selling_positions`) のラッパークラス。
     """
 
     name = "markets_short_selling_positions"
@@ -344,9 +331,7 @@ class MarketsShortSellingPositionsApiV1(BaseApi):
 
 class MarketsDailyMarginInterestApiV1(BaseApi):
     """
-    v1 の日々公表信用取引残高 API (`/markets/daily_margin_interest`) を担当するクラス。
-
-    既存の `Client.get_markets_daily_margin_interest` のロジックをそのまま移植します。
+    v1 の日々公表信用取引残高 API (`/markets/daily_margin_interest`) のラッパークラス。
     """
 
     name = "markets_daily_margin_interest"

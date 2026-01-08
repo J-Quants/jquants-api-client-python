@@ -11,7 +11,7 @@ from jquantsapi.apis.base import BaseApi, SupportsRequest
 
 class ListedInfoApiV1(BaseApi):
     """
-    v1 の上場銘柄一覧 API (`/listed/info`) を担当するクラス。
+    v1 の上場銘柄一覧 API (`/listed/info`) のラッパークラス。
     """
 
     name = "listed_info"
