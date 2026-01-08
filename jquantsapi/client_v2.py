@@ -1010,7 +1010,7 @@ class ClientV2:
         if not buff:
             return pd.DataFrame()
         return pd.concat(buff).sort_values(
-            ["Date", "Code"]
+            ["PubDate", "Code"]
         ).reset_index(drop=True)
 
     # ------------------------------------------------------------------
