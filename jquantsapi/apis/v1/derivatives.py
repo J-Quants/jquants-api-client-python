@@ -27,20 +27,24 @@ class DerivativesFuturesApiV1(BaseApi):
         category: str = "",
         contract_flag: str = "",
     ) -> pd.DataFrame:
-        j = client._get_derivatives_futures_raw(  # type: ignore[attr-defined]
-            category=category,
-            date_yyyymmdd=date_yyyymmdd,
-            contract_flag=contract_flag,
-        )
+        # 元の _get_derivatives_futures_raw の実装を統合
+        url = f"{client.JQUANTS_API_BASE}/derivatives/futures"  # type: ignore[attr-defined]
+        params = {
+            "category": category,
+            "date": date_yyyymmdd,
+            "contract_flag": contract_flag,
+        }
+        
+        ret = client._get(url, params)  # type: ignore[attr-defined]
+        ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+        j = ret.text
         d: Dict[str, Any] = json.loads(j)
         data = d["futures"]
         while "pagination_key" in d:
-            j = client._get_derivatives_futures_raw(  # type: ignore[attr-defined]
-                category=category,
-                date_yyyymmdd=date_yyyymmdd,
-                contract_flag=contract_flag,
-                pagination_key=d["pagination_key"],
-            )
+            params["pagination_key"] = d["pagination_key"]
+            ret = client._get(url, params)  # type: ignore[attr-defined]
+            ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+            j = ret.text
             d = json.loads(j)
             data += d["futures"]
 
@@ -72,22 +76,25 @@ class DerivativesOptionsApiV1(BaseApi):
         contract_flag: str = "",
         code: str = "",
     ) -> pd.DataFrame:
-        j = client._get_derivatives_options_raw(  # type: ignore[attr-defined]
-            category=category,
-            date_yyyymmdd=date_yyyymmdd,
-            contract_flag=contract_flag,
-            code=code,
-        )
+        # 元の _get_derivatives_options_raw の実装を統合
+        url = f"{client.JQUANTS_API_BASE}/derivatives/options"  # type: ignore[attr-defined]
+        params = {
+            "category": category,
+            "date": date_yyyymmdd,
+            "contract_flag": contract_flag,
+            "code": code,
+        }
+        
+        ret = client._get(url, params)  # type: ignore[attr-defined]
+        ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+        j = ret.text
         d: Dict[str, Any] = json.loads(j)
         data = d["options"]
         while "pagination_key" in d:
-            j = client._get_derivatives_options_raw(  # type: ignore[attr-defined]
-                category=category,
-                date_yyyymmdd=date_yyyymmdd,
-                contract_flag=contract_flag,
-                code=code,
-                pagination_key=d["pagination_key"],
-            )
+            params["pagination_key"] = d["pagination_key"]
+            ret = client._get(url, params)  # type: ignore[attr-defined]
+            ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+            j = ret.text
             d = json.loads(j)
             data += d["options"]
 
@@ -116,16 +123,20 @@ class OptionIndexOptionApiV1(BaseApi):
         *,
         date_yyyymmdd: str,
     ) -> pd.DataFrame:
-        j = client._get_option_index_option_raw(  # type: ignore[attr-defined]
-            date_yyyymmdd=date_yyyymmdd,
-        )
+        # 元の _get_option_index_option_raw の実装を統合
+        url = f"{client.JQUANTS_API_BASE}/option/index_option"  # type: ignore[attr-defined]
+        params = {"date": date_yyyymmdd}
+        
+        ret = client._get(url, params)  # type: ignore[attr-defined]
+        ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+        j = ret.text
         d: Dict[str, Any] = json.loads(j)
         data = d["index_option"]
         while "pagination_key" in d:
-            j = client._get_option_index_option_raw(  # type: ignore[attr-defined]
-                date_yyyymmdd=date_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
+            params["pagination_key"] = d["pagination_key"]
+            ret = client._get(url, params)  # type: ignore[attr-defined]
+            ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+            j = ret.text
             d = json.loads(j)
             data += d["index_option"]
 

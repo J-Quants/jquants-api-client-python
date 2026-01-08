@@ -28,22 +28,27 @@ class IndicesApiV1(BaseApi):
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
     ) -> pd.DataFrame:
-        j = client._get_indices_raw(  # type: ignore[attr-defined]
-            code=code,
-            from_yyyymmdd=from_yyyymmdd,
-            to_yyyymmdd=to_yyyymmdd,
-            date_yyyymmdd=date_yyyymmdd,
-        )
+        # 元の _get_indices_raw の実装を統合
+        url = f"{client.JQUANTS_API_BASE}/indices"  # type: ignore[attr-defined]
+        params = {"code": code}
+        if date_yyyymmdd != "":
+            params["date"] = date_yyyymmdd
+        else:
+            if from_yyyymmdd != "":
+                params["from"] = from_yyyymmdd
+            if to_yyyymmdd != "":
+                params["to"] = to_yyyymmdd
+        
+        ret = client._get(url, params)  # type: ignore[attr-defined]
+        ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+        j = ret.text
         d: Dict[str, Any] = json.loads(j)
         data = d["indices"]
         while "pagination_key" in d:
-            j = client._get_indices_raw(  # type: ignore[attr-defined]
-                code=code,
-                from_yyyymmdd=from_yyyymmdd,
-                to_yyyymmdd=to_yyyymmdd,
-                date_yyyymmdd=date_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
+            params["pagination_key"] = d["pagination_key"]
+            ret = client._get(url, params)  # type: ignore[attr-defined]
+            ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+            j = ret.text
             d = json.loads(j)
             data += d["indices"]
 
@@ -73,18 +78,24 @@ class IndicesTopixApiV1(BaseApi):
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
     ) -> pd.DataFrame:
-        j = client._get_indices_topix_raw(  # type: ignore[attr-defined]
-            from_yyyymmdd=from_yyyymmdd,
-            to_yyyymmdd=to_yyyymmdd,
-        )
+        # 元の _get_indices_topix_raw の実装を統合
+        url = f"{client.JQUANTS_API_BASE}/indices/topix"  # type: ignore[attr-defined]
+        params = {}
+        if from_yyyymmdd != "":
+            params["from"] = from_yyyymmdd
+        if to_yyyymmdd != "":
+            params["to"] = to_yyyymmdd
+        
+        ret = client._get(url, params)  # type: ignore[attr-defined]
+        ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+        j = ret.text
         d: Dict[str, Any] = json.loads(j)
         data = d["topix"]
         while "pagination_key" in d:
-            j = client._get_indices_topix_raw(  # type: ignore[attr-defined]
-                from_yyyymmdd=from_yyyymmdd,
-                to_yyyymmdd=to_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
+            params["pagination_key"] = d["pagination_key"]
+            ret = client._get(url, params)  # type: ignore[attr-defined]
+            ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+            j = ret.text
             d = json.loads(j)
             data += d["topix"]
 

@@ -159,19 +159,19 @@ def test_client_v2_config(
 )
 def test_get_eq_master(code, date_yyyymmdd, exp_params):
     """get_eq_masterのパラメータテスト"""
-    ret_value = '{"eq_master": []}'
+    ret_value = []  # _get_paginatedは配列を返す
     exp_ret_len = 0
     exp_raise = does_not_raise()
 
     with exp_raise, patch.object(
         jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
-    ), patch.object(jquantsapi.ClientV2, "_get") as mock_get:
-        mock_get.return_value.text = ret_value
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = ret_value
 
         cli = jquantsapi.ClientV2()
-        ret = cli.get_eq_master(code=code, date_yyyymmdd=date_yyyymmdd)
-        args, _ = mock_get.call_args
-        assert args[1] == exp_params
+        ret = cli.get_eq_master(code=code, date=date_yyyymmdd)
+        args, kwargs = mock_get_paginated.call_args
+        assert kwargs.get("params", {}) == exp_params
         assert len(ret) == exp_ret_len
 
 
@@ -195,14 +195,14 @@ def test_get_eq_master(code, date_yyyymmdd, exp_params):
 )
 def test_get_eq_bars_daily(code, from_yyyymmdd, to_yyyymmdd, date_yyyymmdd, exp_params):
     """get_eq_bars_dailyのパラメータテスト"""
-    ret_value = '{"eq_bars_daily": []}'
+    ret_value = {"data": []}  # resp.json()で返される辞書
     exp_ret_len = 0
     exp_raise = does_not_raise()
 
     with exp_raise, patch.object(
         jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
     ), patch.object(jquantsapi.ClientV2, "_get") as mock_get:
-        mock_get.return_value.text = ret_value
+        mock_get.return_value.json.return_value = ret_value
 
         cli = jquantsapi.ClientV2()
         ret = cli.get_eq_bars_daily(
@@ -356,14 +356,14 @@ def test_aggregate_bars_n_minute_15min():
 )
 def test_get_bulk_list(endpoint, exp_params):
     """get_bulk_listのパラメータテスト"""
-    ret_value = '{"bulk_list": []}'
+    ret_value = {"data": []}  # resp.json()で返される辞書
     exp_ret_len = 0
     exp_raise = does_not_raise()
 
     with exp_raise, patch.object(
         jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
     ), patch.object(jquantsapi.ClientV2, "_get") as mock_get:
-        mock_get.return_value.text = ret_value
+        mock_get.return_value.json.return_value = ret_value
 
         cli = jquantsapi.ClientV2()
         ret = cli.get_bulk_list(endpoint=endpoint)
@@ -374,13 +374,13 @@ def test_get_bulk_list(endpoint, exp_params):
 
 def test_get_bulk():
     """get_bulkのテスト"""
-    ret_value = '{"url": "https://example.com/data.csv"}'
+    ret_value = {"url": "https://example.com/data.csv"}  # resp.json()で返される辞書
     exp_raise = does_not_raise()
 
     with exp_raise, patch.object(
         jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
     ), patch.object(jquantsapi.ClientV2, "_get") as mock_get:
-        mock_get.return_value.text = ret_value
+        mock_get.return_value.json.return_value = ret_value
 
         cli = jquantsapi.ClientV2()
         ret = cli.get_bulk(key="2024/01/01/eq_master.csv")

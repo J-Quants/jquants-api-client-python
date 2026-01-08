@@ -37,21 +37,26 @@ class MarketsTradesSpecApiV1(BaseApi):
             from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
             to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
         """
-        # 元の get_markets_trades_spec と同じ処理をそのまま適用
-        j = client._get_markets_trades_spec_raw(  # type: ignore[attr-defined]
-            section=section,
-            from_yyyymmdd=from_yyyymmdd,
-            to_yyyymmdd=to_yyyymmdd,
-        )
+        # 元の _get_markets_trades_spec_raw の実装を統合
+        url = f"{client.JQUANTS_API_BASE}/markets/trades_spec"  # type: ignore[attr-defined]
+        params = {}
+        if section != "":
+            params["section"] = section
+        if from_yyyymmdd != "":
+            params["from"] = from_yyyymmdd
+        if to_yyyymmdd != "":
+            params["to"] = to_yyyymmdd
+        
+        ret = client._get(url, params)  # type: ignore[attr-defined]
+        ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+        j = ret.text
         d: Dict[str, Any] = json.loads(j)
         data: List[Dict[str, Any]] = d["trades_spec"]
         while "pagination_key" in d:
-            j = client._get_markets_trades_spec_raw(  # type: ignore[attr-defined]
-                section=section,
-                from_yyyymmdd=from_yyyymmdd,
-                to_yyyymmdd=to_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
+            params["pagination_key"] = d["pagination_key"]
+            ret = client._get(url, params)  # type: ignore[attr-defined]
+            ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+            j = ret.text
             d = json.loads(j)
             data += d["trades_spec"]
         df = pd.DataFrame.from_dict(data)
@@ -87,22 +92,27 @@ class MarketsWeeklyMarginInterestApiV1(BaseApi):
         """
         `/markets/weekly_margin_interest` を実行し、信用取引週末残高を DataFrame で返す。
         """
-        j = client._get_markets_weekly_margin_interest_raw(  # type: ignore[attr-defined]
-            code=code,
-            from_yyyymmdd=from_yyyymmdd,
-            to_yyyymmdd=to_yyyymmdd,
-            date_yyyymmdd=date_yyyymmdd,
-        )
+        # 元の _get_markets_weekly_margin_interest_raw の実装を統合
+        url = f"{client.JQUANTS_API_BASE}/markets/weekly_margin_interest"  # type: ignore[attr-defined]
+        params = {"code": code}
+        if date_yyyymmdd != "":
+            params["date"] = date_yyyymmdd
+        else:
+            if from_yyyymmdd != "":
+                params["from"] = from_yyyymmdd
+            if to_yyyymmdd != "":
+                params["to"] = to_yyyymmdd
+        
+        ret = client._get(url, params)  # type: ignore[attr-defined]
+        ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+        j = ret.text
         d: Dict[str, Any] = json.loads(j)
         data: List[Dict[str, Any]] = d["weekly_margin_interest"]
         while "pagination_key" in d:
-            j = client._get_markets_weekly_margin_interest_raw(  # type: ignore[attr-defined]
-                code=code,
-                from_yyyymmdd=from_yyyymmdd,
-                to_yyyymmdd=to_yyyymmdd,
-                date_yyyymmdd=date_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
+            params["pagination_key"] = d["pagination_key"]
+            ret = client._get(url, params)  # type: ignore[attr-defined]
+            ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+            j = ret.text
             d = json.loads(j)
             data += d["weekly_margin_interest"]
         df = pd.DataFrame.from_dict(data)
@@ -135,11 +145,19 @@ class MarketsTradingCalendarApiV1(BaseApi):
         """
         `/markets/trading_calendar` を実行し、取引カレンダーデータを DataFrame で返す。
         """
-        j = client._get_markets_trading_calendar_raw(  # type: ignore[attr-defined]
-            holiday_division=holiday_division,
-            from_yyyymmdd=from_yyyymmdd,
-            to_yyyymmdd=to_yyyymmdd,
-        )
+        # 元の _get_markets_trading_calendar_raw の実装を統合
+        url = f"{client.JQUANTS_API_BASE}/markets/trading_calendar"  # type: ignore[attr-defined]
+        params = {}
+        if holiday_division != "":
+            params["holidaydivision"] = holiday_division
+        if from_yyyymmdd != "":
+            params["from"] = from_yyyymmdd
+        if to_yyyymmdd != "":
+            params["to"] = to_yyyymmdd
+        
+        ret = client._get(url, params)  # type: ignore[attr-defined]
+        ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+        j = ret.text
         d: Dict[str, Any] = json.loads(j)
         df = pd.DataFrame.from_dict(d["trading_calendar"])
         cols = constants.MARKETS_TRADING_CALENDAR
@@ -172,22 +190,27 @@ class MarketsShortSellingApiV1(BaseApi):
         """
         `/markets/short_selling` を実行し、業種別空売り比率データを DataFrame で返す。
         """
-        j = client._get_markets_short_selling_raw(  # type: ignore[attr-defined]
-            sector_33_code=sector_33_code,
-            from_yyyymmdd=from_yyyymmdd,
-            to_yyyymmdd=to_yyyymmdd,
-            date_yyyymmdd=date_yyyymmdd,
-        )
+        # 元の _get_markets_short_selling_raw の実装を統合
+        url = f"{client.JQUANTS_API_BASE}/markets/short_selling"  # type: ignore[attr-defined]
+        params = {"sector33code": sector_33_code}
+        if date_yyyymmdd != "":
+            params["date"] = date_yyyymmdd
+        else:
+            if from_yyyymmdd != "":
+                params["from"] = from_yyyymmdd
+            if to_yyyymmdd != "":
+                params["to"] = to_yyyymmdd
+        
+        ret = client._get(url, params)  # type: ignore[attr-defined]
+        ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+        j = ret.text
         d: Dict[str, Any] = json.loads(j)
         data: List[Dict[str, Any]] = d["short_selling"]
         while "pagination_key" in d:
-            j = client._get_markets_short_selling_raw(  # type: ignore[attr-defined]
-                sector_33_code=sector_33_code,
-                from_yyyymmdd=from_yyyymmdd,
-                to_yyyymmdd=to_yyyymmdd,
-                date_yyyymmdd=date_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
+            params["pagination_key"] = d["pagination_key"]
+            ret = client._get(url, params)  # type: ignore[attr-defined]
+            ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+            j = ret.text
             d = json.loads(j)
             data += d["short_selling"]
         df = pd.DataFrame.from_dict(data)
@@ -221,22 +244,27 @@ class MarketsBreakdownApiV1(BaseApi):
         """
         `/markets/breakdown` を実行し、売買内訳データを DataFrame で返す。
         """
-        j = client._get_markets_breakdown_raw(  # type: ignore[attr-defined]
-            code=code,
-            from_yyyymmdd=from_yyyymmdd,
-            to_yyyymmdd=to_yyyymmdd,
-            date_yyyymmdd=date_yyyymmdd,
-        )
+        # 元の _get_markets_breakdown_raw の実装を統合
+        url = f"{client.JQUANTS_API_BASE}/markets/breakdown"  # type: ignore[attr-defined]
+        params = {"code": code}
+        if date_yyyymmdd != "":
+            params["date"] = date_yyyymmdd
+        else:
+            if from_yyyymmdd != "":
+                params["from"] = from_yyyymmdd
+            if to_yyyymmdd != "":
+                params["to"] = to_yyyymmdd
+        
+        ret = client._get(url, params)  # type: ignore[attr-defined]
+        ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+        j = ret.text
         d: Dict[str, Any] = json.loads(j)
         data: List[Dict[str, Any]] = d["breakdown"]
         while "pagination_key" in d:
-            j = client._get_markets_breakdown_raw(  # type: ignore[attr-defined]
-                code=code,
-                from_yyyymmdd=from_yyyymmdd,
-                to_yyyymmdd=to_yyyymmdd,
-                date_yyyymmdd=date_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
+            params["pagination_key"] = d["pagination_key"]
+            ret = client._get(url, params)  # type: ignore[attr-defined]
+            ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+            j = ret.text
             d = json.loads(j)
             data += d["breakdown"]
         df = pd.DataFrame.from_dict(data)
@@ -271,24 +299,30 @@ class MarketsShortSellingPositionsApiV1(BaseApi):
         """
         `/markets/short_selling_positions` を実行し、空売り残高報告データを DataFrame で返す。
         """
-        j = client._get_markets_short_selling_positions_raw(  # type: ignore[attr-defined]
-            code=code,
-            disclosed_date=disclosed_date,
-            disclosed_date_from=disclosed_date_from,
-            disclosed_date_to=disclosed_date_to,
-            calculated_date=calculated_date,
-        )
+        # 元の _get_markets_short_selling_positions_raw の実装を統合
+        url = f"{client.JQUANTS_API_BASE}/markets/short_selling_positions"  # type: ignore[attr-defined]
+        params = {}
+        if code != "":
+            params["code"] = code
+        if disclosed_date != "":
+            params["disclosed_date"] = disclosed_date
+        if disclosed_date_from != "":
+            params["disclosed_date_from"] = disclosed_date_from
+        if disclosed_date_to != "":
+            params["disclosed_date_to"] = disclosed_date_to
+        if calculated_date != "":
+            params["calculated_date"] = calculated_date
+        
+        ret = client._get(url, params)  # type: ignore[attr-defined]
+        ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+        j = ret.text
         d: Dict[str, Any] = json.loads(j)
         data: List[Dict[str, Any]] = d["short_selling_positions"]
         while "pagination_key" in d:
-            j = client._get_markets_short_selling_positions_raw(  # type: ignore[attr-defined]
-                code=code,
-                disclosed_date=disclosed_date,
-                disclosed_date_from=disclosed_date_from,
-                disclosed_date_to=disclosed_date_to,
-                calculated_date=calculated_date,
-                pagination_key=d["pagination_key"],
-            )
+            params["pagination_key"] = d["pagination_key"]
+            ret = client._get(url, params)  # type: ignore[attr-defined]
+            ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+            j = ret.text
             d = json.loads(j)
             data += d["short_selling_positions"]
         df = pd.DataFrame.from_dict(data)
@@ -330,22 +364,29 @@ class MarketsDailyMarginInterestApiV1(BaseApi):
         """
         `/markets/daily_margin_interest` を実行し、日々公表信用取引残高を DataFrame で返す。
         """
-        j = client._get_markets_daily_margin_interest_raw(  # type: ignore[attr-defined]
-            code=code,
-            from_yyyymmdd=from_yyyymmdd,
-            to_yyyymmdd=to_yyyymmdd,
-            date_yyyymmdd=date_yyyymmdd,
-        )
+        # 元の _get_markets_daily_margin_interest_raw の実装を統合
+        url = f"{client.JQUANTS_API_BASE}/markets/daily_margin_interest"  # type: ignore[attr-defined]
+        params = {}
+        if code != "":
+            params["code"] = code
+        if date_yyyymmdd != "":
+            params["date"] = date_yyyymmdd
+        else:
+            if from_yyyymmdd != "":
+                params["from"] = from_yyyymmdd
+            if to_yyyymmdd != "":
+                params["to"] = to_yyyymmdd
+        
+        ret = client._get(url, params)  # type: ignore[attr-defined]
+        ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+        j = ret.text
         d: Dict[str, Any] = json.loads(j)
         data: List[Dict[str, Any]] = d["daily_margin_interest"]
         while "pagination_key" in d:
-            j = client._get_markets_daily_margin_interest_raw(  # type: ignore[attr-defined]
-                code=code,
-                from_yyyymmdd=from_yyyymmdd,
-                to_yyyymmdd=to_yyyymmdd,
-                date_yyyymmdd=date_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
+            params["pagination_key"] = d["pagination_key"]
+            ret = client._get(url, params)  # type: ignore[attr-defined]
+            ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
+            j = ret.text
             d = json.loads(j)
             data += d["daily_margin_interest"]
         df = pd.json_normalize(data=data)
