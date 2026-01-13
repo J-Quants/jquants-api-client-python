@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List
+from typing import Any
 
 import pandas as pd  # type: ignore
 
@@ -35,8 +35,8 @@ class ListedInfoApiV1(BaseApi):
         url = f"{client.JQUANTS_API_BASE}/listed/info"
 
         # ページングしながら全件取得
-        all_info: List[Dict[str, Any]] = []
-        base_params: Dict[str, Any] = {}
+        all_info: list[dict[str, Any]] = []
+        base_params: dict[str, Any] = {}
         if code != "":
             base_params["code"] = code
         if date_yyyymmdd != "":

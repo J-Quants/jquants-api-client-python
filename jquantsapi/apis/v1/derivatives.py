@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict
+from typing import Any
 
 import pandas as pd  # type: ignore
 
@@ -36,7 +36,7 @@ class DerivativesFuturesApiV1(BaseApi):
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
-        d: Dict[str, Any] = json.loads(j)
+        d: dict[str, Any] = json.loads(j)
         data = d["futures"]
         while "pagination_key" in d:
             params["pagination_key"] = d["pagination_key"]
@@ -84,7 +84,7 @@ class DerivativesOptionsApiV1(BaseApi):
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
-        d: Dict[str, Any] = json.loads(j)
+        d: dict[str, Any] = json.loads(j)
         data = d["options"]
         while "pagination_key" in d:
             params["pagination_key"] = d["pagination_key"]
@@ -124,7 +124,7 @@ class OptionIndexOptionApiV1(BaseApi):
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
-        d: Dict[str, Any] = json.loads(j)
+        d: dict[str, Any] = json.loads(j)
         data = d["index_option"]
         while "pagination_key" in d:
             params["pagination_key"] = d["pagination_key"]

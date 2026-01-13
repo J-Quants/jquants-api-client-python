@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 import pandas as pd  # type: ignore
 
@@ -37,7 +37,7 @@ class BulkListApiV2(BaseApi):
         # BulkEndpointの場合はvalue(str)を取得
         endpoint_str = endpoint.value if isinstance(endpoint, BulkEndpoint) else endpoint
 
-        params: Dict[str, Any] = {"endpoint": endpoint_str}
+        params: dict[str, Any] = {"endpoint": endpoint_str}
 
         resp = client._get(url, params)  # type: ignore[arg-type]
         payload = resp.json()
@@ -83,7 +83,7 @@ class BulkGetApiV2(BaseApi):
         """
         url = f"{client.JQUANTS_API_BASE}/bulk/get"
 
-        params: Dict[str, Any] = {"key": key}
+        params: dict[str, Any] = {"key": key}
 
         resp = client._get(url, params)  # type: ignore[arg-type]
         payload = resp.json()

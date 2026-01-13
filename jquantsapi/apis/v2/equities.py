@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 import pandas as pd  # type: ignore
 
@@ -19,14 +19,14 @@ class EqMasterApiV2(BaseApi):
     version = "v2"
 
     def execute(self, client: Any, code: str = "", date: str = "") -> pd.DataFrame:
-        params: Dict[str, str] = {}
+        params: dict[str, str] = {}
         if code:
             params["code"] = code
         if date:
             params["date"] = date
 
         # ClientV2 の _get_paginated を利用する
-        data: List[Dict[str, Any]] = client._get_paginated(  # type: ignore[attr-defined]
+        data: list[dict[str, Any]] = client._get_paginated(  # type: ignore[attr-defined]
             "/equities/master", params=params, data_key="data"
         )
         cols = constants.EQ_MASTER_COLUMNS_V2
@@ -69,9 +69,7 @@ class EqBarsDailyApiV2(BaseApi):
             to_yyyymmdd: 取得終了日
             date_yyyymmdd: 取得日
         """
-        url = f"{client.JQUANTS_API_BASE}/equities/bars/daily"
-
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if code:
             params["code"] = code
         if date_yyyymmdd:
@@ -82,24 +80,10 @@ class EqBarsDailyApiV2(BaseApi):
             if to_yyyymmdd:
                 params["to"] = to_yyyymmdd
 
-        all_data: List[Dict[str, Any]] = []
-        pagination_key = ""
-
-        while True:
-            req_params = dict(params)
-            if pagination_key:
-                req_params["pagination_key"] = pagination_key
-
-            resp = client._get(url, req_params)  # type: ignore[arg-type]
-            payload = resp.json()
-
-            batch = payload.get("data", [])
-            if isinstance(batch, list):
-                all_data.extend(batch)
-
-            pagination_key = payload.get("pagination_key", "")
-            if not pagination_key:
-                break
+        all_data = client._get_paginated(  # type: ignore[attr-defined]
+            "/equities/bars/daily",
+            params=params,
+        )
 
         if not all_data:
             return pd.DataFrame()
@@ -136,30 +120,14 @@ class EqBarsDailyAmApiV2(BaseApi):
             client: v2 `ClientV2` インスタンスを想定
             code: 銘柄コード (5桁 or 4桁)。空文字の場合は全銘柄。
         """
-        url = f"{client.JQUANTS_API_BASE}/equities/bars/daily/am"
-
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if code:
             params["code"] = code
 
-        all_data: List[Dict[str, Any]] = []
-        pagination_key = ""
-
-        while True:
-            req_params = dict(params)
-            if pagination_key:
-                req_params["pagination_key"] = pagination_key
-
-            resp = client._get(url, req_params)  # type: ignore[arg-type]
-            payload = resp.json()
-
-            batch = payload.get("data", [])
-            if isinstance(batch, list):
-                all_data.extend(batch)
-
-            pagination_key = payload.get("pagination_key", "")
-            if not pagination_key:
-                break
+        all_data = client._get_paginated(  # type: ignore[attr-defined]
+            "/equities/bars/daily/am",
+            params=params,
+        )
 
         if not all_data:
             return pd.DataFrame()
@@ -202,9 +170,7 @@ class EqBarsMinuteApiV2(BaseApi):
             to_yyyymmdd: 取得終了日
             date_yyyymmdd: 取得日
         """
-        url = f"{client.JQUANTS_API_BASE}/equities/bars/minute"
-
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if code:
             params["code"] = code
         if date_yyyymmdd:
@@ -215,24 +181,10 @@ class EqBarsMinuteApiV2(BaseApi):
             if to_yyyymmdd:
                 params["to"] = to_yyyymmdd
 
-        all_data: List[Dict[str, Any]] = []
-        pagination_key = ""
-
-        while True:
-            req_params = dict(params)
-            if pagination_key:
-                req_params["pagination_key"] = pagination_key
-
-            resp = client._get(url, req_params)  # type: ignore[arg-type]
-            payload = resp.json()
-
-            batch = payload.get("data", [])
-            if isinstance(batch, list):
-                all_data.extend(batch)
-
-            pagination_key = payload.get("pagination_key", "")
-            if not pagination_key:
-                break
+        all_data = client._get_paginated(  # type: ignore[attr-defined]
+            "/equities/bars/minute",
+            params=params,
+        )
 
         cols = constants.EQ_BARS_MINUTE_COLUMNS_V2
         if not all_data:
@@ -274,9 +226,7 @@ class EqInvestorTypesApiV2(BaseApi):
             from_yyyymmdd: 期間開始日
             to_yyyymmdd: 期間終了日
         """
-        url = f"{client.JQUANTS_API_BASE}/equities/investor-types"
-
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if section:
             params["section"] = section
         if from_yyyymmdd:
@@ -284,24 +234,10 @@ class EqInvestorTypesApiV2(BaseApi):
         if to_yyyymmdd:
             params["to"] = to_yyyymmdd
 
-        all_data: List[Dict[str, Any]] = []
-        pagination_key = ""
-
-        while True:
-            req_params = dict(params)
-            if pagination_key:
-                req_params["pagination_key"] = pagination_key
-
-            resp = client._get(url, req_params)  # type: ignore[arg-type]
-            payload = resp.json()
-
-            batch = payload.get("data", [])
-            if isinstance(batch, list):
-                all_data.extend(batch)
-
-            pagination_key = payload.get("pagination_key", "")
-            if not pagination_key:
-                break
+        all_data = client._get_paginated(  # type: ignore[attr-defined]
+            "/equities/investor-types",
+            params=params,
+        )
 
         if not all_data:
             return pd.DataFrame()
@@ -333,27 +269,12 @@ class EqEarningsCalApiV2(BaseApi):
         """
         `/equities/earnings-calendar` を実行し、決算発表予定データを DataFrame で返す。
         """
-        url = f"{client.JQUANTS_API_BASE}/equities/earnings-calendar"
+        params: dict[str, Any] = {}
 
-        all_data: List[Dict[str, Any]] = []
-        pagination_key = ""
-        params: Dict[str, Any] = {}
-
-        while True:
-            req_params = dict(params)
-            if pagination_key:
-                req_params["pagination_key"] = pagination_key
-
-            resp = client._get(url, req_params)  # type: ignore[arg-type]
-            payload = resp.json()
-
-            batch = payload.get("data", [])
-            if isinstance(batch, list):
-                all_data.extend(batch)
-
-            pagination_key = payload.get("pagination_key", "")
-            if not pagination_key:
-                break
+        all_data = client._get_paginated(  # type: ignore[attr-defined]
+            "/equities/earnings-calendar",
+            params=params,
+        )
 
         if not all_data:
             return pd.DataFrame()

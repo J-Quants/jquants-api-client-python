@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 import pandas as pd  # type: ignore
 
@@ -25,7 +25,7 @@ class DrvBarsDailyFutApiV2(BaseApi):
         category: str = "",
         contract_flag: str = "",
     ) -> pd.DataFrame:
-        params: Dict[str, Any] = {"date": date_yyyymmdd}
+        params: dict[str, Any] = {"date": date_yyyymmdd}
         if category:
             params["category"] = category
         if contract_flag:
@@ -40,7 +40,7 @@ class DrvBarsDailyFutApiV2(BaseApi):
         df = pd.DataFrame.from_records(data)
         if "Date" in df.columns:
             df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        sort_cols: List[str] = []
+        sort_cols: list[str] = []
         if "Code" in df.columns:
             sort_cols.append("Code")
         if "Date" in df.columns:
@@ -69,7 +69,7 @@ class DrvBarsDailyOptApiV2(BaseApi):
         contract_flag: str = "",
         code: str = "",
     ) -> pd.DataFrame:
-        params: Dict[str, Any] = {"date": date_yyyymmdd}
+        params: dict[str, Any] = {"date": date_yyyymmdd}
         if category:
             params["category"] = category
         if contract_flag:
@@ -87,7 +87,7 @@ class DrvBarsDailyOptApiV2(BaseApi):
         df = pd.DataFrame.from_records(data)
         if "Date" in df.columns:
             df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        sort_cols: List[str] = []
+        sort_cols: list[str] = []
         if "Code" in df.columns:
             sort_cols.append("Code")
         if "Date" in df.columns:
@@ -113,7 +113,7 @@ class DrvBarsDailyOpt225ApiV2(BaseApi):
         *,
         date_yyyymmdd: str,
     ) -> pd.DataFrame:
-        params: Dict[str, Any] = {"date": date_yyyymmdd}
+        params: dict[str, Any] = {"date": date_yyyymmdd}
 
         data = client._get_paginated(  # type: ignore[attr-defined]
             "/derivatives/bars/daily/options/225",
@@ -125,7 +125,7 @@ class DrvBarsDailyOpt225ApiV2(BaseApi):
         df = pd.DataFrame.from_records(data)
         if "Date" in df.columns:
             df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        sort_cols: List[str] = []
+        sort_cols: list[str] = []
         if "Code" in df.columns:
             sort_cols.append("Code")
         if "Date" in df.columns:

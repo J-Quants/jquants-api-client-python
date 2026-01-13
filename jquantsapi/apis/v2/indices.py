@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 import pandas as pd  # type: ignore
 
@@ -26,7 +26,7 @@ class IdxBarsDailyApiV2(BaseApi):
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
     ) -> pd.DataFrame:
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if code:
             params["code"] = code
         # v1 と同様: date があれば date 優先、なければ from/to
@@ -45,7 +45,7 @@ class IdxBarsDailyApiV2(BaseApi):
         df = pd.DataFrame.from_records(data)
         if "Date" in df.columns:
             df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-            sort_cols: List[str] = []
+            sort_cols: list[str] = []
             if "Code" in df.columns:
                 sort_cols.append("Code")
             sort_cols.append("Date")
@@ -70,7 +70,7 @@ class IdxBarsDailyTopixApiV2(BaseApi):
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
     ) -> pd.DataFrame:
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if from_yyyymmdd:
             params["from"] = from_yyyymmdd
         if to_yyyymmdd:

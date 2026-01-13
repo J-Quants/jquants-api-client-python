@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 import pandas as pd  # type: ignore
 
@@ -26,31 +26,16 @@ class FinSummaryApiV2(BaseApi):
         """
         `/fins/summary` を実行し、財務情報サマリを DataFrame で返す。
         """
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if code:
             params["code"] = code
         if date_yyyymmdd:
             params["date"] = date_yyyymmdd
 
-        all_data: List[Dict[str, Any]] = []
-        pagination_key = ""
-        url = f"{client.JQUANTS_API_BASE}/fins/summary"
-
-        while True:
-            req_params = dict(params)
-            if pagination_key:
-                req_params["pagination_key"] = pagination_key
-
-            resp = client._get(url, req_params)  # type: ignore[arg-type]
-            payload = resp.json()
-
-            batch = payload.get("data", [])
-            if isinstance(batch, list):
-                all_data.extend(batch)
-
-            pagination_key = payload.get("pagination_key", "")
-            if not pagination_key:
-                break
+        all_data = client._get_paginated(  # type: ignore[attr-defined]
+            "/fins/summary",
+            params=params,
+        )
 
         if not all_data:
             return pd.DataFrame()
@@ -94,31 +79,16 @@ class FinDetailsApiV2(BaseApi):
         """
         `/fins/details` を実行し、財務諸表詳細を DataFrame で返す。
         """
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if code:
             params["code"] = code
         if date_yyyymmdd:
             params["date"] = date_yyyymmdd
 
-        all_data: List[Dict[str, Any]] = []
-        pagination_key = ""
-        url = f"{client.JQUANTS_API_BASE}/fins/details"
-
-        while True:
-            req_params = dict(params)
-            if pagination_key:
-                req_params["pagination_key"] = pagination_key
-
-            resp = client._get(url, req_params)  # type: ignore[arg-type]
-            payload = resp.json()
-
-            batch = payload.get("data", [])
-            if isinstance(batch, list):
-                all_data.extend(batch)
-
-            pagination_key = payload.get("pagination_key", "")
-            if not pagination_key:
-                break
+        all_data = client._get_paginated(  # type: ignore[attr-defined]
+            "/fins/details",
+            params=params,
+        )
 
         if not all_data:
             return pd.DataFrame()
@@ -152,7 +122,7 @@ class FinDividendApiV2(BaseApi):
         """
         `/fins/dividend` を実行し、配当金情報を DataFrame で返す。
         """
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if code:
             params["code"] = code
         if date_yyyymmdd:
@@ -163,25 +133,10 @@ class FinDividendApiV2(BaseApi):
             if to_yyyymmdd:
                 params["to"] = to_yyyymmdd
 
-        all_data: List[Dict[str, Any]] = []
-        pagination_key = ""
-        url = f"{client.JQUANTS_API_BASE}/fins/dividend"
-
-        while True:
-            req_params = dict(params)
-            if pagination_key:
-                req_params["pagination_key"] = pagination_key
-
-            resp = client._get(url, req_params)  # type: ignore[arg-type]
-            payload = resp.json()
-
-            batch = payload.get("data", [])
-            if isinstance(batch, list):
-                all_data.extend(batch)
-
-            pagination_key = payload.get("pagination_key", "")
-            if not pagination_key:
-                break
+        all_data = client._get_paginated(  # type: ignore[attr-defined]
+            "/fins/dividend",
+            params=params,
+        )
 
         if not all_data:
             return pd.DataFrame()

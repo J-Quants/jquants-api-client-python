@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 import pandas as pd  # type: ignore
 
@@ -47,8 +47,8 @@ class MarketsTradesSpecApiV1(BaseApi):
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
-        d: Dict[str, Any] = json.loads(j)
-        data: List[Dict[str, Any]] = d["trades_spec"]
+        d: dict[str, Any] = json.loads(j)
+        data: list[dict[str, Any]] = d["trades_spec"]
         while "pagination_key" in d:
             params["pagination_key"] = d["pagination_key"]
             ret = client._get(url, params)  # type: ignore[attr-defined]
@@ -101,8 +101,8 @@ class MarketsWeeklyMarginInterestApiV1(BaseApi):
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
-        d: Dict[str, Any] = json.loads(j)
-        data: List[Dict[str, Any]] = d["weekly_margin_interest"]
+        d: dict[str, Any] = json.loads(j)
+        data: list[dict[str, Any]] = d["weekly_margin_interest"]
         while "pagination_key" in d:
             params["pagination_key"] = d["pagination_key"]
             ret = client._get(url, params)  # type: ignore[attr-defined]
@@ -151,7 +151,7 @@ class MarketsTradingCalendarApiV1(BaseApi):
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
-        d: Dict[str, Any] = json.loads(j)
+        d: dict[str, Any] = json.loads(j)
         df = pd.DataFrame.from_dict(d["trading_calendar"])
         cols = constants.MARKETS_TRADING_CALENDAR
         if len(df) == 0:
@@ -195,8 +195,8 @@ class MarketsShortSellingApiV1(BaseApi):
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
-        d: Dict[str, Any] = json.loads(j)
-        data: List[Dict[str, Any]] = d["short_selling"]
+        d: dict[str, Any] = json.loads(j)
+        data: list[dict[str, Any]] = d["short_selling"]
         while "pagination_key" in d:
             params["pagination_key"] = d["pagination_key"]
             ret = client._get(url, params)  # type: ignore[attr-defined]
@@ -247,8 +247,8 @@ class MarketsBreakdownApiV1(BaseApi):
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
-        d: Dict[str, Any] = json.loads(j)
-        data: List[Dict[str, Any]] = d["breakdown"]
+        d: dict[str, Any] = json.loads(j)
+        data: list[dict[str, Any]] = d["breakdown"]
         while "pagination_key" in d:
             params["pagination_key"] = d["pagination_key"]
             ret = client._get(url, params)  # type: ignore[attr-defined]
@@ -303,8 +303,8 @@ class MarketsShortSellingPositionsApiV1(BaseApi):
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
-        d: Dict[str, Any] = json.loads(j)
-        data: List[Dict[str, Any]] = d["short_selling_positions"]
+        d: dict[str, Any] = json.loads(j)
+        data: list[dict[str, Any]] = d["short_selling_positions"]
         while "pagination_key" in d:
             params["pagination_key"] = d["pagination_key"]
             ret = client._get(url, params)  # type: ignore[attr-defined]
@@ -365,8 +365,8 @@ class MarketsDailyMarginInterestApiV1(BaseApi):
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
-        d: Dict[str, Any] = json.loads(j)
-        data: List[Dict[str, Any]] = d["daily_margin_interest"]
+        d: dict[str, Any] = json.loads(j)
+        data: list[dict[str, Any]] = d["daily_margin_interest"]
         while "pagination_key" in d:
             params["pagination_key"] = d["pagination_key"]
             ret = client._get(url, params)  # type: ignore[attr-defined]

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict
+from typing import Any
 
 import pandas as pd  # type: ignore
 
@@ -40,7 +40,7 @@ class IndicesApiV1(BaseApi):
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
-        d: Dict[str, Any] = json.loads(j)
+        d: dict[str, Any] = json.loads(j)
         data = d["indices"]
         while "pagination_key" in d:
             params["pagination_key"] = d["pagination_key"]
@@ -85,7 +85,7 @@ class IndicesTopixApiV1(BaseApi):
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
-        d: Dict[str, Any] = json.loads(j)
+        d: dict[str, Any] = json.loads(j)
         data = d["topix"]
         while "pagination_key" in d:
             params["pagination_key"] = d["pagination_key"]

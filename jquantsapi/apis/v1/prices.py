@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List
+from typing import Any
 
 import pandas as pd  # type: ignore
 
@@ -37,7 +37,7 @@ class PricesDailyQuotesApiV1(BaseApi):
             date_yyyymmdd: 取得日
         """
         url = f"{client.JQUANTS_API_BASE}/prices/daily_quotes"  # type: ignore[attr-defined]
-        params: Dict[str, Any] = {"code": code}
+        params: dict[str, Any] = {"code": code}
         if date_yyyymmdd != "":
             params["date"] = date_yyyymmdd
         else:
@@ -46,7 +46,7 @@ class PricesDailyQuotesApiV1(BaseApi):
             if to_yyyymmdd != "":
                 params["to"] = to_yyyymmdd
 
-        data: List[Dict[str, Any]] = []
+        data: list[dict[str, Any]] = []
         pagination_key: str = ""
         while True:
             req_params = dict(params)
@@ -55,7 +55,7 @@ class PricesDailyQuotesApiV1(BaseApi):
 
             resp = client._get(url, req_params)  # type: ignore[arg-type]
             resp.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
-            d: Dict[str, Any] = json.loads(resp.text)
+            d: dict[str, Any] = json.loads(resp.text)
             page = d.get("daily_quotes", [])
             if isinstance(page, list):
                 data.extend(page)
@@ -101,14 +101,14 @@ class PricesPricesAmApiV1(BaseApi):
             code: issue code (e.g. 27800 or 2780)
         """
         url = f"{client.JQUANTS_API_BASE}/prices/prices_am"  # type: ignore[attr-defined]
-        params: Dict[str, Any] = {"code": code}
+        params: dict[str, Any] = {"code": code}
 
         resp = client._get(url, params)  # type: ignore[arg-type]
         resp.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
-        d: Dict[str, Any] = json.loads(resp.text)
+        d: dict[str, Any] = json.loads(resp.text)
         if d.get("message"):
             return d["message"]  # type: ignore[return-value]
-        data: List[Dict[str, Any]] = d.get("prices_am", [])
+        data: list[dict[str, Any]] = d.get("prices_am", [])
         while "pagination_key" in d:
             req_params = dict(params)
             req_params["pagination_key"] = d["pagination_key"]

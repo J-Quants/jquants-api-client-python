@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 import pandas as pd  # type: ignore
 
@@ -28,7 +28,7 @@ class MktShortRatioApiV2(BaseApi):
         """
         `/markets/short-ratio` を実行し、業種別空売り比率データを DataFrame で返す。
         """
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if sector_33_code:
             params["s33"] = sector_33_code
         if date_yyyymmdd:
@@ -39,25 +39,10 @@ class MktShortRatioApiV2(BaseApi):
             if to_yyyymmdd:
                 params["to"] = to_yyyymmdd
 
-        all_data: List[Dict[str, Any]] = []
-        pagination_key = ""
-        url = f"{client.JQUANTS_API_BASE}/markets/short-ratio"
-
-        while True:
-            req_params = dict(params)
-            if pagination_key:
-                req_params["pagination_key"] = pagination_key
-
-            resp = client._get(url, req_params)  # type: ignore[arg-type]
-            payload = resp.json()
-
-            batch = payload.get("data", [])
-            if isinstance(batch, list):
-                all_data.extend(batch)
-
-            pagination_key = payload.get("pagination_key", "")
-            if not pagination_key:
-                break
+        all_data = client._get_paginated(  # type: ignore[attr-defined]
+            "/markets/short-ratio",
+            params=params,
+        )
 
         if not all_data:
             return pd.DataFrame()
@@ -95,7 +80,7 @@ class MktShortSaleReportApiV2(BaseApi):
         """
         `/markets/short-sale-report` を実行し、空売り残高報告データを DataFrame で返す。
         """
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if code:
             params["code"] = code
         if disclosed_date:
@@ -107,25 +92,10 @@ class MktShortSaleReportApiV2(BaseApi):
         if calculated_date:
             params["calc_date"] = calculated_date
 
-        all_data: List[Dict[str, Any]] = []
-        pagination_key = ""
-        url = f"{client.JQUANTS_API_BASE}/markets/short-sale-report"
-
-        while True:
-            req_params = dict(params)
-            if pagination_key:
-                req_params["pagination_key"] = pagination_key
-
-            resp = client._get(url, req_params)  # type: ignore[arg-type]
-            payload = resp.json()
-
-            batch = payload.get("data", [])
-            if isinstance(batch, list):
-                all_data.extend(batch)
-
-            pagination_key = payload.get("pagination_key", "")
-            if not pagination_key:
-                break
+        all_data = client._get_paginated(  # type: ignore[attr-defined]
+            "/markets/short-sale-report",
+            params=params,
+        )
 
         if not all_data:
             return pd.DataFrame()
@@ -160,7 +130,7 @@ class MktMarginInterestApiV2(BaseApi):
         """
         `/markets/margin-interest` を実行し、信用取引週末残高を DataFrame で返す。
         """
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if code:
             params["code"] = code
         if date_yyyymmdd:
@@ -207,7 +177,7 @@ class MktBreakdownApiV2(BaseApi):
         """
         `/markets/breakdown` を実行し、売買内訳データを DataFrame で返す。
         """
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if code:
             params["code"] = code
         if date_yyyymmdd:
@@ -257,7 +227,7 @@ class MktMarginAlertApiV2(BaseApi):
         """
         `/markets/margin-alert` を実行し、日々公表信用取引残高を DataFrame で返す。
         """
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if code:
             params["code"] = code
         if date_yyyymmdd:
@@ -303,7 +273,7 @@ class MktCalendarApiV2(BaseApi):
         """
         `/markets/calendar` を実行し、取引カレンダーデータを DataFrame で返す。
         """
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if holiday_division:
             params["hol_div"] = holiday_division
         if from_yyyymmdd:

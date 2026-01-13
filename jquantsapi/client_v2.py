@@ -4,7 +4,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 import pandas as pd  # type: ignore
 import requests
@@ -181,8 +181,8 @@ class ClientV2:
 
     def _request_session(
         self,
-        status_forcelist: Optional[List[int]] = None,
-        allowed_methods: Optional[List[str]] = None,
+        status_forcelist: Optional[list[int]] = None,
+        allowed_methods: Optional[list[str]] = None,
     ) -> requests.Session:
         """
         requests の session を取得し、リトライ設定を行う
@@ -208,7 +208,7 @@ class ClientV2:
 
         return self._session
 
-    def _base_headers(self) -> Dict[str, str]:
+    def _base_headers(self) -> dict[str, str]:
         """
         J-Quants API v2 にアクセスする際の共通ヘッダを生成
         """
@@ -218,7 +218,7 @@ class ClientV2:
             f"p/{platform.python_version()}",
         }
 
-    def _get(self, url: str, params: Optional[Dict[str, Any]] = None) -> requests.Response:
+    def _get(self, url: str, params: Optional[dict[str, Any]] = None) -> requests.Response:
         """
         GET リクエスト用ラッパー
         """
@@ -231,9 +231,9 @@ class ClientV2:
     def _get_paginated(
         self,
         path: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[dict[str, Any]] = None,
         data_key: str = "data",
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         pagination_key に対応した共通 GET ヘルパー
 
@@ -245,8 +245,8 @@ class ClientV2:
             List[Dict[str, Any]]: 連結済みのデータ配列
         """
         url = f"{self.JQUANTS_API_BASE}{path}"
-        all_data: List[Dict[str, Any]] = []
-        query: Dict[str, Any] = dict(params or {})
+        all_data: list[dict[str, Any]] = []
+        query: dict[str, Any] = dict(params or {})
 
         while True:
             resp = self._get(url, params=query)
@@ -1313,12 +1313,21 @@ class ClientV2:
         Args:
             key: get_bulk_listで取得したKey
             output_path: ダウンロードファイルの保存先パス
+
+        Raises:
+            ValueError: output_path が空文字列の場合
         """
+        # バリデーション
+        if not output_path or not output_path.strip():
+            raise ValueError("output_path must not be empty")
+
         # ダウンロード URL を取得
         url = self._bulk_get_api.execute(self, key=key)
 
         # ディレクトリが存在しない場合は作成
-        os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+        output_dir = os.path.dirname(os.path.abspath(output_path))
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
 
         # ファイルをダウンロード
         session = self._request_session()

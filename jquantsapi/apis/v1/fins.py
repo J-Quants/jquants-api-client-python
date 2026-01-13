@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List
+from typing import Any
 
 import pandas as pd  # type: ignore
 
@@ -28,9 +28,9 @@ class FinsStatementsApiV1(BaseApi):
         `/fins/statements` を実行し、財務情報を DataFrame で返す。
         """
         url = f"{client.JQUANTS_API_BASE}/fins/statements"  # type: ignore[attr-defined]
-        params: Dict[str, Any] = {"code": code, "date": date_yyyymmdd}
+        params: dict[str, Any] = {"code": code, "date": date_yyyymmdd}
 
-        data: List[Dict[str, Any]] = []
+        data: list[dict[str, Any]] = []
         pagination_key: str = ""
         while True:
             req_params = dict(params)
@@ -39,7 +39,7 @@ class FinsStatementsApiV1(BaseApi):
 
             resp = client._get(url, req_params)  # type: ignore[arg-type]
             resp.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
-            d: Dict[str, Any] = json.loads(resp.text)
+            d: dict[str, Any] = json.loads(resp.text)
             page = d.get("statements", [])
             if isinstance(page, list):
                 data.extend(page)
@@ -93,9 +93,9 @@ class FinsFsDetailsApiV1(BaseApi):
         `/fins/fs_details` を実行し、財務諸表(BS/PL)を DataFrame で返す。
         """
         url = f"{client.JQUANTS_API_BASE}/fins/fs_details"  # type: ignore[attr-defined]
-        params: Dict[str, Any] = {"code": code, "date": date_yyyymmdd}
+        params: dict[str, Any] = {"code": code, "date": date_yyyymmdd}
 
-        data: List[Dict[str, Any]] = []
+        data: list[dict[str, Any]] = []
         pagination_key: str = ""
         while True:
             req_params = dict(params)
@@ -104,7 +104,7 @@ class FinsFsDetailsApiV1(BaseApi):
 
             resp = client._get(url, req_params)  # type: ignore[arg-type]
             resp.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
-            d: Dict[str, Any] = json.loads(resp.text)
+            d: dict[str, Any] = json.loads(resp.text)
             page = d.get("fs_details", [])
             if isinstance(page, list):
                 data.extend(page)
@@ -142,7 +142,7 @@ class FinsDividendApiV1(BaseApi):
         `/fins/dividend` を実行し、配当金情報を DataFrame で返す。
         """
         url = f"{client.JQUANTS_API_BASE}/fins/dividend"  # type: ignore[attr-defined]
-        params: Dict[str, Any] = {"code": code}
+        params: dict[str, Any] = {"code": code}
         if date_yyyymmdd != "":
             params["date"] = date_yyyymmdd
         else:
@@ -151,7 +151,7 @@ class FinsDividendApiV1(BaseApi):
             if to_yyyymmdd != "":
                 params["to"] = to_yyyymmdd
 
-        data: List[Dict[str, Any]] = []
+        data: list[dict[str, Any]] = []
         pagination_key: str = ""
         while True:
             req_params = dict(params)
@@ -160,7 +160,7 @@ class FinsDividendApiV1(BaseApi):
 
             resp = client._get(url, req_params)  # type: ignore[arg-type]
             resp.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
-            d: Dict[str, Any] = json.loads(resp.text)
+            d: dict[str, Any] = json.loads(resp.text)
             page = d.get("dividend", [])
             if isinstance(page, list):
                 data.extend(page)
@@ -195,9 +195,9 @@ class FinsAnnouncementApiV1(BaseApi):
         `/fins/announcement` を実行し、決算発表予定データを DataFrame で返す。
         """
         url = f"{client.JQUANTS_API_BASE}/fins/announcement"  # type: ignore[attr-defined]
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
 
-        data: List[Dict[str, Any]] = []
+        data: list[dict[str, Any]] = []
         pagination_key: str = ""
         while True:
             req_params = dict(params)
@@ -206,7 +206,7 @@ class FinsAnnouncementApiV1(BaseApi):
 
             resp = client._get(url, req_params)  # type: ignore[arg-type]
             resp.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
-            d: Dict[str, Any] = json.loads(resp.text)
+            d: dict[str, Any] = json.loads(resp.text)
             page = d.get("announcement", [])
             if isinstance(page, list):
                 data.extend(page)

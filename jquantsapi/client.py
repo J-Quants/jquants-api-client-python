@@ -5,7 +5,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
-from typing import Any, List, Mapping, Optional, Union
+from typing import Any, Mapping, Optional, Union
 
 import pandas as pd  # type: ignore
 import requests
@@ -229,8 +229,8 @@ class Client:
 
     def _request_session(
         self,
-        status_forcelist: Optional[List[int]] = None,
-        allowed_methods: Optional[List[str]] = None,
+        status_forcelist: Optional[list[int]] = None,
+        allowed_methods: Optional[list[str]] = None,
     ) -> requests.Session:
         """
         requests の session 取得
