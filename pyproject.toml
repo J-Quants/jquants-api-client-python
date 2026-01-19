@@ -38,8 +38,8 @@ tenacity = "^8.2.0"
 black = "^24.3.0"
 isort = "^5.10.1"
 flake8 = "^5.0.0"
+Flake8-pyproject = "^1.2.0"
 mypy = "^1.9.0"
-pyproject-flake8 = "^5.0.0"
 pytest = "8.1.1"
 pytest-cov = "^5.0.0"
 types-requests = "^2.31.0"
@@ -54,7 +54,7 @@ max-line-length = 120
 max-complexity = 18
 ignore = "E203,E266,W503,"
 per-file-ignores = "__init__.py:F401"
-exclude = ".venv"
+exclude = ".venv,tests"
 
 [tool.isort]
 profile = "black"

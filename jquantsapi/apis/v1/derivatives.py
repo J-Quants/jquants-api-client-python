@@ -21,9 +21,10 @@ class DerivativesFuturesApiV1(BaseApi):
         self,
         client: SupportsRequest,
         *,
-        date_yyyymmdd: str,
+        date_yyyymmdd: str = "",
         category: str = "",
         contract_flag: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         # 元の _get_derivatives_futures_raw の実装を統合
         url = f"{client.JQUANTS_API_BASE}/derivatives/futures"  # type: ignore[attr-defined]
@@ -67,10 +68,11 @@ class DerivativesOptionsApiV1(BaseApi):
         self,
         client: SupportsRequest,
         *,
-        date_yyyymmdd: str,
+        date_yyyymmdd: str = "",
         category: str = "",
         contract_flag: str = "",
         code: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         # 元の _get_derivatives_options_raw の実装を統合
         url = f"{client.JQUANTS_API_BASE}/derivatives/options"  # type: ignore[attr-defined]
@@ -115,7 +117,8 @@ class OptionIndexOptionApiV1(BaseApi):
         self,
         client: SupportsRequest,
         *,
-        date_yyyymmdd: str,
+        date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         # 元の _get_option_index_option_raw の実装を統合
         url = f"{client.JQUANTS_API_BASE}/option/index_option"  # type: ignore[attr-defined]

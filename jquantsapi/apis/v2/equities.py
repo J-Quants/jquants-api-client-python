@@ -18,7 +18,9 @@ class EqMasterApiV2(BaseApi):
     name = "eq_master"
     version = "v2"
 
-    def execute(self, client: Any, code: str = "", date: str = "") -> pd.DataFrame:
+    def execute(
+        self, client: Any, code: str = "", date: str = "", **kwargs: Any
+    ) -> pd.DataFrame:
         params: dict[str, str] = {}
         if code:
             params["code"] = code
@@ -58,6 +60,7 @@ class EqBarsDailyApiV2(BaseApi):
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         v2 `/equities/bars/daily` を実行し、株価四本値を DataFrame で返す。
@@ -112,6 +115,7 @@ class EqBarsDailyAmApiV2(BaseApi):
         client: SupportsRequest,
         *,
         code: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         v2 `/equities/bars/daily/am` を実行し、前場四本値を DataFrame で返す。
@@ -159,6 +163,7 @@ class EqBarsMinuteApiV2(BaseApi):
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         v2 `/equities/bars/minute` を実行し、分足を DataFrame で返す。
@@ -216,6 +221,7 @@ class EqInvestorTypesApiV2(BaseApi):
         section: str = "",
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         v2 `/equities/investor-types` を実行し、投資部門別売買状況を DataFrame で返す。
@@ -265,6 +271,7 @@ class EqEarningsCalApiV2(BaseApi):
     def execute(
         self,
         client: SupportsRequest,
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/equities/earnings-calendar` を実行し、決算発表予定データを DataFrame で返す。

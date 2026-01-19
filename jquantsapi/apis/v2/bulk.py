@@ -23,7 +23,8 @@ class BulkListApiV2(BaseApi):
         self,
         client: SupportsRequest,
         *,
-        endpoint: Union[str, BulkEndpoint],
+        endpoint: Union[str, BulkEndpoint] = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         v2 `/bulk/list` を実行し、取得可能なデータ一覧を DataFrame で返す。
@@ -71,7 +72,8 @@ class BulkGetApiV2(BaseApi):
         self,
         client: SupportsRequest,
         *,
-        key: str,
+        key: str = "",
+        **kwargs: Any,
     ) -> str:
         """
         v2 `/bulk/get` を実行し、ダウンロードURLを取得する。

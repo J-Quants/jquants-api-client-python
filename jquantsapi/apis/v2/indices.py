@@ -25,6 +25,7 @@ class IdxBarsDailyApiV2(BaseApi):
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         params: dict[str, Any] = {}
         if code:
@@ -69,6 +70,7 @@ class IdxBarsDailyTopixApiV2(BaseApi):
         *,
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         params: dict[str, Any] = {}
         if from_yyyymmdd:

@@ -25,6 +25,7 @@ class IndicesApiV1(BaseApi):
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         # 元の _get_indices_raw の実装を統合
         url = f"{client.JQUANTS_API_BASE}/indices"  # type: ignore[attr-defined]
@@ -73,6 +74,7 @@ class IndicesTopixApiV1(BaseApi):
         *,
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         # 元の _get_indices_topix_raw の実装を統合
         url = f"{client.JQUANTS_API_BASE}/indices/topix"  # type: ignore[attr-defined]

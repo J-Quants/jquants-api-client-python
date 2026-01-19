@@ -23,6 +23,7 @@ class FinsStatementsApiV1(BaseApi):
         *,
         code: str = "",
         date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/fins/statements` を実行し、財務情報を DataFrame で返す。
@@ -88,6 +89,7 @@ class FinsFsDetailsApiV1(BaseApi):
         *,
         code: str = "",
         date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/fins/fs_details` を実行し、財務諸表(BS/PL)を DataFrame で返す。
@@ -137,6 +139,7 @@ class FinsDividendApiV1(BaseApi):
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/fins/dividend` を実行し、配当金情報を DataFrame で返す。
@@ -190,6 +193,7 @@ class FinsAnnouncementApiV1(BaseApi):
     def execute(
         self,
         client: SupportsRequest,
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/fins/announcement` を実行し、決算発表予定データを DataFrame で返す。

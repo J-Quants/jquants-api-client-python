@@ -24,6 +24,7 @@ class MktShortRatioApiV2(BaseApi):
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/markets/short-ratio` を実行し、業種別空売り比率データを DataFrame で返す。
@@ -76,6 +77,7 @@ class MktShortSaleReportApiV2(BaseApi):
         disclosed_date_from: str = "",
         disclosed_date_to: str = "",
         calculated_date: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/markets/short-sale-report` を実行し、空売り残高報告データを DataFrame で返す。
@@ -126,6 +128,7 @@ class MktMarginInterestApiV2(BaseApi):
         date_yyyymmdd: str = "",
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/markets/margin-interest` を実行し、信用取引週末残高を DataFrame で返す。
@@ -173,6 +176,7 @@ class MktBreakdownApiV2(BaseApi):
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/markets/breakdown` を実行し、売買内訳データを DataFrame で返す。
@@ -223,6 +227,7 @@ class MktMarginAlertApiV2(BaseApi):
         date_yyyymmdd: str = "",
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/markets/margin-alert` を実行し、日々公表信用取引残高を DataFrame で返す。
@@ -269,6 +274,7 @@ class MktCalendarApiV2(BaseApi):
         holiday_division: str = "",
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/markets/calendar` を実行し、取引カレンダーデータを DataFrame で返す。

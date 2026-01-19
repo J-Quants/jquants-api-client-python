@@ -23,6 +23,7 @@ class ListedInfoApiV1(BaseApi):
         *,
         code: str = "",
         date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         v1 `/listed/info` を実行し、上場銘柄情報を DataFrame で返す。

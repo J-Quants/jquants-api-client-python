@@ -25,6 +25,7 @@ class PricesDailyQuotesApiV1(BaseApi):
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/prices/daily_quotes` を実行し、株価情報を DataFrame で返す。
@@ -92,6 +93,7 @@ class PricesPricesAmApiV1(BaseApi):
         client: SupportsRequest,
         *,
         code: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/prices/prices_am` を実行し、前場四本値を DataFrame で返す。

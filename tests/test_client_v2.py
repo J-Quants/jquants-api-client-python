@@ -1,6 +1,6 @@
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
@@ -208,8 +208,8 @@ def test_get_eq_bars_daily(code, from_yyyymmdd, to_yyyymmdd, date_yyyymmdd, exp_
             to_yyyymmdd=to_yyyymmdd,
             date_yyyymmdd=date_yyyymmdd,
         )
-        args, _ = mock_get.call_args
-        assert args[1] == exp_params
+        _, kwargs = mock_get.call_args
+        assert kwargs["params"] == exp_params
         assert len(ret) == exp_ret_len
 
 
@@ -240,13 +240,19 @@ def test_get_eq_bars_daily_range():
     for _fmt, (start, end) in formats.items():
         cli.get_eq_bars_daily_range(start, end)
 
-        assert mock.mock_calls == [
-            call(date_yyyymmdd="2020-02-27"),
-            call(date_yyyymmdd="2020-02-28"),
-            call(date_yyyymmdd="2020-02-29"),
-            call(date_yyyymmdd="2020-03-01"),
-            call(date_yyyymmdd="2020-03-02"),
-        ]
+        # 並列実行のため順序は保証されないので、セットとして比較
+        expected_dates = {
+            "2020-02-27",
+            "2020-02-28",
+            "2020-02-29",
+            "2020-03-01",
+            "2020-03-02",
+        }
+        actual_dates = {
+            call_obj.kwargs["date_yyyymmdd"] for call_obj in mock.mock_calls
+        }
+        assert actual_dates == expected_dates
+        assert len(mock.mock_calls) == 5
         mock.reset_mock()
 
 

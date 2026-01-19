@@ -24,6 +24,7 @@ class MarketsTradesSpecApiV1(BaseApi):
         section: Union[str, enums.MARKET_API_SECTIONS] = "",
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/markets/trades_spec` を実行し、投資部門別売買状況を DataFrame で返す。
@@ -83,6 +84,7 @@ class MarketsWeeklyMarginInterestApiV1(BaseApi):
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/markets/weekly_margin_interest` を実行し、信用取引週末残高を DataFrame で返す。
@@ -134,6 +136,7 @@ class MarketsTradingCalendarApiV1(BaseApi):
         holiday_division: str = "",
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/markets/trading_calendar` を実行し、取引カレンダーデータを DataFrame で返す。
@@ -177,6 +180,7 @@ class MarketsShortSellingApiV1(BaseApi):
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/markets/short_selling` を実行し、業種別空売り比率データを DataFrame で返す。
@@ -229,6 +233,7 @@ class MarketsBreakdownApiV1(BaseApi):
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/markets/breakdown` を実行し、売買内訳データを DataFrame で返す。
@@ -282,6 +287,7 @@ class MarketsShortSellingPositionsApiV1(BaseApi):
         disclosed_date_from: str = "",
         disclosed_date_to: str = "",
         calculated_date: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/markets/short_selling_positions` を実行し、空売り残高報告データを DataFrame で返す。
@@ -345,6 +351,7 @@ class MarketsDailyMarginInterestApiV1(BaseApi):
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/markets/daily_margin_interest` を実行し、日々公表信用取引残高を DataFrame で返す。

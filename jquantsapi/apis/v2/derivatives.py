@@ -21,9 +21,10 @@ class DrvBarsDailyFutApiV2(BaseApi):
         self,
         client: SupportsRequest,
         *,
-        date_yyyymmdd: str,
+        date_yyyymmdd: str = "",
         category: str = "",
         contract_flag: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         params: dict[str, Any] = {"date": date_yyyymmdd}
         if category:
@@ -64,10 +65,11 @@ class DrvBarsDailyOptApiV2(BaseApi):
         self,
         client: SupportsRequest,
         *,
-        date_yyyymmdd: str,
+        date_yyyymmdd: str = "",
         category: str = "",
         contract_flag: str = "",
         code: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         params: dict[str, Any] = {"date": date_yyyymmdd}
         if category:
@@ -111,7 +113,8 @@ class DrvBarsDailyOpt225ApiV2(BaseApi):
         self,
         client: SupportsRequest,
         *,
-        date_yyyymmdd: str,
+        date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         params: dict[str, Any] = {"date": date_yyyymmdd}
 

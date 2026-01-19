@@ -1,4 +1,3 @@
-import json
 import os
 import platform
 import sys
@@ -50,7 +49,7 @@ else:
     import tomli as tomllib
 
 if sys.version_info >= (3, 13):
-    from warnings import deprecated
+    from warnings import deprecated  # type: ignore[attr-defined]
 else:
     from typing_extensions import deprecated
 

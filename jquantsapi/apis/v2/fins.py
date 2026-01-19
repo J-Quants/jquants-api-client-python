@@ -22,6 +22,7 @@ class FinSummaryApiV2(BaseApi):
         *,
         code: str = "",
         date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/fins/summary` を実行し、財務情報サマリを DataFrame で返す。
@@ -75,6 +76,7 @@ class FinDetailsApiV2(BaseApi):
         *,
         code: str = "",
         date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/fins/details` を実行し、財務諸表詳細を DataFrame で返す。
@@ -118,6 +120,7 @@ class FinDividendApiV2(BaseApi):
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/fins/dividend` を実行し、配当金情報を DataFrame で返す。
