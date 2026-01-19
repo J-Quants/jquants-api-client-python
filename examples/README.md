@@ -6,6 +6,16 @@ jquants-api-client-python の使用例集です。データの取得方法や分
 
 Google Colab での使用例です。実際に実行することも可能となっていますのでご活用ください。
 
+### V2 API (ClientV2)
+
+| ファイル                                                                                 | 内容                                                                              |                                                                                                       Colab で開く                                                                                                        |
+| :--------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| [20260119-007-jquants-api-v2-starter.ipynb](20260119-007-jquants-api-v2-starter.ipynb)   | J-Quants API V2 の使い方や ClientV2 を使った基本的なデータ取得方法を解説します。  |   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/J-Quants/jquants-api-client-python/blob/master/examples/20260119-007-jquants-api-v2-starter.ipynb)   |
+
+### V1 API (Client) - Deprecated
+
+> **⚠️ 非推奨**: 以下のノートブックは `Client` クラス (V1) を使用しています。V1 API は非推奨となりました。新規の開発には上記の V2 API (ClientV2) をご利用ください。
+
 | ファイル                                                                                 | 内容                                                                              |                                                                                                       Colab で開く                                                                                                        |
 | :--------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
 | [20220825-000-write-refresh_token.ipynb](20220825-000-write-refresh_token.ipynb)         | リフレッシュトークンを Google Drive のファイルに書き込みます。                    |   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/J-Quants/jquants-api-client-python/blob/master/examples/20220825-000-write-refresh_token.ipynb)   |

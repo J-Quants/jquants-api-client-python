@@ -1,11 +1,10 @@
-import json
 import os
 import platform
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
-from typing import Any, List, Mapping, Optional, Union
+from typing import Any, Mapping, Optional, Union
 
 import pandas as pd  # type: ignore
 import requests
@@ -20,11 +19,39 @@ from tenacity import (
 from urllib3.util import Retry
 
 from jquantsapi import __version__, constants, enums
+from jquantsapi.apis.v1.derivatives import (
+    DerivativesFuturesApiV1,
+    DerivativesOptionsApiV1,
+    OptionIndexOptionApiV1,
+)
+from jquantsapi.apis.v1.fins import (
+    FinsAnnouncementApiV1,
+    FinsDividendApiV1,
+    FinsFsDetailsApiV1,
+    FinsStatementsApiV1,
+)
+from jquantsapi.apis.v1.indices import IndicesApiV1, IndicesTopixApiV1
+from jquantsapi.apis.v1.listed import ListedInfoApiV1
+from jquantsapi.apis.v1.markets import (
+    MarketsBreakdownApiV1,
+    MarketsDailyMarginInterestApiV1,
+    MarketsShortSellingApiV1,
+    MarketsShortSellingPositionsApiV1,
+    MarketsTradesSpecApiV1,
+    MarketsTradingCalendarApiV1,
+    MarketsWeeklyMarginInterestApiV1,
+)
+from jquantsapi.apis.v1.prices import PricesDailyQuotesApiV1, PricesPricesAmApiV1
 
 if sys.version_info >= (3, 11):
     import tomllib
 else:
     import tomli as tomllib
+
+if sys.version_info >= (3, 13):
+    from warnings import deprecated  # type: ignore[attr-defined]
+else:
+    from typing_extensions import deprecated
 
 
 DatetimeLike = Union[datetime, pd.Timestamp, str]
@@ -35,10 +62,16 @@ class TokenAuthRefreshBadRequestException(Exception):
     pass
 
 
+@deprecated(
+    "Client (V1) is deprecated and will be removed in a future version. Please use ClientV2 instead."
+)
 class Client:
     """
     J-Quants API からデータを取得する
     ref. https://jpx.gitbook.io/j-quants-ja/
+
+    .. deprecated::
+        This class is deprecated. Use :class:`ClientV2` instead.
     """
 
     JQUANTS_API_BASE = "https://api.jquants.com/v1"
@@ -84,6 +117,28 @@ class Client:
         self._id_token = ""
         self._id_token_expire = pd.Timestamp.utcnow()
         self._session: Optional[requests.Session] = None
+
+        # API 実装 (v1)
+        self._listed_info_api = ListedInfoApiV1()
+        self._prices_daily_quotes_api = PricesDailyQuotesApiV1()
+        self._prices_prices_am_api = PricesPricesAmApiV1()
+        self._markets_trades_spec_api = MarketsTradesSpecApiV1()
+        self._markets_weekly_margin_interest_api = MarketsWeeklyMarginInterestApiV1()
+        self._indices_api = IndicesApiV1()
+        self._indices_topix_api = IndicesTopixApiV1()
+        self._derivatives_futures_api = DerivativesFuturesApiV1()
+        self._derivatives_options_api = DerivativesOptionsApiV1()
+        self._option_index_option_api = OptionIndexOptionApiV1()
+        self._markets_weekly_margin_interest_api = MarketsWeeklyMarginInterestApiV1()
+        self._markets_short_selling_api = MarketsShortSellingApiV1()
+        self._markets_breakdown_api = MarketsBreakdownApiV1()
+        self._markets_short_selling_positions_api = MarketsShortSellingPositionsApiV1()
+        self._markets_daily_margin_interest_api = MarketsDailyMarginInterestApiV1()
+        self._markets_trading_calendar_api = MarketsTradingCalendarApiV1()
+        self._fins_statements_api = FinsStatementsApiV1()
+        self._fins_fs_details_api = FinsFsDetailsApiV1()
+        self._fins_dividend_api = FinsDividendApiV1()
+        self._fins_announcement_api = FinsAnnouncementApiV1()
 
         if ((self._mail_address == "") or (self._password == "")) and (
             self._refresh_token == ""
@@ -175,8 +230,8 @@ class Client:
 
     def _request_session(
         self,
-        status_forcelist: Optional[List[int]] = None,
-        allowed_methods: Optional[List[str]] = None,
+        status_forcelist: Optional[list[int]] = None,
+        allowed_methods: Optional[list[str]] = None,
     ) -> requests.Session:
         """
         requests の session 取得
@@ -355,33 +410,6 @@ class Client:
         self._id_token_expire = pd.Timestamp.utcnow() + pd.Timedelta(23, unit="hour")
         return self._id_token
 
-    # /listed
-    def _get_listed_info_raw(
-        self, code: str = "", date_yyyymmdd: str = "", pagination_key: str = ""
-    ) -> str:
-        """
-        Get listed companies raw API returns
-
-        Args:
-            code: Issue code (Optional)
-            date: YYYYMMDD or YYYY-MM-DD (Optional)
-            pagination_key: ページングキー
-
-        Returns:
-            str: listed companies raw json string
-        """
-        url = f"{self.JQUANTS_API_BASE}/listed/info"
-        params = {}
-        if code != "":
-            params["code"] = code
-        if date_yyyymmdd != "":
-            params["date"] = date_yyyymmdd
-        if pagination_key != "":
-            params["pagination_key"] = pagination_key
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
-
     def get_listed_info(self, code: str = "", date_yyyymmdd: str = "") -> pd.DataFrame:
         """
         Get listed companies
@@ -393,29 +421,11 @@ class Client:
         Returns:
             pd.DataFrame: listed companies (sorted by Code)
         """
-        j = self._get_listed_info_raw(code=code, date_yyyymmdd=date_yyyymmdd)
-        d = json.loads(j)
-        data = d["info"]
-        while "pagination_key" in d:
-            j = self._get_listed_info_raw(
-                code=code,
-                date_yyyymmdd=date_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
-            d = json.loads(j)
-            data += d["info"]
-        df = pd.DataFrame.from_dict(data)
-
-        standard_premium_flag = "MarginCode" in df.columns
-        if standard_premium_flag:
-            cols = constants.LISTED_INFO_STANDARD_PREMIUM_COLUMNS
-        else:
-            cols = constants.LISTED_INFO_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
-        df.sort_values("Code", inplace=True)
-        return df[cols]
+        return self._listed_info_api.execute(
+            self,
+            code=code,
+            date_yyyymmdd=date_yyyymmdd,
+        )
 
     @staticmethod
     def get_market_segments() -> pd.DataFrame:
@@ -493,45 +503,6 @@ class Client:
         df_list.sort_values("Code", inplace=True)
         return df_list
 
-    # /prices
-    def _get_prices_daily_quotes_raw(
-        self,
-        code: str = "",
-        from_yyyymmdd: str = "",
-        to_yyyymmdd: str = "",
-        date_yyyymmdd: str = "",
-        pagination_key: str = "",
-    ) -> str:
-        """
-        get daily quotes raw API returns
-
-        Args:
-            code: 銘柄コード
-            from_yyyymmdd: 取得開始日
-            to_yyyymmdd: 取得終了日
-            date_yyyymmdd: 取得日
-            pagination_key: ページングキー
-
-        Returns:
-            str: daily quotes
-        """
-        url = f"{self.JQUANTS_API_BASE}/prices/daily_quotes"
-        params = {
-            "code": code,
-        }
-        if date_yyyymmdd != "":
-            params["date"] = date_yyyymmdd
-        else:
-            if from_yyyymmdd != "":
-                params["from"] = from_yyyymmdd
-            if to_yyyymmdd != "":
-                params["to"] = to_yyyymmdd
-        if pagination_key != "":
-            params["pagination_key"] = pagination_key
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
-
     def get_prices_daily_quotes(
         self,
         code: str = "",
@@ -551,35 +522,13 @@ class Client:
         Returns:
             pd.DataFrame: 株価情報 (Code, Date列でソートされています)
         """
-        j = self._get_prices_daily_quotes_raw(
+        return self._prices_daily_quotes_api.execute(
+            self,
             code=code,
             from_yyyymmdd=from_yyyymmdd,
             to_yyyymmdd=to_yyyymmdd,
             date_yyyymmdd=date_yyyymmdd,
         )
-        d = json.loads(j)
-        data = d["daily_quotes"]
-        while "pagination_key" in d:
-            j = self._get_prices_daily_quotes_raw(
-                code=code,
-                from_yyyymmdd=from_yyyymmdd,
-                to_yyyymmdd=to_yyyymmdd,
-                date_yyyymmdd=date_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
-            d = json.loads(j)
-            data += d["daily_quotes"]
-        df = pd.DataFrame.from_dict(data)
-        premium_flag = "MorningClose" in df.columns
-        if premium_flag:
-            cols = constants.PRICES_DAILY_QUOTES_PREMIUM_COLUMNS
-        else:
-            cols = constants.PRICES_DAILY_QUOTES_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
-        df.sort_values(["Code", "Date"], inplace=True)
-        return df[cols]
 
     def get_price_range(
         self,
@@ -612,33 +561,6 @@ class Client:
                 buff.append(df)
         return pd.concat(buff).sort_values(["Code", "Date"])
 
-    def _get_prices_prices_am_raw(
-        self,
-        code: str = "",
-        pagination_key: str = "",
-    ) -> str:
-        """
-        get the morning session's high, low, opening, and closing prices for individual stocks raw API returns
-
-        Args:
-            code: issue code (e.g. 27800 or 2780)
-                If a 4-character issue code is specified, only the data of common stock will be obtained
-                for the issue on which both common and preferred stocks are listed.
-            pagination_key: ページングキー
-
-        Returns:
-            str: the morning session's OHLC data
-        """
-        url = f"{self.JQUANTS_API_BASE}/prices/prices_am"
-        params = {
-            "code": code,
-        }
-        if pagination_key != "":
-            params["pagination_key"] = pagination_key
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
-
     def get_prices_prices_am(
         self,
         code: str = "",
@@ -652,62 +574,9 @@ class Client:
                 for the issue on which both common and preferred stocks are listed.
         Returns: pd.DataFrame: the morning session's OHLC data
         """
-        j = self._get_prices_prices_am_raw(
-            code=code,
-        )
-        d = json.loads(j)
-        if d.get("message"):
-            return d["message"]
-        data = d["prices_am"]
-        while "pagination_key" in d:
-            j = self._get_prices_prices_am_raw(
-                code=code,
-                pagination_key=d["pagination_key"],
-            )
-            d = json.loads(j)
-            data += d["prices_am"]
-        df = pd.DataFrame.from_dict(data)
-        cols = constants.PRICES_PRICES_AM_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
-        df.sort_values(["Code"], inplace=True)
-        return df[cols]
+        return self._prices_prices_am_api.execute(self, code=code)
 
     # /markets
-    def _get_markets_trades_spec_raw(
-        self,
-        section: Union[str, enums.MARKET_API_SECTIONS] = "",
-        from_yyyymmdd: str = "",
-        to_yyyymmdd: str = "",
-        pagination_key: str = "",
-    ) -> str:
-        """
-        Weekly Trading by Type of Investors raw API returns
-
-        Args:
-            section: section name (e.g. "TSEPrime" or MARKET_API_SECTIONS.TSEPrime)
-            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
-            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
-            pagination_key: ページングキー
-
-        Returns:
-            str: Weekly Trading by Type of Investors
-        """
-        url = f"{self.JQUANTS_API_BASE}/markets/trades_spec"
-        params = {}
-        if section != "":
-            params["section"] = section
-        if from_yyyymmdd != "":
-            params["from"] = from_yyyymmdd
-        if to_yyyymmdd != "":
-            params["to"] = to_yyyymmdd
-        if pagination_key != "":
-            params["pagination_key"] = pagination_key
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
-
     def get_markets_trades_spec(
         self,
         section: Union[str, enums.MARKET_API_SECTIONS] = "",
@@ -724,68 +593,12 @@ class Client:
         Returns:
             pd.DataFrame: Weekly Trading by Type of Investors (Sorted by "PublishedDate" and "Section" columns)
         """
-        j = self._get_markets_trades_spec_raw(
-            section=section, from_yyyymmdd=from_yyyymmdd, to_yyyymmdd=to_yyyymmdd
+        return self._markets_trades_spec_api.execute(
+            self,
+            section=section,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
         )
-        d = json.loads(j)
-        data = d["trades_spec"]
-        while "pagination_key" in d:
-            j = self._get_markets_trades_spec_raw(
-                section=section,
-                from_yyyymmdd=from_yyyymmdd,
-                to_yyyymmdd=to_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
-            d = json.loads(j)
-            data += d["trades_spec"]
-        df = pd.DataFrame.from_dict(data)
-        cols = constants.MARKETS_TRADES_SPEC
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["PublishedDate"] = pd.to_datetime(df["PublishedDate"], format="%Y-%m-%d")
-        df["StartDate"] = pd.to_datetime(df["StartDate"], format="%Y-%m-%d")
-        df["EndDate"] = pd.to_datetime(df["EndDate"], format="%Y-%m-%d")
-        df.sort_values(["PublishedDate", "Section"], inplace=True)
-        return df[cols]
-
-    def _get_markets_weekly_margin_interest_raw(
-        self,
-        code: str = "",
-        from_yyyymmdd: str = "",
-        to_yyyymmdd: str = "",
-        date_yyyymmdd: str = "",
-        pagination_key: str = "",
-    ) -> str:
-        """
-        get weekly margin interest raw API returns
-
-        Args:
-            code: issue code (e.g. 27800 or 2780)
-                If a 4-character issue code is specified, only the data of common stock will be obtained
-                for the issue on which both common and preferred stocks are listed.
-            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
-            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
-            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
-            pagination_key: ページングキー
-        Returns:
-            str: weekly margin interest
-        """
-        url = f"{self.JQUANTS_API_BASE}/markets/weekly_margin_interest"
-        params = {
-            "code": code,
-        }
-        if date_yyyymmdd != "":
-            params["date"] = date_yyyymmdd
-        else:
-            if from_yyyymmdd != "":
-                params["from"] = from_yyyymmdd
-            if to_yyyymmdd != "":
-                params["to"] = to_yyyymmdd
-        if pagination_key != "":
-            params["pagination_key"] = pagination_key
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
 
     def get_markets_weekly_margin_interest(
         self,
@@ -807,31 +620,13 @@ class Client:
         Returns:
             pd.DataFrame: weekly margin interest (Sorted by "Date" and "Code" columns)
         """
-        j = self._get_markets_weekly_margin_interest_raw(
+        return self._markets_weekly_margin_interest_api.execute(
+            self,
             code=code,
             from_yyyymmdd=from_yyyymmdd,
             to_yyyymmdd=to_yyyymmdd,
             date_yyyymmdd=date_yyyymmdd,
         )
-        d = json.loads(j)
-        data = d["weekly_margin_interest"]
-        while "pagination_key" in d:
-            j = self._get_markets_weekly_margin_interest_raw(
-                code=code,
-                from_yyyymmdd=from_yyyymmdd,
-                to_yyyymmdd=to_yyyymmdd,
-                date_yyyymmdd=date_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
-            d = json.loads(j)
-            data += d["weekly_margin_interest"]
-        df = pd.DataFrame.from_dict(data)
-        cols = constants.MARKETS_WEEKLY_MARGIN_INTEREST
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
-        df.sort_values(["Date", "Code"], inplace=True)
-        return df[cols]
 
     def get_weekly_margin_range(
         self,
@@ -865,43 +660,6 @@ class Client:
                 buff.append(df)
         return pd.concat(buff).sort_values(["Code", "Date"])
 
-    def _get_markets_short_selling_raw(
-        self,
-        sector_33_code: str = "",
-        from_yyyymmdd: str = "",
-        to_yyyymmdd: str = "",
-        date_yyyymmdd: str = "",
-        pagination_key: str = "",
-    ) -> str:
-        """
-        get daily short sale ratios and trading value by industry (sector) raw API returns
-
-        Args:
-            sector_33_code: 33-sector code (e.g. 0050 or 8050)
-            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
-            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
-            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
-            pagination_key: ページングキー
-        Returns:
-            str: daily short sale ratios and trading value by industry
-        """
-        url = f"{self.JQUANTS_API_BASE}/markets/short_selling"
-        params = {
-            "sector33code": sector_33_code,
-        }
-        if date_yyyymmdd != "":
-            params["date"] = date_yyyymmdd
-        else:
-            if from_yyyymmdd != "":
-                params["from"] = from_yyyymmdd
-            if to_yyyymmdd != "":
-                params["to"] = to_yyyymmdd
-        if pagination_key != "":
-            params["pagination_key"] = date_yyyymmdd
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
-
     def get_markets_short_selling(
         self,
         sector_33_code: str = "",
@@ -921,32 +679,13 @@ class Client:
             pd.DataFrame:
                 daily short sale ratios and trading value by industry (Sorted by "Date" and "Sector33Code" columns)
         """
-        j = self._get_markets_short_selling_raw(
+        return self._markets_short_selling_api.execute(
+            self,
             sector_33_code=sector_33_code,
             from_yyyymmdd=from_yyyymmdd,
             to_yyyymmdd=to_yyyymmdd,
             date_yyyymmdd=date_yyyymmdd,
         )
-
-        d = json.loads(j)
-        data = d["short_selling"]
-        while "pagination_key" in d:
-            j = self._get_markets_short_selling_raw(
-                sector_33_code=sector_33_code,
-                from_yyyymmdd=from_yyyymmdd,
-                to_yyyymmdd=to_yyyymmdd,
-                date_yyyymmdd=date_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
-            d = json.loads(j)
-            data += d["short_selling"]
-        df = pd.DataFrame.from_dict(data)
-        cols = constants.MARKET_SHORT_SELLING_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
-        df.sort_values(["Date", "Sector33Code"], inplace=True)
-        return df[cols]
 
     def get_short_selling_range(
         self,
@@ -979,45 +718,6 @@ class Client:
                 buff.append(df)
         return pd.concat(buff).sort_values(["Sector33Code", "Date"])
 
-    def _get_markets_breakdown_raw(
-        self,
-        code: str = "",
-        from_yyyymmdd: str = "",
-        to_yyyymmdd: str = "",
-        date_yyyymmdd: str = "",
-        pagination_key: str = "",
-    ) -> str:
-        """
-        get detail breakdown trading data raw API returns
-
-        Args:
-            code: issue code (e.g. 27800 or 2780)
-                If a 4-character issue code is specified, only the data of common stock will be obtained
-                for the issue on which both common and preferred stocks are listed.
-            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
-            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
-            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
-            pagination_key: ページングキー
-        Returns:
-            str: detail breakdown trading data
-        """
-        url = f"{self.JQUANTS_API_BASE}/markets/breakdown"
-        params = {
-            "code": code,
-        }
-        if date_yyyymmdd != "":
-            params["date"] = date_yyyymmdd
-        else:
-            if from_yyyymmdd != "":
-                params["from"] = from_yyyymmdd
-            if to_yyyymmdd != "":
-                params["to"] = to_yyyymmdd
-        if pagination_key != "":
-            params["pagination_key"] = pagination_key
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
-
     def get_markets_breakdown(
         self,
         code: str = "",
@@ -1038,31 +738,13 @@ class Client:
         Returns:
             pd.DataFrame: detail breakdown trading data (Sorted by "Code")
         """
-        j = self._get_markets_breakdown_raw(
+        return self._markets_breakdown_api.execute(
+            self,
             code=code,
             from_yyyymmdd=from_yyyymmdd,
             to_yyyymmdd=to_yyyymmdd,
             date_yyyymmdd=date_yyyymmdd,
         )
-        d = json.loads(j)
-        data = d["breakdown"]
-        while "pagination_key" in d:
-            j = self._get_markets_breakdown_raw(
-                code=code,
-                from_yyyymmdd=from_yyyymmdd,
-                to_yyyymmdd=to_yyyymmdd,
-                date_yyyymmdd=date_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
-            d = json.loads(j)
-            data += d["breakdown"]
-        df = pd.DataFrame.from_dict(data)
-        cols = constants.MARKETS_BREAKDOWN_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
-        df.sort_values(["Code"], inplace=True)
-        return df[cols]
 
     def get_breakdown_range(
         self,
@@ -1097,43 +779,6 @@ class Client:
 
     # /indices
 
-    def _get_indices_raw(
-        self,
-        code: str = "",
-        from_yyyymmdd: str = "",
-        to_yyyymmdd: str = "",
-        date_yyyymmdd: str = "",
-        pagination_key: str = "",
-    ) -> str:
-        """
-        Indices Daily OHLC raw API returns
-
-        Args:
-            code: 指数コード
-            from_yyyymmdd: 取得開始日
-            to_yyyymmdd: 取得終了日
-            date_yyyymmdd: 取得日
-            pagination_key: ページングキー
-        Returns:
-            str: Indices Daily OHLC
-        """
-        url = f"{self.JQUANTS_API_BASE}/indices"
-        params = {
-            "code": code,
-        }
-        if date_yyyymmdd != "":
-            params["date"] = date_yyyymmdd
-        else:
-            if from_yyyymmdd != "":
-                params["from"] = from_yyyymmdd
-            if to_yyyymmdd != "":
-                params["to"] = to_yyyymmdd
-        if pagination_key != "":
-            params["pagination_key"] = pagination_key
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
-
     def get_indices(
         self,
         code: str = "",
@@ -1152,59 +797,13 @@ class Client:
         Returns:
             pd.DataFrame: Indices Daily OHLC (Sorted by "Code", "Date" column)
         """
-        j = self._get_indices_raw(
+        return self._indices_api.execute(
+            self,
             code=code,
             from_yyyymmdd=from_yyyymmdd,
             to_yyyymmdd=to_yyyymmdd,
             date_yyyymmdd=date_yyyymmdd,
         )
-        d = json.loads(j)
-        data = d["indices"]
-        while "pagination_key" in d:
-            j = self._get_indices_raw(
-                code=code,
-                from_yyyymmdd=from_yyyymmdd,
-                to_yyyymmdd=to_yyyymmdd,
-                date_yyyymmdd=date_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
-            d = json.loads(j)
-            data += d["indices"]
-        df = pd.DataFrame.from_dict(data)
-        cols = constants.INDICES_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
-        df.sort_values(["Code", "Date"], inplace=True)
-        return df[cols]
-
-    def _get_indices_topix_raw(
-        self,
-        from_yyyymmdd: str = "",
-        to_yyyymmdd: str = "",
-        pagination_key: str = "",
-    ) -> str:
-        """
-        TOPIX Daily OHLC raw API returns
-
-        Args:
-            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
-            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
-            pagination_key: ページングキー
-        Returns:
-            str: TOPIX Daily OHLC
-        """
-        url = f"{self.JQUANTS_API_BASE}/indices/topix"
-        params = {}
-        if from_yyyymmdd != "":
-            params["from"] = from_yyyymmdd
-        if to_yyyymmdd != "":
-            params["to"] = to_yyyymmdd
-        if pagination_key != "":
-            params["pagination_key"] = pagination_key
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
 
     def get_indices_topix(
         self,
@@ -1220,53 +819,11 @@ class Client:
         Returns:
             pd.DataFrame: TOPIX Daily OHLC (Sorted by "Date" column)
         """
-        j = self._get_indices_topix_raw(
-            from_yyyymmdd=from_yyyymmdd, to_yyyymmdd=to_yyyymmdd
+        return self._indices_topix_api.execute(
+            self,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
         )
-        d = json.loads(j)
-        data = d["topix"]
-        while "pagination_key" in d:
-            j = self._get_indices_topix_raw(
-                from_yyyymmdd=from_yyyymmdd,
-                to_yyyymmdd=to_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
-            d = json.loads(j)
-            data += d["topix"]
-        df = pd.DataFrame.from_dict(data)
-        cols = constants.INDICES_TOPIX_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
-        df.sort_values(["Date"], inplace=True)
-        return df[cols]
-
-    # /fins
-    def _get_fins_statements_raw(
-        self, code: str = "", date_yyyymmdd: str = "", pagination_key: str = ""
-    ) -> str:
-        """
-        get fins statements raw API return
-
-        Args:
-            code: 銘柄コード
-            date_yyyymmdd: 日付(YYYYMMDD or YYYY-MM-DD)
-            pagination_key: ページングキー
-
-        Returns:
-            str: fins statements
-        """
-        url = f"{self.JQUANTS_API_BASE}/fins/statements"
-        params = {
-            "code": code,
-            "date": date_yyyymmdd,
-        }
-        if pagination_key != "":
-            params["pagination_key"] = pagination_key
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-
-        return ret.text
 
     def get_fins_statements(
         self, code: str = "", date_yyyymmdd: str = ""
@@ -1281,42 +838,11 @@ class Client:
         Returns:
             pd.DataFrame: 財務情報 (DisclosedDate, DisclosedTime, 及びLocalCode列でソートされています)
         """
-        j = self._get_fins_statements_raw(code=code, date_yyyymmdd=date_yyyymmdd)
-        d = json.loads(j)
-        data = d["statements"]
-        while "pagination_key" in d:
-            j = self._get_fins_statements_raw(
-                code=code,
-                date_yyyymmdd=date_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
-            d = json.loads(j)
-            data += d["statements"]
-        df = pd.DataFrame.from_dict(data)
-        cols = constants.FINS_STATEMENTS_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["DisclosedDate"] = pd.to_datetime(df["DisclosedDate"], format="%Y-%m-%d")
-        df["CurrentPeriodStartDate"] = pd.to_datetime(
-            df["CurrentPeriodStartDate"], format="%Y-%m-%d"
+        return self._fins_statements_api.execute(
+            self,
+            code=code,
+            date_yyyymmdd=date_yyyymmdd,
         )
-        df["CurrentPeriodEndDate"] = pd.to_datetime(
-            df["CurrentPeriodEndDate"], format="%Y-%m-%d"
-        )
-        df["CurrentFiscalYearStartDate"] = pd.to_datetime(
-            df["CurrentFiscalYearStartDate"], format="%Y-%m-%d"
-        )
-        df["CurrentFiscalYearEndDate"] = pd.to_datetime(
-            df["CurrentFiscalYearEndDate"], format="%Y-%m-%d"
-        )
-        df["NextFiscalYearStartDate"] = pd.to_datetime(
-            df["NextFiscalYearStartDate"], format="%Y-%m-%d"
-        )
-        df["NextFiscalYearEndDate"] = pd.to_datetime(
-            df["NextFiscalYearEndDate"], format="%Y-%m-%d"
-        )
-        df.sort_values(["DisclosedDate", "DisclosedTime", "LocalCode"], inplace=True)
-        return df[cols]
 
     def get_statements_range(
         self,
@@ -1394,32 +920,6 @@ class Client:
             ["DisclosedDate", "DisclosedTime", "LocalCode"]
         )
 
-    def _get_fins_fs_details_raw(
-        self, code: str = "", date_yyyymmdd: str = "", pagination_key: str = ""
-    ) -> str:
-        """
-        get fins fs_details raw API return
-
-        Args:
-            code: 銘柄コード
-            date_yyyymmdd: 開示日(YYYYMMDD or YYYY-MM-DD)
-            pagination_key: ページングキー
-
-        Returns:
-            str: fins fs_details
-        """
-        url = f"{self.JQUANTS_API_BASE}/fins/fs_details"
-        params = {
-            "code": code,
-            "date": date_yyyymmdd,
-        }
-        if pagination_key != "":
-            params["pagination_key"] = pagination_key
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-
-        return ret.text
-
     def get_fins_fs_details(
         self, code: str = "", date_yyyymmdd: str = ""
     ) -> pd.DataFrame:
@@ -1433,24 +933,11 @@ class Client:
         Returns:
             pd.DataFrame: 財務諸表(BS/PL) (DisclosedDate, DisclosedTime, 及びLocalCode列でソートされています)
         """
-        j = self._get_fins_fs_details_raw(code=code, date_yyyymmdd=date_yyyymmdd)
-        d = json.loads(j)
-        data = d["fs_details"]
-        while "pagination_key" in d:
-            j = self._get_fins_fs_details_raw(
-                code=code,
-                date_yyyymmdd=date_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
-            d = json.loads(j)
-            data += d["fs_details"]
-        df = pd.json_normalize(data=data)
-        cols = constants.FINS_FS_DETAILS_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["DisclosedDate"] = pd.to_datetime(df["DisclosedDate"], format="%Y-%m-%d")
-        df.sort_values(["DisclosedDate", "DisclosedTime", "LocalCode"], inplace=True)
-        return df
+        return self._fins_fs_details_api.execute(
+            self,
+            code=code,
+            date_yyyymmdd=date_yyyymmdd,
+        )
 
     def get_fs_details_range(
         self,
@@ -1510,45 +997,6 @@ class Client:
             ["DisclosedDate", "DisclosedTime", "LocalCode"]
         )
 
-    def _get_fins_dividend_raw(
-        self,
-        code: str = "",
-        from_yyyymmdd: str = "",
-        to_yyyymmdd: str = "",
-        date_yyyymmdd: str = "",
-        pagination_key: str = "",
-    ) -> str:
-        """
-        get  information on dividends (determined and forecast) per share of listed companies etc.. raw API returns
-
-        Args:
-            code: issue code (e.g. 27800 or 2780)
-                If a 4-character issue code is specified, only the data of common stock will be obtained
-                for the issue on which both common and preferred stocks are listed.
-            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
-            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
-            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
-            pagination_key: ページングキー
-        Returns:
-            str: information on dividends data
-        """
-        url = f"{self.JQUANTS_API_BASE}/fins/dividend"
-        params = {
-            "code": code,
-        }
-        if date_yyyymmdd != "":
-            params["date"] = date_yyyymmdd
-        else:
-            if from_yyyymmdd != "":
-                params["from"] = from_yyyymmdd
-            if to_yyyymmdd != "":
-                params["to"] = to_yyyymmdd
-        if pagination_key != "":
-            params["pagination_key"] = pagination_key
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
-
     def get_fins_dividend(
         self,
         code: str = "",
@@ -1569,33 +1017,13 @@ class Client:
         Returns:
             pd.DataFrame: information on dividends data (Sorted by "Code")
         """
-        j = self._get_fins_dividend_raw(
+        return self._fins_dividend_api.execute(
+            self,
             code=code,
             from_yyyymmdd=from_yyyymmdd,
             to_yyyymmdd=to_yyyymmdd,
             date_yyyymmdd=date_yyyymmdd,
         )
-        d = json.loads(j)
-        data = d["dividend"]
-        while "pagination_key" in d:
-            j = self._get_fins_dividend_raw(
-                code=code,
-                from_yyyymmdd=from_yyyymmdd,
-                to_yyyymmdd=to_yyyymmdd,
-                date_yyyymmdd=date_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
-            d = json.loads(j)
-            data += d["dividend"]
-        df = pd.DataFrame.from_dict(data)
-        cols = constants.FINS_DIVIDEND_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["AnnouncementDate"] = pd.to_datetime(
-            df["AnnouncementDate"], format="%Y-%m-%d"
-        )
-        df.sort_values(["Code"], inplace=True)
-        return df[cols]
 
     def get_dividend_range(
         self,
@@ -1630,27 +1058,6 @@ class Client:
             ["AnnouncementDate", "AnnouncementTime", "Code"]
         )
 
-    def _get_fins_announcement_raw(
-        self,
-        pagination_key: str = "",
-    ) -> str:
-        """
-        get fin announcement raw API returns
-
-        Args:
-            pagination_key: ページングキー
-
-        Returns:
-            str: Schedule of financial announcement
-        """
-        url = f"{self.JQUANTS_API_BASE}/fins/announcement"
-        params = {}
-        if pagination_key != "":
-            params["pagination_key"] = pagination_key
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
-
     def get_fins_announcement(self) -> pd.DataFrame:
         """
         get fin announcement
@@ -1661,45 +1068,7 @@ class Client:
         Returns:
             pd.DataFrame: Schedule of financial announcement
         """
-        j = self._get_fins_announcement_raw()
-        d = json.loads(j)
-        data = d["announcement"]
-        while "pagination_key" in d:
-            j = self._get_fins_announcement_raw(pagination_key=d["pagination_key"])
-            d = json.loads(j)
-            data += d["announcement"]
-        df = pd.DataFrame.from_dict(data)
-        cols = constants.FINS_ANNOUNCEMENT_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
-        df.sort_values(["Date", "Code"], inplace=True)
-        return df[cols]
-
-    # /option
-    def _get_option_index_option_raw(
-        self,
-        date_yyyymmdd,
-        pagination_key: str = "",
-    ) -> str:
-        """
-        get information on the OHLC etc. of Nikkei 225 raw API returns
-
-        Args:
-            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
-            pagination_key: ページングキー
-        Returns:
-            str: Nikkei 225 Options' OHLC etc.
-        """
-        url = f"{self.JQUANTS_API_BASE}/option/index_option"
-        params = {
-            "date": date_yyyymmdd,
-        }
-        if pagination_key != "":
-            params["pagination_key"] = pagination_key
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
+        return self._fins_announcement_api.execute(self)
 
     def get_option_index_option(
         self,
@@ -1714,25 +1083,10 @@ class Client:
             pd.DataFrame:
                 Nikkei 225 Options' OHLC etc. (Sorted by "Code")
         """
-        j = self._get_option_index_option_raw(
+        return self._option_index_option_api.execute(
+            self,
             date_yyyymmdd=date_yyyymmdd,
         )
-        d = json.loads(j)
-        data = d["index_option"]
-        while "pagination_key" in d:
-            j = self._get_option_index_option_raw(
-                date_yyyymmdd=date_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
-            d = json.loads(j)
-            data += d["index_option"]
-        df = pd.DataFrame.from_dict(data)
-        cols = constants.OPTION_INDEX_OPTION_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
-        df.sort_values(["Code"], inplace=True)
-        return df[cols]
 
     def get_index_option_range(
         self,
@@ -1765,36 +1119,6 @@ class Client:
                 buff.append(df)
         return pd.concat(buff).sort_values(["Code", "Date"])
 
-    # /trading_calendar
-    def _get_markets_trading_calendar_raw(
-        self,
-        holiday_division: str = "",
-        from_yyyymmdd: str = "",
-        to_yyyymmdd: str = "",
-    ) -> str:
-        """
-        get trading calendar raw API returns
-
-        Args:
-            holiday_division: 休日区分
-            from_yyyymmdd: 取得開始日
-            to_yyyymmdd: 取得終了日
-
-        Returns:
-            str: trading calendar
-        """
-        url = f"{self.JQUANTS_API_BASE}/markets/trading_calendar"
-        params = {}
-        if holiday_division != "":
-            params["holidaydivision"] = holiday_division
-        if from_yyyymmdd != "":
-            params["from"] = from_yyyymmdd
-        if to_yyyymmdd != "":
-            params["to"] = to_yyyymmdd
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
-
     def get_markets_trading_calendar(
         self,
         holiday_division: str = "",
@@ -1812,48 +1136,12 @@ class Client:
         Returns:
             pd.DataFrame: 取り引きカレンダー (Date列でソートされています)
         """
-        j = self._get_markets_trading_calendar_raw(
+        return self._markets_trading_calendar_api.execute(
+            self,
             holiday_division=holiday_division,
             from_yyyymmdd=from_yyyymmdd,
             to_yyyymmdd=to_yyyymmdd,
         )
-        d = json.loads(j)
-        df = pd.DataFrame.from_dict(d["trading_calendar"])
-        cols = constants.MARKETS_TRADING_CALENDAR
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
-        df.sort_values(["Date"], inplace=True)
-        return df[cols]
-
-    # /derivatives
-    def _get_derivatives_futures_raw(
-        self,
-        date_yyyymmdd,
-        category,
-        contract_flag,
-        pagination_key: str = "",
-    ) -> str:
-        """
-        get information on the OHLC etc. of  futures raw API returns
-
-        Args:
-            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
-            pagination_key: ページングキー
-        Returns:
-            str: Futures' OHLC etc.
-        """
-        url = f"{self.JQUANTS_API_BASE}/derivatives/futures"
-        params = {
-            "category": category,
-            "date": date_yyyymmdd,
-            "contract_flag": contract_flag,
-        }
-        if pagination_key != "":
-            params["pagination_key"] = pagination_key
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
 
     def get_derivatives_futures(
         self,
@@ -1870,29 +1158,12 @@ class Client:
             pd.DataFrame:
                 Futures' OHLC etc. (Sorted by "Code")
         """
-        j = self._get_derivatives_futures_raw(
-            category=category,
+        return self._derivatives_futures_api.execute(
+            self,
             date_yyyymmdd=date_yyyymmdd,
+            category=category,
             contract_flag=contract_flag,
         )
-        d = json.loads(j)
-        data = d["futures"]
-        while "pagination_key" in d:
-            j = self._get_derivatives_futures_raw(
-                category=category,
-                date_yyyymmdd=date_yyyymmdd,
-                contract_flag=contract_flag,
-                pagination_key=d["pagination_key"],
-            )
-            d = json.loads(j)
-            data += d["futures"]
-        df = pd.DataFrame.from_dict(data)
-        cols = constants.DERIVATIVES_FUTURES_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
-        df.sort_values(["Code"], inplace=True)
-        return df[cols]
 
     def get_derivatives_futures_range(
         self,
@@ -1930,36 +1201,6 @@ class Client:
                 buff.append(df)
         return pd.concat(buff).sort_values(["Code", "Date"])
 
-    def _get_derivatives_options_raw(
-        self,
-        date_yyyymmdd,
-        category,
-        contract_flag,
-        code,
-        pagination_key: str = "",
-    ) -> str:
-        """
-        get information on the OHLC etc. of  options raw API returns
-
-        Args:
-            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
-            pagination_key: ページングキー
-        Returns:
-            str: Options' OHLC etc.
-        """
-        url = f"{self.JQUANTS_API_BASE}/derivatives/options"
-        params = {
-            "category": category,
-            "date": date_yyyymmdd,
-            "contract_flag": contract_flag,
-            "code": code,
-        }
-        if pagination_key != "":
-            params["pagination_key"] = pagination_key
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
-
     def get_derivatives_options(
         self,
         date_yyyymmdd: str,
@@ -1976,31 +1217,13 @@ class Client:
             pd.DataFrame:
                 Futures' OHLC etc. (Sorted by "Code")
         """
-        j = self._get_derivatives_options_raw(
-            category=category,
+        return self._derivatives_options_api.execute(
+            self,
             date_yyyymmdd=date_yyyymmdd,
+            category=category,
             contract_flag=contract_flag,
             code=code,
         )
-        d = json.loads(j)
-        data = d["options"]
-        while "pagination_key" in d:
-            j = self._get_derivatives_options_raw(
-                category=category,
-                date_yyyymmdd=date_yyyymmdd,
-                contract_flag=contract_flag,
-                code=code,
-                pagination_key=d["pagination_key"],
-            )
-            d = json.loads(j)
-            data += d["options"]
-        df = pd.DataFrame.from_dict(data)
-        cols = constants.DERIVATIVES_OPTIONS_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
-        df.sort_values(["Code"], inplace=True)
-        return df[cols]
 
     def get_derivatives_options_range(
         self,
@@ -2040,49 +1263,6 @@ class Client:
                 buff.append(df)
         return pd.concat(buff).sort_values(["Code", "Date"])
 
-    def _get_markets_short_selling_positions_raw(
-        self,
-        code: str = "",
-        disclosed_date: str = "",
-        disclosed_date_from: str = "",
-        disclosed_date_to: str = "",
-        calculated_date: str = "",
-        pagination_key: str = "",
-    ) -> str:
-        """
-        get short selling positions raw API returns
-
-        Args:
-            code: issue code (e.g. 27800 or 2780)
-                If a 4-character issue code is specified, only the data of common stock
-                will be obtained for the issue on which both common and preferred stocks
-                are listed.
-            disclosed_date: disclosed date (e.g. 20240301 or 2024-03-01)
-            disclosed_date_from: disclosed date from (e.g. 20240301 or 2024-03-01)
-            disclosed_date_to: disclosed date to (e.g. 20240301 or 2024-03-01)
-            calculated_date: calculated date (e.g. 20240301 or 2024-03-01)
-            pagination_key: pagination key
-        Returns:
-            str: short selling positions
-        """
-        url = f"{self.JQUANTS_API_BASE}/markets/short_selling_positions"
-        params = {}
-        if code != "":
-            params["code"] = code
-        if disclosed_date != "":
-            params["disclosed_date"] = disclosed_date
-        if disclosed_date_from != "":
-            params["disclosed_date_from"] = disclosed_date_from
-        if disclosed_date_to != "":
-            params["disclosed_date_to"] = disclosed_date_to
-        if calculated_date != "":
-            params["calculated_date"] = calculated_date
-        if pagination_key != "":
-            params["pagination_key"] = pagination_key
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
-
     def get_markets_short_selling_positions(
         self,
         code: str = "",
@@ -2107,41 +1287,14 @@ class Client:
             pd.DataFrame: short selling positions (Sorted by "DisclosedDate",
             "CalculatedDate", and "Code" columns)
         """
-        j = self._get_markets_short_selling_positions_raw(
+        return self._markets_short_selling_positions_api.execute(
+            self,
             code=code,
             disclosed_date=disclosed_date,
             disclosed_date_from=disclosed_date_from,
             disclosed_date_to=disclosed_date_to,
             calculated_date=calculated_date,
         )
-        d = json.loads(j)
-        data = d["short_selling_positions"]
-        while "pagination_key" in d:
-            j = self._get_markets_short_selling_positions_raw(
-                code=code,
-                disclosed_date=disclosed_date,
-                disclosed_date_from=disclosed_date_from,
-                disclosed_date_to=disclosed_date_to,
-                calculated_date=calculated_date,
-                pagination_key=d["pagination_key"],
-            )
-            d = json.loads(j)
-            data += d["short_selling_positions"]
-        df = pd.DataFrame.from_dict(data)
-        cols = constants.SHORT_SELLING_POSITIONS_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["DisclosedDate"] = pd.to_datetime(
-            df["DisclosedDate"], format="%Y-%m-%d", errors="coerce"
-        )
-        df["CalculatedDate"] = pd.to_datetime(
-            df["CalculatedDate"], format="%Y-%m-%d", errors="coerce"
-        )
-        df["CalculationInPreviousReportingDate"] = pd.to_datetime(
-            df["CalculationInPreviousReportingDate"], format="%Y-%m-%d", errors="coerce"
-        )
-        df.sort_values(["DisclosedDate", "CalculatedDate", "Code"], inplace=True)
-        return df[cols]
 
     def get_markets_short_selling_positions_range(
         self,
@@ -2176,47 +1329,6 @@ class Client:
                 buff.append(df)
         return pd.concat(buff).sort_values(["DisclosedDate", "CalculatedDate", "Code"])
 
-    # /markets/daily_margin_interest
-    def _get_markets_daily_margin_interest_raw(
-        self,
-        code: str = "",
-        from_yyyymmdd: str = "",
-        to_yyyymmdd: str = "",
-        date_yyyymmdd: str = "",
-        pagination_key: str = "",
-    ) -> str:
-        """
-        get daily margin interest raw API returns
-
-        Args:
-            code: issue code (e.g. 27800 or 2780)
-                If a 4-character issue code is specified, only the data of common stock
-                will be obtained for the issue on which both common and preferred stocks
-                are listed.
-            from_yyyymmdd: starting point of data period (e.g. 20210901 or 2021-09-01)
-            to_yyyymmdd: end point of data period (e.g. 20210907 or 2021-09-07)
-            date_yyyymmdd: date of data (e.g. 20210907 or 2021-09-07)
-            pagination_key: pagination key
-        Returns:
-            str: daily margin interest
-        """
-        url = f"{self.JQUANTS_API_BASE}/markets/daily_margin_interest"
-        params = {}
-        if code != "":
-            params["code"] = code
-        if date_yyyymmdd != "":
-            params["date"] = date_yyyymmdd
-        else:
-            if from_yyyymmdd != "":
-                params["from"] = from_yyyymmdd
-            if to_yyyymmdd != "":
-                params["to"] = to_yyyymmdd
-        if pagination_key != "":
-            params["pagination_key"] = pagination_key
-        ret = self._get(url, params)
-        ret.encoding = self.RAW_ENCODING
-        return ret.text
-
     def get_markets_daily_margin_interest(
         self,
         code: str = "",
@@ -2238,32 +1350,13 @@ class Client:
         Returns:
             pd.DataFrame: daily margin interest (Sorted by "Code" and "PublishedDate" columns)
         """
-        j = self._get_markets_daily_margin_interest_raw(
+        return self._markets_daily_margin_interest_api.execute(
+            self,
             code=code,
             from_yyyymmdd=from_yyyymmdd,
             to_yyyymmdd=to_yyyymmdd,
             date_yyyymmdd=date_yyyymmdd,
         )
-        d = json.loads(j)
-        data = d["daily_margin_interest"]
-        while "pagination_key" in d:
-            j = self._get_markets_daily_margin_interest_raw(
-                code=code,
-                from_yyyymmdd=from_yyyymmdd,
-                to_yyyymmdd=to_yyyymmdd,
-                date_yyyymmdd=date_yyyymmdd,
-                pagination_key=d["pagination_key"],
-            )
-            d = json.loads(j)
-            data += d["daily_margin_interest"]
-        df = pd.json_normalize(data=data)
-        cols = constants.DAILY_MARGIN_INTEREST_COLUMNS
-        if len(df) == 0:
-            return pd.DataFrame([], columns=cols)
-        df["PublishedDate"] = pd.to_datetime(df["PublishedDate"], format="%Y-%m-%d")
-        df["ApplicationDate"] = pd.to_datetime(df["ApplicationDate"], format="%Y-%m-%d")
-        df.sort_values(["Code", "PublishedDate"], inplace=True)
-        return df[cols]
 
     def get_daily_margin_interest_range(
         self,
