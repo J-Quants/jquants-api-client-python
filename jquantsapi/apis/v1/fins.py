@@ -221,4 +221,3 @@ class FinsAnnouncementApiV1(BaseApi):
         df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
         df.sort_values(["Date", "Code"], inplace=True)
         return df[cols]
-

@@ -17,6 +17,12 @@ else:
     import tomli as tomllib
 
 from jquantsapi import __version__, constants
+from jquantsapi.apis.v2.bulk import BulkGetApiV2, BulkListApiV2
+from jquantsapi.apis.v2.derivatives import (
+    DrvBarsDailyFutApiV2,
+    DrvBarsDailyOpt225ApiV2,
+    DrvBarsDailyOptApiV2,
+)
 from jquantsapi.apis.v2.equities import (
     EqBarsDailyAmApiV2,
     EqBarsDailyApiV2,
@@ -26,6 +32,7 @@ from jquantsapi.apis.v2.equities import (
     EqMasterApiV2,
 )
 from jquantsapi.apis.v2.fins import FinDetailsApiV2, FinDividendApiV2, FinSummaryApiV2
+from jquantsapi.apis.v2.indices import IdxBarsDailyApiV2, IdxBarsDailyTopixApiV2
 from jquantsapi.apis.v2.markets import (
     MktBreakdownApiV2,
     MktCalendarApiV2,
@@ -34,17 +41,10 @@ from jquantsapi.apis.v2.markets import (
     MktShortRatioApiV2,
     MktShortSaleReportApiV2,
 )
-from jquantsapi.apis.v2.indices import IdxBarsDailyApiV2, IdxBarsDailyTopixApiV2
-from jquantsapi.apis.v2.derivatives import (
-    DrvBarsDailyFutApiV2,
-    DrvBarsDailyOptApiV2,
-    DrvBarsDailyOpt225ApiV2,
-)
-from jquantsapi.apis.v2.bulk import BulkGetApiV2, BulkListApiV2
 from jquantsapi.enums import BulkEndpoint
 
-
 DatetimeLike = Union[datetime, pd.Timestamp, str]
+
 
 class ClientV2:
     """
@@ -155,9 +155,7 @@ class ClientV2:
             config = {**config, **self._read_config(env_config_path)}
 
         # env var (highest priority)
-        config["api_key"] = os.environ.get(
-            "JQUANTS_API_KEY", config.get("api_key", "")
-        )
+        config["api_key"] = os.environ.get("JQUANTS_API_KEY", config.get("api_key", ""))
 
         return config
 
@@ -218,7 +216,9 @@ class ClientV2:
             f"p/{platform.python_version()}",
         }
 
-    def _get(self, url: str, params: Optional[dict[str, Any]] = None) -> requests.Response:
+    def _get(
+        self, url: str, params: Optional[dict[str, Any]] = None
+    ) -> requests.Response:
         """
         GET リクエスト用ラッパー
         """
@@ -298,7 +298,9 @@ class ClientV2:
         """
         17 業種コードと名称 (V2 カラム名)
         """
-        df = pd.DataFrame(constants.SECTOR_17_DATA, columns=constants.SECTOR_17_COLUMNS_V2)
+        df = pd.DataFrame(
+            constants.SECTOR_17_DATA, columns=constants.SECTOR_17_COLUMNS_V2
+        )
         df.sort_values(constants.SECTOR_17_COLUMNS_V2[0], inplace=True)
         return df
 
@@ -306,7 +308,9 @@ class ClientV2:
         """
         33 業種コードと名称 (V2 カラム名)
         """
-        df = pd.DataFrame(constants.SECTOR_33_DATA, columns=constants.SECTOR_33_COLUMNS_V2)
+        df = pd.DataFrame(
+            constants.SECTOR_33_DATA, columns=constants.SECTOR_33_COLUMNS_V2
+        )
         df.sort_values(constants.SECTOR_33_COLUMNS_V2[0], inplace=True)
         return df
 
@@ -477,12 +481,12 @@ class ClientV2:
             "Date": "first",
             "Time": "first",
             "Code": "first",
-            "O": "first",      # 始値: 最初の値
-            "H": "max",        # 高値: 最大値
-            "L": "min",        # 安値: 最小値
-            "C": "last",       # 終値: 最後の値
-            "Vo": "sum",       # 出来高: 合計
-            "Va": "sum",       # 売買代金: 合計
+            "O": "first",  # 始値: 最初の値
+            "H": "max",  # 高値: 最大値
+            "L": "min",  # 安値: 最小値
+            "C": "last",  # 終値: 最後の値
+            "Vo": "sum",  # 出来高: 合計
+            "Va": "sum",  # 売買代金: 合計
         }
 
         result = (
@@ -659,9 +663,11 @@ class ClientV2:
         if not buff:
             return pd.DataFrame()
 
-        return pd.concat(buff).sort_values(
-            ["DiscDate", "DiscTime", "Code"]
-        ).reset_index(drop=True)
+        return (
+            pd.concat(buff)
+            .sort_values(["DiscDate", "DiscTime", "Code"])
+            .reset_index(drop=True)
+        )
 
     # ------------------------------------------------------------------
     # /fins/details (path_old: /fins/fs_details)
@@ -738,9 +744,11 @@ class ClientV2:
         if not buff:
             return pd.DataFrame()
 
-        return pd.concat(buff).sort_values(
-            ["DiscDate", "DiscTime", "Code"]
-        ).reset_index(drop=True)
+        return (
+            pd.concat(buff)
+            .sort_values(["DiscDate", "DiscTime", "Code"])
+            .reset_index(drop=True)
+        )
 
     # ------------------------------------------------------------------
     # /fins/dividend (path_old: /fins/dividend)
@@ -835,9 +843,7 @@ class ClientV2:
                     buff.append(df)
         if not buff:
             return pd.DataFrame()
-        return pd.concat(buff).sort_values(
-            ["Date", "S33"]
-        ).reset_index(drop=True)
+        return pd.concat(buff).sort_values(["Date", "S33"]).reset_index(drop=True)
 
     # ------------------------------------------------------------------
     # /markets/short-sale-report (path_old: /markets/short_selling_positions)
@@ -895,9 +901,11 @@ class ClientV2:
                     buff.append(df)
         if not buff:
             return pd.DataFrame()
-        return pd.concat(buff).sort_values(
-            ["DiscDate", "CalcDate", "Code"]
-        ).reset_index(drop=True)
+        return (
+            pd.concat(buff)
+            .sort_values(["DiscDate", "CalcDate", "Code"])
+            .reset_index(drop=True)
+        )
 
     # ------------------------------------------------------------------
     # /markets/margin-interest (path_old: /markets/weekly_margin_interest)
@@ -952,9 +960,7 @@ class ClientV2:
                     buff.append(df)
         if not buff:
             return pd.DataFrame()
-        return pd.concat(buff).sort_values(
-            ["Date", "Code"]
-        ).reset_index(drop=True)
+        return pd.concat(buff).sort_values(["Date", "Code"]).reset_index(drop=True)
 
     # ------------------------------------------------------------------
     # /markets/margin-alert (path_old: /markets/daily_margin_interest)
@@ -1009,9 +1015,7 @@ class ClientV2:
                     buff.append(df)
         if not buff:
             return pd.DataFrame()
-        return pd.concat(buff).sort_values(
-            ["PubDate", "Code"]
-        ).reset_index(drop=True)
+        return pd.concat(buff).sort_values(["PubDate", "Code"]).reset_index(drop=True)
 
     # ------------------------------------------------------------------
     # /markets/breakdown (path_old: /markets/breakdown)
@@ -1065,9 +1069,7 @@ class ClientV2:
                     buff.append(df)
         if not buff:
             return pd.DataFrame()
-        return pd.concat(buff).sort_values(
-            ["Code", "Date"]
-        ).reset_index(drop=True)
+        return pd.concat(buff).sort_values(["Code", "Date"]).reset_index(drop=True)
 
     # ------------------------------------------------------------------
     # /markets/calendar (path_old: /markets/trading_calendar)
@@ -1338,4 +1340,3 @@ class ClientV2:
         with open(output_path, "wb") as f:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
-

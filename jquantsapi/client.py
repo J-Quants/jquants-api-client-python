@@ -20,18 +20,6 @@ from tenacity import (
 from urllib3.util import Retry
 
 from jquantsapi import __version__, constants, enums
-from jquantsapi.apis.v1.listed import ListedInfoApiV1
-from jquantsapi.apis.v1.prices import PricesDailyQuotesApiV1, PricesPricesAmApiV1
-from jquantsapi.apis.v1.markets import (
-    MarketsTradesSpecApiV1,
-    MarketsWeeklyMarginInterestApiV1,
-    MarketsTradingCalendarApiV1,
-    MarketsShortSellingApiV1,
-    MarketsBreakdownApiV1,
-    MarketsShortSellingPositionsApiV1,
-    MarketsDailyMarginInterestApiV1,
-)
-from jquantsapi.apis.v1.indices import IndicesApiV1, IndicesTopixApiV1
 from jquantsapi.apis.v1.derivatives import (
     DerivativesFuturesApiV1,
     DerivativesOptionsApiV1,
@@ -43,6 +31,18 @@ from jquantsapi.apis.v1.fins import (
     FinsFsDetailsApiV1,
     FinsStatementsApiV1,
 )
+from jquantsapi.apis.v1.indices import IndicesApiV1, IndicesTopixApiV1
+from jquantsapi.apis.v1.listed import ListedInfoApiV1
+from jquantsapi.apis.v1.markets import (
+    MarketsBreakdownApiV1,
+    MarketsDailyMarginInterestApiV1,
+    MarketsShortSellingApiV1,
+    MarketsShortSellingPositionsApiV1,
+    MarketsTradesSpecApiV1,
+    MarketsTradingCalendarApiV1,
+    MarketsWeeklyMarginInterestApiV1,
+)
+from jquantsapi.apis.v1.prices import PricesDailyQuotesApiV1, PricesPricesAmApiV1
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -63,7 +63,9 @@ class TokenAuthRefreshBadRequestException(Exception):
     pass
 
 
-@deprecated("Client (V1) is deprecated and will be removed in a future version. Please use ClientV2 instead.")
+@deprecated(
+    "Client (V1) is deprecated and will be removed in a future version. Please use ClientV2 instead."
+)
 class Client:
     """
     J-Quants API からデータを取得する
@@ -803,6 +805,7 @@ class Client:
             to_yyyymmdd=to_yyyymmdd,
             date_yyyymmdd=date_yyyymmdd,
         )
+
     def get_indices_topix(
         self,
         from_yyyymmdd: str = "",
@@ -1222,6 +1225,7 @@ class Client:
             contract_flag=contract_flag,
             code=code,
         )
+
     def get_derivatives_options_range(
         self,
         start_dt: DatetimeLike = "20170101",
@@ -1386,4 +1390,3 @@ class Client:
                 df = future.result()
                 buff.append(df)
         return pd.concat(buff).sort_values(["Code", "PublishedDate"])
-

@@ -36,7 +36,7 @@ class IndicesApiV1(BaseApi):
                 params["from"] = from_yyyymmdd
             if to_yyyymmdd != "":
                 params["to"] = to_yyyymmdd
-        
+
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
@@ -81,7 +81,7 @@ class IndicesTopixApiV1(BaseApi):
             params["from"] = from_yyyymmdd
         if to_yyyymmdd != "":
             params["to"] = to_yyyymmdd
-        
+
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
@@ -102,4 +102,3 @@ class IndicesTopixApiV1(BaseApi):
         df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
         df.sort_values(["Date"], inplace=True)
         return df[cols]
-

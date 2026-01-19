@@ -32,7 +32,7 @@ class DerivativesFuturesApiV1(BaseApi):
             "date": date_yyyymmdd,
             "contract_flag": contract_flag,
         }
-        
+
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
@@ -80,7 +80,7 @@ class DerivativesOptionsApiV1(BaseApi):
             "contract_flag": contract_flag,
             "code": code,
         }
-        
+
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
@@ -120,7 +120,7 @@ class OptionIndexOptionApiV1(BaseApi):
         # 元の _get_option_index_option_raw の実装を統合
         url = f"{client.JQUANTS_API_BASE}/option/index_option"  # type: ignore[attr-defined]
         params = {"date": date_yyyymmdd}
-        
+
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
@@ -141,4 +141,3 @@ class OptionIndexOptionApiV1(BaseApi):
         df["Date"] = pd.to_datetime(df["Date"], format="%Y-%m-%d")
         df.sort_values(["Code"], inplace=True)
         return df[cols]
-

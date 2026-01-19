@@ -35,7 +35,9 @@ class BulkListApiV2(BaseApi):
         url = f"{client.JQUANTS_API_BASE}/bulk/list"
 
         # BulkEndpointの場合はvalue(str)を取得
-        endpoint_str = endpoint.value if isinstance(endpoint, BulkEndpoint) else endpoint
+        endpoint_str = (
+            endpoint.value if isinstance(endpoint, BulkEndpoint) else endpoint
+        )
 
         params: dict[str, Any] = {"endpoint": endpoint_str}
 
@@ -89,4 +91,3 @@ class BulkGetApiV2(BaseApi):
         payload = resp.json()
 
         return payload.get("url", "")
-

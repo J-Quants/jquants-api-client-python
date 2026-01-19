@@ -43,7 +43,7 @@ class MarketsTradesSpecApiV1(BaseApi):
             params["from"] = from_yyyymmdd
         if to_yyyymmdd != "":
             params["to"] = to_yyyymmdd
-        
+
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
@@ -97,7 +97,7 @@ class MarketsWeeklyMarginInterestApiV1(BaseApi):
                 params["from"] = from_yyyymmdd
             if to_yyyymmdd != "":
                 params["to"] = to_yyyymmdd
-        
+
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
@@ -147,7 +147,7 @@ class MarketsTradingCalendarApiV1(BaseApi):
             params["from"] = from_yyyymmdd
         if to_yyyymmdd != "":
             params["to"] = to_yyyymmdd
-        
+
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
@@ -191,7 +191,7 @@ class MarketsShortSellingApiV1(BaseApi):
                 params["from"] = from_yyyymmdd
             if to_yyyymmdd != "":
                 params["to"] = to_yyyymmdd
-        
+
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
@@ -243,7 +243,7 @@ class MarketsBreakdownApiV1(BaseApi):
                 params["from"] = from_yyyymmdd
             if to_yyyymmdd != "":
                 params["to"] = to_yyyymmdd
-        
+
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
@@ -299,7 +299,7 @@ class MarketsShortSellingPositionsApiV1(BaseApi):
             params["disclosed_date_to"] = disclosed_date_to
         if calculated_date != "":
             params["calculated_date"] = calculated_date
-        
+
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
@@ -361,7 +361,7 @@ class MarketsDailyMarginInterestApiV1(BaseApi):
                 params["from"] = from_yyyymmdd
             if to_yyyymmdd != "":
                 params["to"] = to_yyyymmdd
-        
+
         ret = client._get(url, params)  # type: ignore[attr-defined]
         ret.encoding = client.RAW_ENCODING  # type: ignore[attr-defined]
         j = ret.text
@@ -382,4 +382,3 @@ class MarketsDailyMarginInterestApiV1(BaseApi):
         df["ApplicationDate"] = pd.to_datetime(df["ApplicationDate"], format="%Y-%m-%d")
         df.sort_values(["Code", "PublishedDate"], inplace=True)
         return df[cols]
-

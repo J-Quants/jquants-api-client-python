@@ -85,4 +85,3 @@ class IdxBarsDailyTopixApiV2(BaseApi):
             df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
             df.sort_values("Date", inplace=True)
         return df.reset_index(drop=True)
-

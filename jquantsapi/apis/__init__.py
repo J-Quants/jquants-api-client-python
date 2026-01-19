@@ -7,5 +7,3 @@ API ごとの実装クラス群をまとめるパッケージ。
 """
 
 from .base import BaseApi  # noqa: F401
-
-

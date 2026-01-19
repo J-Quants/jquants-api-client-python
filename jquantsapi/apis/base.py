@@ -18,7 +18,9 @@ class SupportsRequest(Protocol):
     JQUANTS_API_BASE: str
     RAW_ENCODING: str
 
-    def _get(self, url: str, params: dict[str, Any] | None = None):  # pragma: no cover - Protocol 定義のみ
+    def _get(
+        self, url: str, params: dict[str, Any] | None = None
+    ):  # pragma: no cover - Protocol 定義のみ
         ...
 
 
@@ -43,5 +45,3 @@ class BaseApi(ABC):
             client: HTTP リクエストなどを実行するクライアント
             **params: API ごとのパラメータ
         """
-
-

@@ -11,10 +11,7 @@ from jquantsapi import client_v2
 
 
 @pytest.mark.parametrize(
-    "api_key,"
-    "env, isfile, load,"
-    "exp_api_key,"
-    "exp_raise",
+    "api_key," "env, isfile, load," "exp_api_key," "exp_raise",
     (
         # Case 1: api_key未指定、設定ファイルなし、環境変数なし → エラー
         (
@@ -276,7 +273,18 @@ def test_aggregate_bars_n_minute():
         "L": [90, 91, 92, 93, 94, 95, 96, 97, 98, 99],
         "C": [105, 106, 107, 108, 109, 110, 111, 112, 113, 114],
         "Vo": [1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900],
-        "Va": [100000, 110000, 120000, 130000, 140000, 150000, 160000, 170000, 180000, 190000],
+        "Va": [
+            100000,
+            110000,
+            120000,
+            130000,
+            140000,
+            150000,
+            160000,
+            170000,
+            180000,
+            190000,
+        ],
     }
     df_1min = pd.DataFrame(data)
 
@@ -387,4 +395,3 @@ def test_get_bulk():
         args, _ = mock_get.call_args
         assert args[1] == {"key": "2024/01/01/eq_master.csv"}
         assert ret == "https://example.com/data.csv"
-

@@ -148,4 +148,3 @@ class FinDividendApiV2(BaseApi):
         if sort_cols:
             df.sort_values(sort_cols, inplace=True)
         return df.reset_index(drop=True)
-
