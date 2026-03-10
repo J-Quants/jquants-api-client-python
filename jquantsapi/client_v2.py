@@ -9,6 +9,7 @@ from typing import Any, Optional, Union
 import pandas as pd  # type: ignore
 import requests
 from requests.adapters import HTTPAdapter
+from requests.exceptions import HTTPError
 from urllib3.util import Retry
 
 if sys.version_info >= (3, 11):
@@ -216,6 +217,21 @@ class ClientV2:
             f"p/{platform.python_version()}",
         }
 
+    def _raise_for_status(self, resp: requests.Response) -> None:
+        """
+        raise_for_status の拡張版。
+        エラー時にレスポンスボディのメッセージを含めた HTTPError を送出する。
+        """
+        if resp.ok:
+            return
+        try:
+            body = resp.json()
+            detail = body.get("message", resp.text)
+        except Exception:
+            detail = resp.text
+        msg = f"{resp.status_code} for url: {resp.url} body: {detail}"
+        raise HTTPError(msg, response=resp)
+
     def _get(
         self, url: str, params: Optional[dict[str, Any]] = None
     ) -> requests.Response:
@@ -225,7 +241,7 @@ class ClientV2:
         session = self._request_session()
         headers = self._base_headers()
         resp = session.get(url, params=params, headers=headers, timeout=30)
-        resp.raise_for_status()
+        self._raise_for_status(resp)
         return resp
 
     def _get_paginated(
@@ -1334,7 +1350,7 @@ class ClientV2:
         # ファイルをダウンロード
         session = self._request_session()
         response = session.get(url, stream=True, timeout=300)
-        response.raise_for_status()
+        self._raise_for_status(response)
 
         # ファイルに書き込み
         with open(output_path, "wb") as f:

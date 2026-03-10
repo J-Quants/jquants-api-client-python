@@ -6,6 +6,8 @@ import pandas as pd
 import pytest
 from dateutil import tz
 
+import requests
+
 import jquantsapi
 from jquantsapi import client_v2
 
@@ -401,3 +403,85 @@ def test_get_bulk():
         args, _ = mock_get.call_args
         assert args[1] == {"key": "2024/01/01/eq_master.csv"}
         assert ret == "https://example.com/data.csv"
+
+
+def test_get_raises_with_api_error_message():
+    """_get()がエラー時にAPIのメッセージを含むHTTPErrorを送出することを確認"""
+    mock_resp = MagicMock()
+    mock_resp.ok = False
+    mock_resp.status_code = 403
+    mock_resp.url = "https://api.jquants.com/v2/equities/master"
+    mock_resp.json.return_value = {"message": "Forbidden - Invalid API key"}
+    mock_resp.text = '{"message": "Forbidden - Invalid API key"}'
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_request_session") as mock_session, patch.object(
+        jquantsapi.ClientV2, "_base_headers", return_value={}
+    ):
+        mock_session.return_value.get.return_value = mock_resp
+        cli = jquantsapi.ClientV2()
+        with pytest.raises(
+            requests.exceptions.HTTPError, match="Forbidden - Invalid API key"
+        ):
+            cli._get("https://api.jquants.com/v2/equities/master")
+
+
+def test_get_raises_with_text_body_on_json_error():
+    """レスポンスがJSONでない場合にテキストボディでHTTPErrorを送出することを確認"""
+    mock_resp = MagicMock()
+    mock_resp.ok = False
+    mock_resp.status_code = 500
+    mock_resp.url = "https://api.jquants.com/v2/equities/master"
+    mock_resp.json.side_effect = ValueError("No JSON")
+    mock_resp.text = "Internal Server Error"
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_request_session") as mock_session, patch.object(
+        jquantsapi.ClientV2, "_base_headers", return_value={}
+    ):
+        mock_session.return_value.get.return_value = mock_resp
+        cli = jquantsapi.ClientV2()
+        with pytest.raises(
+            requests.exceptions.HTTPError, match="Internal Server Error"
+        ):
+            cli._get("https://api.jquants.com/v2/equities/master")
+
+
+def test_get_success_does_not_raise():
+    """正常レスポンスの場合はエラーが送出されないことを確認"""
+    mock_resp = MagicMock()
+    mock_resp.ok = True
+    mock_resp.status_code = 200
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_request_session") as mock_session, patch.object(
+        jquantsapi.ClientV2, "_base_headers", return_value={}
+    ):
+        mock_session.return_value.get.return_value = mock_resp
+        cli = jquantsapi.ClientV2()
+        result = cli._get("https://api.jquants.com/v2/equities/master")
+        assert result == mock_resp
+
+
+def test_get_error_has_response_attribute():
+    """HTTPErrorにresponseオブジェクトが付与されることを確認（後方互換性）"""
+    mock_resp = MagicMock()
+    mock_resp.ok = False
+    mock_resp.status_code = 401
+    mock_resp.url = "https://api.jquants.com/v2/equities/master"
+    mock_resp.json.return_value = {"message": "Unauthorized"}
+    mock_resp.text = '{"message": "Unauthorized"}'
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_request_session") as mock_session, patch.object(
+        jquantsapi.ClientV2, "_base_headers", return_value={}
+    ):
+        mock_session.return_value.get.return_value = mock_resp
+        cli = jquantsapi.ClientV2()
+        with pytest.raises(requests.exceptions.HTTPError) as exc_info:
+            cli._get("https://api.jquants.com/v2/equities/master")
+        assert exc_info.value.response == mock_resp
