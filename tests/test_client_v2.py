@@ -4,9 +4,8 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
-from dateutil import tz
-
 import requests
+from dateutil import tz
 
 import jquantsapi
 from jquantsapi import client_v2
@@ -416,7 +415,9 @@ def test_get_raises_with_api_error_message():
 
     with patch.object(
         jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
-    ), patch.object(jquantsapi.ClientV2, "_request_session") as mock_session, patch.object(
+    ), patch.object(
+        jquantsapi.ClientV2, "_request_session"
+    ) as mock_session, patch.object(
         jquantsapi.ClientV2, "_base_headers", return_value={}
     ):
         mock_session.return_value.get.return_value = mock_resp
@@ -438,7 +439,9 @@ def test_get_raises_with_text_body_on_json_error():
 
     with patch.object(
         jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
-    ), patch.object(jquantsapi.ClientV2, "_request_session") as mock_session, patch.object(
+    ), patch.object(
+        jquantsapi.ClientV2, "_request_session"
+    ) as mock_session, patch.object(
         jquantsapi.ClientV2, "_base_headers", return_value={}
     ):
         mock_session.return_value.get.return_value = mock_resp
@@ -457,7 +460,9 @@ def test_get_success_does_not_raise():
 
     with patch.object(
         jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
-    ), patch.object(jquantsapi.ClientV2, "_request_session") as mock_session, patch.object(
+    ), patch.object(
+        jquantsapi.ClientV2, "_request_session"
+    ) as mock_session, patch.object(
         jquantsapi.ClientV2, "_base_headers", return_value={}
     ):
         mock_session.return_value.get.return_value = mock_resp
@@ -477,7 +482,9 @@ def test_get_error_has_response_attribute():
 
     with patch.object(
         jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
-    ), patch.object(jquantsapi.ClientV2, "_request_session") as mock_session, patch.object(
+    ), patch.object(
+        jquantsapi.ClientV2, "_request_session"
+    ) as mock_session, patch.object(
         jquantsapi.ClientV2, "_base_headers", return_value={}
     ):
         mock_session.return_value.get.return_value = mock_resp
