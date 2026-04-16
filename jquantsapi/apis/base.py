@@ -3,8 +3,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Protocol
 
-import pandas as pd  # type: ignore
-
 
 class SupportsRequest(Protocol):
     """
@@ -37,7 +35,7 @@ class BaseApi(ABC):
     version: str
 
     @abstractmethod
-    def execute(self, client: SupportsRequest, **params: Any) -> pd.DataFrame:
+    def execute(self, client: SupportsRequest, **params: Any) -> Any:
         """
         実際に API を実行し、結果を DataFrame で返す。
 

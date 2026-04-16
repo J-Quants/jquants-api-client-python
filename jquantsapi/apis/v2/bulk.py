@@ -14,6 +14,7 @@ class BulkListApiV2(BaseApi):
     v2 の Bulk List API (`/bulk/list`) のラッパークラス。
 
     指定したエンドポイントで取得可能なデータ一覧を取得します。
+    `endpoint` または `date` のどちらかは必須です。
     """
 
     name = "bulk_list"
@@ -24,6 +25,9 @@ class BulkListApiV2(BaseApi):
         client: SupportsRequest,
         *,
         endpoint: Union[str, BulkEndpoint] = "",
+        date: str = "",
+        from_date: str = "",
+        to_date: str = "",
         **kwargs: Any,
     ) -> pd.DataFrame:
         """
@@ -31,7 +35,12 @@ class BulkListApiV2(BaseApi):
 
         Args:
             client: v2 `ClientV2` インスタンスを想定
-            endpoint: 取得したいデータのエンドポイント (例: "/equities/master")
+            endpoint: 取得したいデータのエンドポイント (例: "/equities/master")。
+                      `date` と排他的に使用します。
+            date: 対象日付 (YYYY-MM, YYYYMM, YYYY-MM-DD, YYYYMMDD)。
+                  `endpoint` と排他的に使用します。
+            from_date: 取得期間の開始日。`endpoint` 指定時のみ使用可能。
+            to_date: 取得期間の終了日。`endpoint` 指定時のみ使用可能。
         """
         url = f"{client.JQUANTS_API_BASE}/bulk/list"
 
@@ -40,7 +49,15 @@ class BulkListApiV2(BaseApi):
             endpoint.value if isinstance(endpoint, BulkEndpoint) else endpoint
         )
 
-        params: dict[str, Any] = {"endpoint": endpoint_str}
+        params: dict[str, Any] = {}
+        if endpoint_str:
+            params["endpoint"] = endpoint_str
+        if date:
+            params["date"] = date
+        if from_date:
+            params["from"] = from_date
+        if to_date:
+            params["to"] = to_date
 
         resp = client._get(url, params)  # type: ignore[arg-type]
         payload = resp.json()
@@ -73,6 +90,8 @@ class BulkGetApiV2(BaseApi):
         client: SupportsRequest,
         *,
         key: str = "",
+        endpoint: Union[str, BulkEndpoint] = "",
+        date: str = "",
         **kwargs: Any,
     ) -> str:
         """
@@ -80,14 +99,27 @@ class BulkGetApiV2(BaseApi):
 
         Args:
             client: v2 `ClientV2` インスタンスを想定
-            key: BulkListで取得したKey
+            key: BulkListで取得したKey。`endpoint` + `date` と排他的に使用します。
+            endpoint: 取得するデータのエンドポイント名。`date` と組み合わせて使用します。
+            date: 対象日付 (YYYY-MM, YYYYMM, YYYY-MM-DD, YYYYMMDD)。`endpoint` と組み合わせて使用します。
 
         Returns:
             str: ダウンロードURL
         """
         url = f"{client.JQUANTS_API_BASE}/bulk/get"
 
-        params: dict[str, Any] = {"key": key}
+        # BulkEndpointの場合はvalue(str)を取得
+        endpoint_str = (
+            endpoint.value if isinstance(endpoint, BulkEndpoint) else endpoint
+        )
+
+        params: dict[str, Any] = {}
+        if key:
+            params["key"] = key
+        if endpoint_str:
+            params["endpoint"] = endpoint_str
+        if date:
+            params["date"] = date
 
         resp = client._get(url, params)  # type: ignore[arg-type]
         payload = resp.json()
