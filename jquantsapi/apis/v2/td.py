@@ -106,7 +106,7 @@ class TdFilesApiV2(BaseApi):
         self,
         client: SupportsRequest,
         *,
-        disc_no: str,
+        disc_no: str = "",
         docs: str = "",
         **kwargs: Any,
     ) -> dict[str, Any]:
@@ -156,5 +156,3 @@ class TdBulkApiV2(BaseApi):
         url = f"{client.JQUANTS_API_BASE}/td/bulk"
         resp = client._get(url, {})  # type: ignore[arg-type]
         return resp.json()
-
-

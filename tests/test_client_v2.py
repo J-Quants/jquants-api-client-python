@@ -381,7 +381,11 @@ def test_aggregate_bars_n_minute_15min():
             {"date": "2024-01"},
         ),
         (
-            {"endpoint": "/equities/bars/daily", "from_date": "2024-01", "to_date": "2024-03"},
+            {
+                "endpoint": "/equities/bars/daily",
+                "from_date": "2024-01",
+                "to_date": "2024-03",
+            },
             {"endpoint": "/equities/bars/daily", "from": "2024-01", "to": "2024-03"},
         ),
     ),
@@ -456,7 +460,9 @@ def test_download_bulk_by_endpoint():
             )
 
         cli.download_bulk_by_endpoint(
-            endpoint="/equities/bars/daily", date="2024-01", output_path="/tmp/test.csv.gz"
+            endpoint="/equities/bars/daily",
+            date="2024-01",
+            output_path="/tmp/test.csv.gz",
         )
         args, _ = mock_get.call_args
         assert args[1] == {"endpoint": "/equities/bars/daily", "date": "2024-01"}

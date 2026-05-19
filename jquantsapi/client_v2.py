@@ -19,7 +19,6 @@ else:
 
 from jquantsapi import __version__, constants
 from jquantsapi.apis.v2.bulk import BulkGetApiV2, BulkListApiV2
-from jquantsapi.apis.v2.td import TdBulkApiV2, TdFilesApiV2, TdListApiV2
 from jquantsapi.apis.v2.derivatives import (
     DrvBarsDailyFutApiV2,
     DrvBarsDailyOpt225ApiV2,
@@ -43,6 +42,7 @@ from jquantsapi.apis.v2.markets import (
     MktShortRatioApiV2,
     MktShortSaleReportApiV2,
 )
+from jquantsapi.apis.v2.td import TdBulkApiV2, TdFilesApiV2, TdListApiV2
 from jquantsapi.enums import BulkEndpoint
 
 DatetimeLike = Union[datetime, pd.Timestamp, str]
