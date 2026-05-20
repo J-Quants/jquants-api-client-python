@@ -42,6 +42,7 @@ from jquantsapi.apis.v2.markets import (
     MktShortRatioApiV2,
     MktShortSaleReportApiV2,
 )
+from jquantsapi.apis.v2.td import TdBulkApiV2, TdFilesApiV2, TdListApiV2
 from jquantsapi.enums import BulkEndpoint
 
 DatetimeLike = Union[datetime, pd.Timestamp, str]
@@ -114,6 +115,9 @@ class ClientV2:
         self._drv_bars_daily_opt_225_api = DrvBarsDailyOpt225ApiV2()
         self._bulk_list_api = BulkListApiV2()
         self._bulk_get_api = BulkGetApiV2()
+        self._td_list_api = TdListApiV2()
+        self._td_files_api = TdFilesApiV2()
+        self._td_bulk_api = TdBulkApiV2()
 
     # ------------------------------------------------------------------
     # 内部ユーティリティ
@@ -1300,29 +1304,55 @@ class ClientV2:
     # ------------------------------------------------------------------
     def get_bulk_list(
         self,
-        endpoint: Union[str, BulkEndpoint],
+        endpoint: Union[str, BulkEndpoint] = "",
+        date: str = "",
+        from_date: str = "",
+        to_date: str = "",
     ) -> pd.DataFrame:
         """
         bulk-list: 取得可能なデータ一覧 (v2: /bulk/list)
 
+        `endpoint` または `date` のどちらかは必須です。
+
         Args:
             endpoint: 取得したいデータのエンドポイント
-                      (例: BulkEndpoint.EQ_MASTER または "/equities/master")
+                      (例: BulkEndpoint.EQ_MASTER または "/equities/master")。
+                      `date` と排他的に使用します。
+            date: 対象日付 (YYYY-MM, YYYYMM, YYYY-MM-DD, YYYYMMDD)。
+                  契約プランでアクセス可能な全エンドポイントのファイル一覧を返します。
+                  `endpoint` と排他的に使用します。
+            from_date: 取得期間の開始日。`endpoint` 指定時のみ使用可能。
+            to_date: 取得期間の終了日。`endpoint` 指定時のみ使用可能。
         Returns:
             pd.DataFrame: データ一覧 (Key, Size, LastModified)
         """
-        return self._bulk_list_api.execute(self, endpoint=endpoint)
+        return self._bulk_list_api.execute(
+            self,
+            endpoint=endpoint,
+            date=date,
+            from_date=from_date,
+            to_date=to_date,
+        )
 
-    def get_bulk(self, key: str) -> str:
+    def get_bulk(
+        self,
+        key: str = "",
+        endpoint: Union[str, BulkEndpoint] = "",
+        date: str = "",
+    ) -> str:
         """
         bulk-get: データダウンロードURL取得 (v2: /bulk/get)
 
+        `key` または `endpoint` + `date` の組み合わせのどちらかを指定してください。
+
         Args:
-            key: get_bulk_listで取得したKey
+            key: get_bulk_listで取得したKey。`endpoint` + `date` と排他的に使用します。
+            endpoint: 取得するデータのエンドポイント名。`date` と組み合わせて使用します。
+            date: 対象日付 (YYYY-MM, YYYYMM, YYYY-MM-DD, YYYYMMDD)。`endpoint` と組み合わせて使用します。
         Returns:
             str: ダウンロードURL
         """
-        return self._bulk_get_api.execute(self, key=key)
+        return self._bulk_get_api.execute(self, key=key, endpoint=endpoint, date=date)
 
     def download_bulk(self, key: str, output_path: str) -> None:
         """
@@ -1335,24 +1365,122 @@ class ClientV2:
         Raises:
             ValueError: output_path が空文字列の場合
         """
-        # バリデーション
         if not output_path or not output_path.strip():
             raise ValueError("output_path must not be empty")
 
-        # ダウンロード URL を取得
         url = self._bulk_get_api.execute(self, key=key)
 
-        # ディレクトリが存在しない場合は作成
         output_dir = os.path.dirname(os.path.abspath(output_path))
         if output_dir:
             os.makedirs(output_dir, exist_ok=True)
 
-        # ファイルをダウンロード
         session = self._request_session()
         response = session.get(url, stream=True, timeout=300)
         self._raise_for_status(response)
 
-        # ファイルに書き込み
         with open(output_path, "wb") as f:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
+
+    def download_bulk_by_endpoint(
+        self,
+        endpoint: Union[str, BulkEndpoint],
+        date: str,
+        output_path: str,
+    ) -> None:
+        """
+        エンドポイントと日付を指定してファイルをダウンロードして保存
+
+        Args:
+            endpoint: 取得するデータのエンドポイント名
+            date: 対象日付 (YYYY-MM, YYYYMM, YYYY-MM-DD, YYYYMMDD)
+            output_path: ダウンロードファイルの保存先パス
+
+        Raises:
+            ValueError: output_path が空文字列の場合
+        """
+        if not output_path or not output_path.strip():
+            raise ValueError("output_path must not be empty")
+
+        url = self._bulk_get_api.execute(self, endpoint=endpoint, date=date)
+
+        output_dir = os.path.dirname(os.path.abspath(output_path))
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+
+        session = self._request_session()
+        response = session.get(url, stream=True, timeout=300)
+        self._raise_for_status(response)
+
+        with open(output_path, "wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+
+    # ------------------------------------------------------------------
+    # TDnet/適時開示 API (v2: /td/*)
+    # ------------------------------------------------------------------
+    def get_td_list(
+        self,
+        date: str = "",
+        code: str = "",
+        from_date: str = "",
+        to_date: str = "",
+        disc_items: str = "",
+        cursor: str = "",
+    ) -> tuple[pd.DataFrame, Optional[str]]:
+        """
+        td-list: 適時開示インデックス一覧 (v2: /td/list)
+
+        `date` または `code` のどちらかは必須です。
+        pagination_key が返された場合は自動的に全件取得します。
+
+        Args:
+            date: 開示日 (YYYYMMDD or YYYY-MM-DD)。`code` と排他的に使用します。
+            code: 銘柄コード。`date` と排他的に使用します。
+            from_date: 取得開始日。`code` と組み合わせて使用します。
+            to_date: 取得終了日。`code` と組み合わせて使用します。
+            disc_items: 公開項目コードで絞り込む（カンマ区切りで複数指定可能）。
+            cursor: 前回レスポンスで返却された cursor。差分取得に使用します。
+        Returns:
+            tuple[pd.DataFrame, Optional[str]]:
+                - DataFrame: 適時開示インデックス一覧
+                - cursor: レスポンスに含まれる cursor（含まれない場合は None）
+        """
+        return self._td_list_api.execute(
+            self,
+            date=date,
+            code=code,
+            from_date=from_date,
+            to_date=to_date,
+            disc_items=disc_items,
+            cursor=cursor,
+        )
+
+    def get_td_files(
+        self,
+        disc_no: str,
+        docs: str = "",
+    ) -> dict:
+        """
+        td-files: 適時開示ファイルダウンロードURL取得 (v2: /td/files)
+
+        Args:
+            disc_no: 開示番号（14桁）
+            docs: 取得するファイル種別（カンマ区切り: g=全文PDF, s=サマリPDF, x=XBRL）。
+                  省略時は全種別を返します。
+        Returns:
+            dict: ``discNo`` と ``files`` (pdf/summaryPdf/xbrl の URL) を含む辞書
+        """
+        return self._td_files_api.execute(self, disc_no=disc_no, docs=docs)
+
+    def get_td_bulk(self) -> dict:
+        """
+        td-bulk: 適時開示インデックス一括ダウンロードURL取得 (v2: /td/bulk)
+
+        過去5年分の適時開示インデックスを収録した CSV (gzip) の
+        ダウンロードURLと最終更新日時を取得します。
+
+        Returns:
+            dict: ``lastUpdated`` (ISO 8601) と ``url`` を含む辞書
+        """
+        return self._td_bulk_api.execute(self)

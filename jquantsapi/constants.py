@@ -1207,3 +1207,16 @@ BULK_LIST_COLUMNS_V2 = [
     "Size",
     "LastModified",
 ]
+
+TD_LIST_COLUMNS_V2 = [
+    "DiscNo",
+    "Code",
+    "Name",
+    "DiscDate",
+    "DiscTime",
+    "Title",
+    "DiscStatus",
+    "RevNo",
+    "DiscItems",
+    "Docs",
+]

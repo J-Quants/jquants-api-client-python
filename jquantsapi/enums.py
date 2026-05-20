@@ -52,6 +52,8 @@ class BulkEndpoint(str, Enum):
     MKT_MARGIN_ALERT = "/markets/margin-alert"
     # 売買内訳データAPI
     MKT_BREAKDOWN = "/markets/breakdown"
+    # 取引カレンダーAPI
+    MKT_CALENDAR = "/markets/calendar"
 
     # 指数四本値API
     IDX_BARS_DAILY = "/indices/bars/daily"
