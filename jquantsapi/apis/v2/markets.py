@@ -251,9 +251,9 @@ class MktMarginAlertApiV2(BaseApi):
             return pd.DataFrame()
 
         df = pd.DataFrame.from_records(data)
-        if "Date" in df.columns:
-            df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        sort_cols = [c for c in ["Date", "Code"] if c in df.columns]
+        if "PubDate" in df.columns:
+            df["PubDate"] = pd.to_datetime(df["PubDate"], errors="coerce")
+        sort_cols = [c for c in ["PubDate", "Code"] if c in df.columns]
         if sort_cols:
             df.sort_values(sort_cols, inplace=True)
         return df.reset_index(drop=True)
