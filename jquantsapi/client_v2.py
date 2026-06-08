@@ -673,12 +673,12 @@ class ClientV2:
                     buff.append(df)
                 else:
                     future = executor.submit(
-                        self.get_fin_summary, date_yyyymmdd=yyyymmdd
+                        self.get_fin_summary_cursor, date_yyyymmdd=yyyymmdd
                     )
                     futures[future] = yyyymmdd
 
             for future in as_completed(futures):
-                df = future.result()
+                df, _ = future.result()
                 if df.empty:
                     continue
                 buff.append(df)
@@ -783,12 +783,12 @@ class ClientV2:
                     buff.append(df)
                 else:
                     future = executor.submit(
-                        self.get_fin_details, date_yyyymmdd=yyyymmdd
+                        self.get_fin_details_cursor, date_yyyymmdd=yyyymmdd
                     )
                     futures[future] = yyyymmdd
 
             for future in as_completed(futures):
-                df = future.result()
+                df, _ = future.result()
                 if df.empty:
                     continue
                 buff.append(df)

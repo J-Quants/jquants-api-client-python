@@ -27,6 +27,8 @@ class FinSummaryApiV2(BaseApi):
     ) -> tuple[pd.DataFrame, Optional[str]]:
         """
         v2 `/fins/summary` を実行し、財務情報サマリと cursor を返す。
+
+        cursor は API 仕様上、最終ページのレスポンスにのみ含まれます。
         """
         url = f"{client.JQUANTS_API_BASE}/fins/summary"  # type: ignore[attr-defined]
 
@@ -95,6 +97,8 @@ class FinDetailsApiV2(BaseApi):
     ) -> tuple[pd.DataFrame, Optional[str]]:
         """
         v2 `/fins/details` を実行し、財務諸表詳細と cursor を返す。
+
+        cursor は API 仕様上、最終ページのレスポンスにのみ含まれます。
         """
         url = f"{client.JQUANTS_API_BASE}/fins/details"  # type: ignore[attr-defined]
 
