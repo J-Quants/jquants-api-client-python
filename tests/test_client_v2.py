@@ -648,6 +648,22 @@ def test_get_fin_summary_cursor():
         assert cursor is None
 
 
+def test_get_fin_summary_cursor_passes_cursor_param():
+    """get_fin_summary_cursorがcursor引数をクエリパラメータに渡すことを確認"""
+    ret_value = {"data": [FIN_SUMMARY_RECORD]}
+    cursor_value = "eyJkIjoiMjAyNS0wNC0wMSJ9"
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get") as mock_get:
+        mock_get.return_value.json.return_value = ret_value
+
+        cli = jquantsapi.ClientV2()
+        cli.get_fin_summary_cursor(cursor=cursor_value)
+        args, _ = mock_get.call_args
+        assert args[1] == {"cursor": cursor_value}
+
+
 def test_get_fin_summary_cursor_returns_cursor():
     """get_fin_summary_cursorがレスポンスのcursorを返すことを確認"""
     cursor_value = "eyJkIjoiMjAyNS0wNC0wMSJ9"
@@ -696,6 +712,22 @@ def test_get_fin_details_cursor():
         assert args[1] == {"code": "86970"}
         assert len(df) == 1
         assert cursor is None
+
+
+def test_get_fin_details_cursor_passes_cursor_param():
+    """get_fin_details_cursorがcursor引数をクエリパラメータに渡すことを確認"""
+    ret_value = {"data": [FIN_DETAILS_RECORD]}
+    cursor_value = "eyJkIjoiMjAyNS0wNC0wMSJ9"
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get") as mock_get:
+        mock_get.return_value.json.return_value = ret_value
+
+        cli = jquantsapi.ClientV2()
+        cli.get_fin_details_cursor(cursor=cursor_value)
+        args, _ = mock_get.call_args
+        assert args[1] == {"cursor": cursor_value}
 
 
 def test_get_fin_details_cursor_returns_cursor():
