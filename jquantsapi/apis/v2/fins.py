@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 import pandas as pd  # type: ignore
 
@@ -22,24 +22,40 @@ class FinSummaryApiV2(BaseApi):
         *,
         code: str = "",
         date_yyyymmdd: str = "",
+        cursor: str = "",
         **kwargs: Any,
-    ) -> pd.DataFrame:
+    ) -> tuple[pd.DataFrame, Optional[str]]:
         """
-        `/fins/summary` を実行し、財務情報サマリを DataFrame で返す。
+        v2 `/fins/summary` を実行し、財務情報サマリと cursor を返す。
         """
+        url = f"{client.JQUANTS_API_BASE}/fins/summary"  # type: ignore[attr-defined]
+
         params: dict[str, Any] = {}
         if code:
             params["code"] = code
         if date_yyyymmdd:
             params["date"] = date_yyyymmdd
+        if cursor:
+            params["cursor"] = cursor
 
-        all_data = client._get_paginated(  # type: ignore[attr-defined]
-            "/fins/summary",
-            params=params,
-        )
+        all_data: list[dict[str, Any]] = []
+        returned_cursor: Optional[str] = None
+        query = dict(params)
 
+        while True:
+            resp = client._get(url, query)  # type: ignore[attr-defined]
+            payload = resp.json()
+            all_data.extend(payload.get("data", []))
+            returned_cursor = payload.get("cursor")
+
+            pagination_key = payload.get("pagination_key")
+            if not pagination_key:
+                break
+            query["pagination_key"] = pagination_key
+
+        cols = constants.FIN_SUMMARY_COLUMNS_V2
         if not all_data:
-            return pd.DataFrame()
+            return pd.DataFrame(columns=cols), returned_cursor
 
         df = pd.DataFrame.from_records(all_data)
         for col in (
@@ -57,9 +73,7 @@ class FinSummaryApiV2(BaseApi):
         if sort_cols:
             df.sort_values(sort_cols, inplace=True)
 
-        # v1 `/fins/statements` と同様に、定義済みカラムの順序で返す
-        cols = constants.FIN_SUMMARY_COLUMNS_V2
-        return df[cols].reset_index(drop=True)
+        return df[cols].reset_index(drop=True), returned_cursor
 
 
 class FinDetailsApiV2(BaseApi):
@@ -76,24 +90,39 @@ class FinDetailsApiV2(BaseApi):
         *,
         code: str = "",
         date_yyyymmdd: str = "",
+        cursor: str = "",
         **kwargs: Any,
-    ) -> pd.DataFrame:
+    ) -> tuple[pd.DataFrame, Optional[str]]:
         """
-        `/fins/details` を実行し、財務諸表詳細を DataFrame で返す。
+        v2 `/fins/details` を実行し、財務諸表詳細と cursor を返す。
         """
+        url = f"{client.JQUANTS_API_BASE}/fins/details"  # type: ignore[attr-defined]
+
         params: dict[str, Any] = {}
         if code:
             params["code"] = code
         if date_yyyymmdd:
             params["date"] = date_yyyymmdd
+        if cursor:
+            params["cursor"] = cursor
 
-        all_data = client._get_paginated(  # type: ignore[attr-defined]
-            "/fins/details",
-            params=params,
-        )
+        all_data: list[dict[str, Any]] = []
+        returned_cursor: Optional[str] = None
+        query = dict(params)
+
+        while True:
+            resp = client._get(url, query)  # type: ignore[attr-defined]
+            payload = resp.json()
+            all_data.extend(payload.get("data", []))
+            returned_cursor = payload.get("cursor")
+
+            pagination_key = payload.get("pagination_key")
+            if not pagination_key:
+                break
+            query["pagination_key"] = pagination_key
 
         if not all_data:
-            return pd.DataFrame()
+            return pd.DataFrame(), returned_cursor
 
         df = pd.DataFrame.from_records(all_data)
         if "DiscDate" in df.columns:
@@ -101,7 +130,7 @@ class FinDetailsApiV2(BaseApi):
         sort_cols = [c for c in ["DiscDate", "DiscTime", "Code"] if c in df.columns]
         if sort_cols:
             df.sort_values(sort_cols, inplace=True)
-        return df.reset_index(drop=True)
+        return df.reset_index(drop=True), returned_cursor
 
 
 class FinDividendApiV2(BaseApi):

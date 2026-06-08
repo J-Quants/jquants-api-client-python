@@ -8,7 +8,7 @@ import requests
 from dateutil import tz
 
 import jquantsapi
-from jquantsapi import client_v2
+from jquantsapi import client_v2, constants
 
 
 @pytest.mark.parametrize(
@@ -611,6 +611,124 @@ def test_get_td_bulk():
         ret = cli.get_td_bulk()
         assert ret["lastUpdated"] == "2025-04-01T08:00:00Z"
         assert ret["url"] == "https://example.com/bulk.csv.gz"
+
+
+FIN_SUMMARY_RECORD = {col: None for col in constants.FIN_SUMMARY_COLUMNS_V2}
+FIN_SUMMARY_RECORD.update(
+    {
+        "DiscDate": "2025-04-01",
+        "DiscTime": "08:00",
+        "Code": "86970",
+        "DiscNo": "20250401130100",
+    }
+)
+
+FIN_DETAILS_RECORD = {
+    "DiscDate": "2025-04-01",
+    "DiscTime": "08:00",
+    "Code": "86970",
+    "DiscNo": "20250401130100",
+}
+
+
+def test_get_fin_summary_cursor():
+    """get_fin_summary_cursorがtuple(DataFrame, cursor)を返すことを確認"""
+    ret_value = {"data": [FIN_SUMMARY_RECORD]}
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get") as mock_get:
+        mock_get.return_value.json.return_value = ret_value
+
+        cli = jquantsapi.ClientV2()
+        df, cursor = cli.get_fin_summary_cursor(code="86970")
+        args, _ = mock_get.call_args
+        assert args[1] == {"code": "86970"}
+        assert len(df) == 1
+        assert cursor is None
+
+
+def test_get_fin_summary_cursor_returns_cursor():
+    """get_fin_summary_cursorがレスポンスのcursorを返すことを確認"""
+    cursor_value = "eyJkIjoiMjAyNS0wNC0wMSJ9"
+    ret_value = {"data": [FIN_SUMMARY_RECORD], "cursor": cursor_value}
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get") as mock_get:
+        mock_get.return_value.json.return_value = ret_value
+
+        cli = jquantsapi.ClientV2()
+        df, cursor = cli.get_fin_summary_cursor(code="86970")
+        assert len(df) == 1
+        assert cursor == cursor_value
+
+
+def test_get_fin_summary_cursor_with_pagination():
+    """get_fin_summary_cursorがpagination_keyを自動処理して全件取得することを確認"""
+    page1 = {"data": [FIN_SUMMARY_RECORD], "pagination_key": "page2key"}
+    page2 = {"data": [FIN_SUMMARY_RECORD], "cursor": "eyJkIjoiMjAyNS0wNC0wMSJ9"}
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get") as mock_get:
+        mock_get.return_value.json.side_effect = [page1, page2]
+
+        cli = jquantsapi.ClientV2()
+        df, cursor = cli.get_fin_summary_cursor(code="86970")
+        assert len(df) == 2
+        assert cursor == "eyJkIjoiMjAyNS0wNC0wMSJ9"
+        assert mock_get.call_count == 2
+
+
+def test_get_fin_details_cursor():
+    """get_fin_details_cursorがtuple(DataFrame, cursor)を返すことを確認"""
+    ret_value = {"data": [FIN_DETAILS_RECORD]}
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get") as mock_get:
+        mock_get.return_value.json.return_value = ret_value
+
+        cli = jquantsapi.ClientV2()
+        df, cursor = cli.get_fin_details_cursor(code="86970")
+        args, _ = mock_get.call_args
+        assert args[1] == {"code": "86970"}
+        assert len(df) == 1
+        assert cursor is None
+
+
+def test_get_fin_details_cursor_returns_cursor():
+    """get_fin_details_cursorがレスポンスのcursorを返すことを確認"""
+    cursor_value = "eyJkIjoiMjAyNS0wNC0wMSJ9"
+    ret_value = {"data": [FIN_DETAILS_RECORD], "cursor": cursor_value}
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get") as mock_get:
+        mock_get.return_value.json.return_value = ret_value
+
+        cli = jquantsapi.ClientV2()
+        df, cursor = cli.get_fin_details_cursor(code="86970")
+        assert len(df) == 1
+        assert cursor == cursor_value
+
+
+def test_get_fin_details_cursor_with_pagination():
+    """get_fin_details_cursorがpagination_keyを自動処理して全件取得することを確認"""
+    page1 = {"data": [FIN_DETAILS_RECORD], "pagination_key": "page2key"}
+    page2 = {"data": [FIN_DETAILS_RECORD], "cursor": "eyJkIjoiMjAyNS0wNC0wMSJ9"}
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get") as mock_get:
+        mock_get.return_value.json.side_effect = [page1, page2]
+
+        cli = jquantsapi.ClientV2()
+        df, cursor = cli.get_fin_details_cursor(code="86970")
+        assert len(df) == 2
+        assert cursor == "eyJkIjoiMjAyNS0wNC0wMSJ9"
+        assert mock_get.call_count == 2
 
 
 def test_get_raises_with_api_error_message():
