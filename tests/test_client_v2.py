@@ -1,5 +1,6 @@
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
@@ -613,7 +614,9 @@ def test_get_td_bulk():
         assert ret["url"] == "https://example.com/bulk.csv.gz"
 
 
-FIN_SUMMARY_RECORD = {col: None for col in constants.FIN_SUMMARY_COLUMNS_V2}
+FIN_SUMMARY_RECORD: dict[str, Any] = {
+    col: None for col in constants.FIN_SUMMARY_COLUMNS_V2
+}
 FIN_SUMMARY_RECORD.update(
     {
         "DiscDate": "2025-04-01",
