@@ -17,6 +17,11 @@ if sys.version_info >= (3, 11):
 else:
     import tomli as tomllib
 
+if sys.version_info >= (3, 13):
+    from warnings import deprecated  # type: ignore[attr-defined]
+else:
+    from typing_extensions import deprecated
+
 from jquantsapi import __version__, constants
 from jquantsapi.apis.v2.bulk import BulkGetApiV2, BulkListApiV2
 from jquantsapi.apis.v2.derivatives import (
@@ -600,6 +605,9 @@ class ClientV2:
     # ------------------------------------------------------------------
     # /fins/summary (path_old: /fins/statements)
     # ------------------------------------------------------------------
+    @deprecated(
+        "get_fin_summary_cursor() is now available for cursor-based incremental retrieval. Consider using it instead."
+    )
     def get_fin_summary(
         self,
         code: str = "",
@@ -614,11 +622,12 @@ class ClientV2:
         Returns:
             pd.DataFrame: 財務情報 (v2のフィールド名で返却)
         """
-        return self._fin_summary_api.execute(
+        df, _ = self._fin_summary_api.execute(
             self,
             code=code,
             date_yyyymmdd=date_yyyymmdd,
         )
+        return df
 
     def get_fin_summary_range(
         self,
@@ -664,12 +673,12 @@ class ClientV2:
                     buff.append(df)
                 else:
                     future = executor.submit(
-                        self.get_fin_summary, date_yyyymmdd=yyyymmdd
+                        self.get_fin_summary_cursor, date_yyyymmdd=yyyymmdd
                     )
                     futures[future] = yyyymmdd
 
             for future in as_completed(futures):
-                df = future.result()
+                df, _ = future.result()
                 if df.empty:
                     continue
                 buff.append(df)
@@ -689,9 +698,37 @@ class ClientV2:
             .reset_index(drop=True)
         )
 
+    def get_fin_summary_cursor(
+        self,
+        code: str = "",
+        date_yyyymmdd: str = "",
+        cursor: str = "",
+    ) -> tuple[pd.DataFrame, Optional[str]]:
+        """
+        財務情報サマリ cursor 差分取得対応版 (v2: /fins/summary)
+
+        cursor パラメータを使用した差分取得はプレミアムプラン限定の機能です。
+
+        Args:
+            code: 銘柄コード
+            date_yyyymmdd: 開示日 (YYYYMMDD or YYYY-MM-DD)
+            cursor: 前回レスポンスで返却された cursor。差分取得に使用します。
+        Returns:
+            tuple[pd.DataFrame, Optional[str]]: 財務情報サマリと cursor のタプル
+        """
+        return self._fin_summary_api.execute(
+            self,
+            code=code,
+            date_yyyymmdd=date_yyyymmdd,
+            cursor=cursor,
+        )
+
     # ------------------------------------------------------------------
     # /fins/details (path_old: /fins/fs_details)
     # ------------------------------------------------------------------
+    @deprecated(
+        "get_fin_details_cursor() is now available for cursor-based incremental retrieval. Consider using it instead."
+    )
     def get_fin_details(
         self,
         code: str = "",
@@ -706,11 +743,12 @@ class ClientV2:
         Returns:
             pd.DataFrame: 財務諸表詳細 (FS列に各項目が含まれる)
         """
-        return self._fin_details_api.execute(
+        df, _ = self._fin_details_api.execute(
             self,
             code=code,
             date_yyyymmdd=date_yyyymmdd,
         )
+        return df
 
     def get_fin_details_range(
         self,
@@ -745,12 +783,12 @@ class ClientV2:
                     buff.append(df)
                 else:
                     future = executor.submit(
-                        self.get_fin_details, date_yyyymmdd=yyyymmdd
+                        self.get_fin_details_cursor, date_yyyymmdd=yyyymmdd
                     )
                     futures[future] = yyyymmdd
 
             for future in as_completed(futures):
-                df = future.result()
+                df, _ = future.result()
                 if df.empty:
                     continue
                 buff.append(df)
@@ -768,6 +806,29 @@ class ClientV2:
             pd.concat(buff)
             .sort_values(["DiscDate", "DiscTime", "Code"])
             .reset_index(drop=True)
+        )
+
+    def get_fin_details_cursor(
+        self,
+        code: str = "",
+        date_yyyymmdd: str = "",
+        cursor: str = "",
+    ) -> tuple[pd.DataFrame, Optional[str]]:
+        """
+        財務諸表詳細 cursor 差分取得対応版 (v2: /fins/details)
+
+        Args:
+            code: 銘柄コード
+            date_yyyymmdd: 開示日 (YYYYMMDD or YYYY-MM-DD)
+            cursor: 前回レスポンスで返却された cursor。差分取得に使用します。
+        Returns:
+            tuple[pd.DataFrame, Optional[str]]: 財務諸表詳細と cursor のタプル
+        """
+        return self._fin_details_api.execute(
+            self,
+            code=code,
+            date_yyyymmdd=date_yyyymmdd,
+            cursor=cursor,
         )
 
     # ------------------------------------------------------------------
