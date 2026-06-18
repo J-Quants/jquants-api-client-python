@@ -20,9 +20,9 @@ To use J-Quants API, you need to "Applications for J-Quants API" from [J-Quants 
 
 J-Quants API を利用するためには[J-Quants API の Web サイト](https://jpx-jquants.com/) から「J-Quants API 申し込み」及び利用プランの選択が必要になります。
 
-jquants-api-client-python を使用するためには「J-Quants API ログインページで使用するメールアドレスおよびパスワード」または「J-Quants API メニューページから取得したリフレッシュトークン」が必要になります。必要に応じて下記の Web サイトより取得してください。
+jquants-api-client-python を使用するためには「J-Quants API ダッシュボードから取得した API キー」が必要になります。必要に応じて下記の Web サイトより取得してください。
 
-[J-Quants API ログインページ](https://jpx-jquants.com/login)
+[J-Quants API ダッシュボード](https://jpx-jquants.com/dashboard/api-keys)
 
 ### サンプルコード (V2)
 

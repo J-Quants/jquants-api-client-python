@@ -8,9 +8,7 @@ class SupportsRequest(Protocol):
     """
     Api クラスが利用するクライアント側の最小インタフェース。
 
-    - v1 の `Client`
-    - v2 の `ClientV2`
-    などがこの Protocol を満たす想定。
+    `ClientV2` がこの Protocol を満たす想定。
     """
 
     JQUANTS_API_BASE: str
@@ -26,12 +24,12 @@ class BaseApi(ABC):
     """
     各エンドポイント単位の API 実装のための抽象クラス。
 
-    v1 / v2 の実装で共通の execute インタフェースを提供する。
+    `ClientV2` から呼び出される共通の execute インタフェースを提供する。
     """
 
     #: 論理名 (例: "listed_info")
     name: str
-    #: バージョン識別子 (例: "v1", "v2")
+    #: バージョン識別子 (例: "v2")
     version: str
 
     @abstractmethod
