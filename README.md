@@ -147,78 +147,6 @@ API レスポンスが Dataframe の形式で取得できます。
 - get_mkt_breakdown_range - 売買内訳（範囲指定）
 - get_fin_details_range - 財務詳細（範囲指定）
 
-## 対応 API (V1) - Deprecated
-
-> **⚠️ 非推奨**: `Client` クラス (V1) は非推奨となりました。今後は `ClientV2` をご利用ください。
-> V1 API は将来のバージョンで削除される予定です。
-
-<details>
-<summary>V1 API 一覧（クリックで展開）</summary>
-
-### ラッパー群
-
------------------- Free plan or higher is required ------------------
-
-- get_refresh_token
-- get_id_token
-- get_listed_info
-- get_prices_daily_quotes
-- get_fins_statements
-- get_fins_announcement
-
------------------- Light plan or higher is required ------------------
-
-- get_markets_trades_spec
-- get_indices_topix
-
------------------- Standard plan or higher is required ------------------
-
-- get_option_index_option
-- get_markets_weekly_margin_interest
-- get_markets_short_selling
-- get_indices
-- get_markets_short_selling_positions
-- get_markets_daily_margin_interest
-
------------------- Premium plan or higher is required ------------------
-
-- get_markets_breakdown
-- get_prices_prices_am
-- get_fins_dividend
-- get_fins_fs_details
-- get_derivatives_futures
-- get_derivatives_options
-
-### ユーティリティ群
-
-- get_market_segments
-- get_17_sectors
-- get_33_sectors
-
------------------- Free plan or higher is required ------------------
-
-- get_list
-- get_price_range
-- get_statements_range
-
------------------- Standard plan or higher is required ------------------
-
-- get_weekly_margin_range
-- get_short_selling_range
-- get_index_option_range
-- get_markets_short_selling_positions_range
-- get_daily_margin_interest_range
-
------------------- Premium plan or higher is required ------------------
-
-- get_breakdown_range
-- get_dividend_range
-- get_fins_fs_details_range
-- get_derivatives_futures_range
-- get_derivatives_options_range
-
-</details>
-
 ## レートリミット
 
 J-Quants API には、サービスの安定稼働を目的としてレートリミット（利用頻度の制限）が設けられています。
@@ -234,8 +162,6 @@ J-Quants API には、サービスの安定稼働を目的としてレートリ�
 
 ## 設定
 
-### V2 (ClientV2)
-
 API キーは設定ファイルおよび環境変数を使用して指定することも可能です。
 設定は下記の順に読み込まれ、設定項目が重複している場合は後に読み込まれた値で上書きされます。
 
@@ -245,7 +171,7 @@ API キーは設定ファイルおよび環境変数を使用して指定する�
 4. `os.environ["JQUANTS_API_CLIENT_CONFIG_FILE"]`
 5. `${JQUANTS_API_KEY}`
 
-#### 設定ファイル例
+### 設定ファイル例
 
 `jquants-api.toml` は下記のように設定します。
 
@@ -253,33 +179,6 @@ API キーは設定ファイルおよび環境変数を使用して指定する�
 [jquants-api-client]
 api_key = "*****"
 ```
-
-### V1 (Client) - Deprecated
-
-<details>
-<summary>V1 設定方法（クリックで展開）</summary>
-
-認証用のメールアドレス/パスワードおよびリフレッシュトークンは設定ファイルおよび環境変数を使用して指定することも可能です。
-設定は下記の順に読み込まれ、設定項目が重複している場合は後に読み込まれた値で上書きされます。
-
-1. `/content/drive/MyDrive/drive_ws/secret/jquants-api.toml` (Google Colab のみ)
-2. `${HOME}/.jquants-api/jquants-api.toml`
-3. `jquants-api.toml`
-4. `os.environ["JQUANTS_API_CLIENT_CONFIG_FILE"]`
-5. `${JQUANTS_API_MAIL_ADDRESS}`, `${JQUANTS_API_PASSWORD}`, `${JQUANTS_API_REFRESH_TOKEN}`
-
-#### 設定ファイル例
-
-`jquants-api.toml` は下記のように設定します。
-
-```toml
-[jquants-api-client]
-mail_address = "*****"
-password = "*****"
-refresh_token = "*****"
-```
-
-</details>
 
 ## 動作確認
 
