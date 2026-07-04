@@ -700,6 +700,42 @@ def test_get_fin_summary_cursor_with_pagination():
         assert mock_get.call_count == 2
 
 
+def test_get_fin_summary_cursor_numeric_code_stays_string():
+    """Codeが数値で返却され欠損値と混在してもfloat化せず文字列のまま保持されることを確認 (#108)"""
+    record_numeric = dict(FIN_SUMMARY_RECORD)
+    record_numeric["Code"] = 7203
+    record_missing = dict(FIN_SUMMARY_RECORD)
+    record_missing["Code"] = None
+    ret_value = {"data": [record_numeric, record_missing]}
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get") as mock_get:
+        mock_get.return_value.json.return_value = ret_value
+
+        cli = jquantsapi.ClientV2()
+        df, _ = cli.get_fin_summary_cursor()
+        assert len(df) == 2
+        assert df["Code"].isna().sum() == 1
+        assert df["Code"].dropna().tolist() == ["7203"]
+
+
+def test_get_fin_summary_cursor_alphanumeric_code_preserved():
+    """2024年以降の英数字銘柄コード(例: 186A)が文字列のまま保持されることを確認 (#108)"""
+    record_alnum = dict(FIN_SUMMARY_RECORD)
+    record_alnum["Code"] = "186A"
+    ret_value = {"data": [record_alnum]}
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get") as mock_get:
+        mock_get.return_value.json.return_value = ret_value
+
+        cli = jquantsapi.ClientV2()
+        df, _ = cli.get_fin_summary_cursor()
+        assert df["Code"].tolist() == ["186A"]
+
+
 def test_get_fin_details_cursor():
     """get_fin_details_cursorがtuple(DataFrame, cursor)を返すことを確認"""
     ret_value = {"data": [FIN_DETAILS_RECORD]}
