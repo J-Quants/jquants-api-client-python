@@ -433,6 +433,10 @@ FIN_SUMMARY_COLUMNS_V2 = [
     "NxFNCOdP",
     "NxFNCNP",
     "NxFNCEPS",
+    "ShEq",
+    "NCShEq",
+    "ROE",
+    "NCROE",
 ]
 
 # ref. ja https://jpx-jquants.com/ja/spec/fin-details
