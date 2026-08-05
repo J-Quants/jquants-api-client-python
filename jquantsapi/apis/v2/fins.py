@@ -184,3 +184,53 @@ class FinDividendApiV2(BaseApi):
         if sort_cols:
             df.sort_values(sort_cols, inplace=True)
         return df.reset_index(drop=True)
+
+
+class FinEarningsDateApiV2(BaseApi):
+    """
+    v2 の決算発表予定日 API (`/fins/earnings-date`) のラッパークラス。
+    """
+
+    name = "fin_earnings_date"
+    version = "v2"
+
+    def execute(
+        self,
+        client: SupportsRequest,
+        *,
+        code: str = "",
+        date_yyyymmdd: str = "",
+        scheduled_date: str = "",
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """
+        `/fins/earnings-date` を実行し、決算発表予定日データを DataFrame で返す。
+
+        code・date_yyyymmdd・scheduled_date のいずれか1つの指定が必須です
+        （2つ以上指定するとAPI側で400エラーになります）。SchDate が未定の
+        場合は空文字列のままです（pd.to_datetime は空文字を NaT に変換）。
+        """
+        params: dict[str, Any] = {}
+        if code:
+            params["code"] = code
+        if date_yyyymmdd:
+            params["date"] = date_yyyymmdd
+        if scheduled_date:
+            params["scheduled_date"] = scheduled_date
+
+        all_data = client._get_paginated(  # type: ignore[attr-defined]
+            "/fins/earnings-date",
+            params=params,
+        )
+
+        if not all_data:
+            return pd.DataFrame()
+
+        df = pd.DataFrame.from_records(all_data)
+        for col in ("PubDate", "SchDate"):
+            if col in df.columns:
+                df[col] = pd.to_datetime(df[col], errors="coerce")
+        sort_cols = [c for c in ["PubDate", "Code"] if c in df.columns]
+        if sort_cols:
+            df.sort_values(sort_cols, inplace=True)
+        return df.reset_index(drop=True)

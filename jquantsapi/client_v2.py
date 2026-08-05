@@ -37,7 +37,12 @@ from jquantsapi.apis.v2.equities import (
     EqInvestorTypesApiV2,
     EqMasterApiV2,
 )
-from jquantsapi.apis.v2.fins import FinDetailsApiV2, FinDividendApiV2, FinSummaryApiV2
+from jquantsapi.apis.v2.fins import (
+    FinDetailsApiV2,
+    FinDividendApiV2,
+    FinEarningsDateApiV2,
+    FinSummaryApiV2,
+)
 from jquantsapi.apis.v2.indices import IdxBarsDailyApiV2, IdxBarsDailyTopixApiV2
 from jquantsapi.apis.v2.markets import (
     MktBreakdownApiV2,
@@ -106,6 +111,7 @@ class ClientV2:
         self._fin_summary_api = FinSummaryApiV2()
         self._fin_details_api = FinDetailsApiV2()
         self._fin_dividend_api = FinDividendApiV2()
+        self._fin_earnings_date_api = FinEarningsDateApiV2()
         self._eq_earnings_cal_api = EqEarningsCalApiV2()
         self._mkt_short_ratio_api = MktShortRatioApiV2()
         self._mkt_margin_interest_api = MktMarginInterestApiV2()
@@ -858,6 +864,40 @@ class ClientV2:
             from_yyyymmdd=from_yyyymmdd,
             to_yyyymmdd=to_yyyymmdd,
             date_yyyymmdd=date_yyyymmdd,
+        )
+
+    # ------------------------------------------------------------------
+    # /fins/earnings-date
+    # ------------------------------------------------------------------
+    def get_fin_earnings_date(
+        self,
+        code: str = "",
+        date_yyyymmdd: str = "",
+        scheduled_date: str = "",
+    ) -> pd.DataFrame:
+        """
+        決算発表予定日 (v2: /fins/earnings-date)
+
+        東証上場会社等が報告した決算発表予定日を取得します。get_eq_earnings_cal
+        （旧 /equities/earnings-calendar）と異なり、決算期によらず全上場銘柄
+        （REIT等含む）が対象で、予定日の変更・未定の履歴も公表日単位で追跡できます。
+
+        code・date_yyyymmdd・scheduled_date のいずれか1つの指定が必須です
+        （2つ以上指定するとAPI側で400エラーになります）。
+
+        Args:
+            code: 銘柄コード。指定時は変更履歴を含む全レコードを返却
+            date_yyyymmdd: 公表日 (YYYYMMDD or YYYY-MM-DD)。指定日に公表・変更された全銘柄
+            scheduled_date: 発表予定日 (YYYYMMDD or YYYY-MM-DD)。指定日を現在有効な予定日とする全銘柄
+                （その後予定日が変更されたレコードはヒットしない点に注意）
+        Returns:
+            pd.DataFrame: 決算発表予定日データ（PubDate/SchDate/FQName/FYE/Code/CoName/CoNameEn）
+        """
+        return self._fin_earnings_date_api.execute(
+            self,
+            code=code,
+            date_yyyymmdd=date_yyyymmdd,
+            scheduled_date=scheduled_date,
         )
 
     # ------------------------------------------------------------------

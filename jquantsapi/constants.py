@@ -474,6 +474,18 @@ FINS_DIVIDEND_COLUMNS_V2 = [
     "SpecDivRate",
 ]
 
+# ref. ja https://jpx-jquants.com/ja/spec/fin-earnings-date
+# ref. en https://jpx-jquants.com/en/spec/fin-earnings-date
+FIN_EARNINGS_DATE_COLUMNS_V2 = [
+    "PubDate",
+    "SchDate",
+    "FQName",
+    "FYE",
+    "Code",
+    "CoName",
+    "CoNameEn",
+]
+
 # ref. ja https://jpx-jquants.com/ja/spec/eq-earnings-cal
 # ref. en https://jpx-jquants.com/en/spec/eq-earnings-cal
 FINS_ANNOUNCEMENT_COLUMNS_V2 = [

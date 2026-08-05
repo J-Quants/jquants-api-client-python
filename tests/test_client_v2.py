@@ -854,3 +854,93 @@ def test_get_error_has_response_attribute():
         with pytest.raises(requests.exceptions.HTTPError) as exc_info:
             cli._get("https://api.jquants.com/v2/equities/master")
         assert exc_info.value.response == mock_resp
+
+
+FIN_EARNINGS_DATE_RECORD = {
+    "PubDate": "2025-06-03",
+    "SchDate": "2025-07-30",
+    "FQName": "1Q",
+    "FYE": "0331",
+    "Code": "86970",
+    "CoName": "日本取引所グループ",
+    "CoNameEn": "Japan Exchange Group,Inc.",
+}
+
+
+@pytest.mark.parametrize(
+    "code, date_yyyymmdd, scheduled_date, exp_params",
+    (
+        ("", "", "", {}),
+        ("86970", "", "", {"code": "86970"}),
+        ("", "20260803", "", {"date": "20260803"}),
+        ("", "", "20260805", {"scheduled_date": "20260805"}),
+    ),
+)
+def test_get_fin_earnings_date_params(code, date_yyyymmdd, scheduled_date, exp_params):
+    """get_fin_earnings_dateがcode/date_yyyymmdd/scheduled_dateを
+    クエリパラメータへ正しく反映することを確認（3者は排他だが、クライアント側は
+    渡された値をそのまま転送するだけで、排他性の検証はAPI側の400エラーに委ねる）"""
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = []
+
+        cli = jquantsapi.ClientV2()
+        cli.get_fin_earnings_date(
+            code=code, date_yyyymmdd=date_yyyymmdd, scheduled_date=scheduled_date
+        )
+        args, kwargs = mock_get_paginated.call_args
+        assert args[0] == "/fins/earnings-date"
+        assert kwargs.get("params", {}) == exp_params
+
+
+def test_get_fin_earnings_date_returns_dataframe():
+    """get_fin_earnings_dateが正しい列・型のDataFrameを返すことを確認"""
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = [FIN_EARNINGS_DATE_RECORD]
+
+        cli = jquantsapi.ClientV2()
+        df = cli.get_fin_earnings_date(code="86970")
+        assert list(df.columns) == [
+            "PubDate",
+            "SchDate",
+            "FQName",
+            "FYE",
+            "Code",
+            "CoName",
+            "CoNameEn",
+        ]
+        assert len(df) == 1
+        assert pd.api.types.is_datetime64_any_dtype(df["PubDate"])
+        assert pd.api.types.is_datetime64_any_dtype(df["SchDate"])
+        assert df.loc[0, "Code"] == "86970"
+
+
+def test_get_fin_earnings_date_undetermined_sch_date_becomes_nat():
+    """SchDateが空文字（未定）の場合、NaTに変換されることを確認（仕様上、
+    一度公表された予定日が後から「未定」に変更されるとSchDateは空文字になる）"""
+    record = dict(FIN_EARNINGS_DATE_RECORD)
+    record["SchDate"] = ""
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = [record]
+
+        cli = jquantsapi.ClientV2()
+        df = cli.get_fin_earnings_date(code="86970")
+        assert pd.isna(df.loc[0, "SchDate"])
+
+
+def test_get_fin_earnings_date_empty_result():
+    """該当データなし（空配列）の場合、空のDataFrameを返すことを確認"""
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = []
+
+        cli = jquantsapi.ClientV2()
+        df = cli.get_fin_earnings_date(code="86970")
+        assert df.empty
