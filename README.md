@@ -82,7 +82,8 @@ API レスポンスが Dataframe の形式で取得できます。
 - get_eq_master - 上場銘柄一覧
 - get_eq_bars_daily - 株価日足
 - get_fin_summary - 決算サマリー
-- get_eq_earnings_cal - 決算発表日
+- get_fin_earnings_date - 決算発表予定日
+- get_eq_earnings_cal - 決算発表予定日（3・9月期決算会社のみ・翌営業日分）
 
 ------------------ Light plan or higher is required ------------------
 
@@ -101,6 +102,9 @@ API レスポンスが Dataframe の形式で取得できます。
 - get_drv_bars_daily_fut - 先物日足
 - get_drv_bars_daily_opt - オプション日足
 - get_drv_bars_daily_opt_225 - 日経225オプション日足
+- get_edinet_major_shareholders - 大株主状況（EDINET）
+- get_edinet_cross_shareholdings - 政策保有株式（EDINET）
+- get_edinet_large_volume_shareholders - 大量保有報告書（EDINET）
 
 ------------------ Premium plan or higher is required ------------------
 
@@ -131,6 +135,7 @@ API レスポンスが Dataframe の形式で取得できます。
 - get_list - 銘柄一覧（セクター情報付き）
 - get_eq_bars_daily_range - 株価日足（範囲指定）
 - get_fin_summary_range - 決算サマリー（範囲指定）
+- get_fin_earnings_date_range - 決算発表予定日（公表日の範囲指定）
 
 ------------------ Standard plan or higher is required ------------------
 

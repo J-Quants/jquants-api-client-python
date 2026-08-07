@@ -868,18 +868,18 @@ FIN_EARNINGS_DATE_RECORD = {
 
 
 @pytest.mark.parametrize(
-    "code, date_yyyymmdd, scheduled_date, exp_params",
+    "code, date_yyyymmdd, scheduled_date_yyyymmdd, exp_params",
     (
-        ("", "", "", {}),
         ("86970", "", "", {"code": "86970"}),
         ("", "20260803", "", {"date": "20260803"}),
         ("", "", "20260805", {"scheduled_date": "20260805"}),
     ),
 )
-def test_get_fin_earnings_date_params(code, date_yyyymmdd, scheduled_date, exp_params):
-    """get_fin_earnings_dateがcode/date_yyyymmdd/scheduled_dateを
-    クエリパラメータへ正しく反映することを確認（3者は排他だが、クライアント側は
-    渡された値をそのまま転送するだけで、排他性の検証はAPI側の400エラーに委ねる）"""
+def test_get_fin_earnings_date_params(
+    code, date_yyyymmdd, scheduled_date_yyyymmdd, exp_params
+):
+    """get_fin_earnings_dateがcode/date_yyyymmdd/scheduled_date_yyyymmddを
+    クエリパラメータへ正しく反映することを確認"""
     with patch.object(
         jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
     ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
@@ -887,11 +887,36 @@ def test_get_fin_earnings_date_params(code, date_yyyymmdd, scheduled_date, exp_p
 
         cli = jquantsapi.ClientV2()
         cli.get_fin_earnings_date(
-            code=code, date_yyyymmdd=date_yyyymmdd, scheduled_date=scheduled_date
+            code=code,
+            date_yyyymmdd=date_yyyymmdd,
+            scheduled_date_yyyymmdd=scheduled_date_yyyymmdd,
         )
         args, kwargs = mock_get_paginated.call_args
         assert args[0] == "/fins/earnings-date"
         assert kwargs.get("params", {}) == exp_params
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    (
+        {},  # 指定なし
+        {"code": "86970", "date_yyyymmdd": "20260603"},  # 2つ指定
+        {
+            "code": "86970",
+            "date_yyyymmdd": "20260603",
+            "scheduled_date_yyyymmdd": "20260730",
+        },  # 3つ指定
+    ),
+)
+def test_get_fin_earnings_date_raises_on_invalid_params(kwargs):
+    """get_fin_earnings_dateはcode/date/scheduled_dateのいずれか1つ必須
+    （未指定・複数指定はAPIを呼ぶ前にValueError）"""
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ):
+        cli = jquantsapi.ClientV2()
+        with pytest.raises(ValueError):
+            cli.get_fin_earnings_date(**kwargs)
 
 
 def test_get_fin_earnings_date_returns_dataframe():
@@ -944,3 +969,139 @@ def test_get_fin_earnings_date_empty_result():
         cli = jquantsapi.ClientV2()
         df = cli.get_fin_earnings_date(code="86970")
         assert df.empty
+
+
+EDINET_MAJOR_SHAREHOLDERS_RECORD = {
+    "DocId": "S100YA84",
+    "Code": "86970",
+    "EdinetCode": "E03814",
+    "FilerName": "株式会社日本取引所グループ",
+    "FilerNameEn": "Japan Exchange Group, Inc.",
+    "DocTypeCode": "120",
+    "SubDate": "2026-06-11",
+    "SubTime": "15:00:00",
+    "PerSt": "2025-04-01",
+    "PerEn": "2026-03-31",
+    "Hldrs": [
+        {
+            "Rank": 1,
+            "HldrName": "日本マスタートラスト信託銀行株式会社（信託口）",
+            "HldrAddr": "東京都港区",
+            "ShsHeld": 175830000,
+            "ShsRatio": 0.1704,
+        }
+    ],
+}
+
+
+@pytest.mark.parametrize(
+    "kwargs, exp_params",
+    (
+        ({}, {}),
+        ({"edinet_code": "E03814"}, {"edinet_code": "E03814"}),
+        ({"code": "86970"}, {"code": "86970"}),
+        ({"date_yyyymmdd": "20260611"}, {"date": "20260611"}),
+        (
+            {"code": "86970", "date_yyyymmdd": "20260611"},
+            {"code": "86970", "date": "20260611"},
+        ),
+    ),
+)
+def test_get_edinet_major_shareholders(kwargs, exp_params):
+    """get_edinet_major_shareholdersのパラメータテスト"""
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = [EDINET_MAJOR_SHAREHOLDERS_RECORD]
+
+        cli = jquantsapi.ClientV2()
+        df = cli.get_edinet_major_shareholders(**kwargs)
+        args, kwargs_called = mock_get_paginated.call_args
+        assert args[0] == "/edinet/major-shareholders"
+        assert kwargs_called.get("params", {}) == exp_params
+        assert len(df) == 1
+        # ネストは list のまま object 列として保持される
+        assert isinstance(df["Hldrs"].iloc[0], list)
+        assert df["Hldrs"].iloc[0][0]["Rank"] == 1
+
+
+@pytest.mark.parametrize(
+    "method_name",
+    (
+        "get_edinet_major_shareholders",
+        "get_edinet_cross_shareholdings",
+        "get_edinet_large_volume_shareholders",
+    ),
+)
+def test_get_edinet_raises_on_both_codes(method_name):
+    """EDINET系APIはedinet_codeとcodeの同時指定でValueError"""
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ):
+        cli = jquantsapi.ClientV2()
+        with pytest.raises(ValueError):
+            getattr(cli, method_name)(edinet_code="E03814", code="86970")
+
+
+def test_get_edinet_cross_shareholdings_keeps_nested_objects():
+    """政策保有株式のReport/Largest/SecondLargestはdictのまま保持されることを確認"""
+    record = {
+        "DocId": "S100XXXX",
+        "Code": "79740",
+        "EdinetCode": "E02367",
+        "FilerName": "任天堂株式会社",
+        "FilerNameEn": "Nintendo Co., Ltd.",
+        "DocTypeCode": "120",
+        "SubDate": "2026-06-25",
+        "SubTime": "15:00:00",
+        "PerSt": "2025-04-01",
+        "PerEn": "2026-03-31",
+        "Report": {"HldrName": "任天堂株式会社", "Spec": [], "Deem": []},
+        "Largest": {"HldrName": "", "Spec": [], "Deem": []},
+        "SecondLargest": {"HldrName": "", "Spec": [], "Deem": []},
+    }
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = [record]
+
+        cli = jquantsapi.ClientV2()
+        df = cli.get_edinet_cross_shareholdings(edinet_code="E02367")
+        assert len(df) == 1
+        assert isinstance(df["Report"].iloc[0], dict)
+        assert df["Report"].iloc[0]["HldrName"] == "任天堂株式会社"
+
+
+def test_get_edinet_large_volume_shareholders_params():
+    """get_edinet_large_volume_shareholdersのパス・パラメータテスト"""
+    record = {
+        "DocId": "S100ZZZZ",
+        "Code": "86970",
+        "EdinetCode": "E03814",
+        "IsrName": "株式会社日本取引所グループ",
+        "DocTypeCode": "350",
+        "SubDate": "2026-07-01",
+        "SubTime": "10:00:00",
+        "LargeHldgTypeCode": "1",
+        "DocTitle": "大量保有報告書",
+        "ChgRsn": "",
+        "TotalShsHeld": 71000000,
+        "TotalShsRatio": 0.0572,
+        "TotalShsRatioLast": None,
+        "TotalOutStks": 1241000000,
+        "Hldrs": [{"HldrName": "テスト保有者", "AcqDisp": [], "BrwList": []}],
+    }
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = [record]
+
+        cli = jquantsapi.ClientV2()
+        df = cli.get_edinet_large_volume_shareholders(code="86970")
+        args, kwargs_called = mock_get_paginated.call_args
+        assert args[0] == "/edinet/large-volume-shareholders"
+        assert kwargs_called.get("params", {}) == {"code": "86970"}
+        assert len(df) == 1
+        assert isinstance(df["Hldrs"].iloc[0], list)

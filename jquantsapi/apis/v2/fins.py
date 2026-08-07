@@ -200,23 +200,30 @@ class FinEarningsDateApiV2(BaseApi):
         *,
         code: str = "",
         date_yyyymmdd: str = "",
-        scheduled_date: str = "",
+        scheduled_date_yyyymmdd: str = "",
         **kwargs: Any,
     ) -> pd.DataFrame:
         """
         `/fins/earnings-date` を実行し、決算発表予定日データを DataFrame で返す。
 
-        code・date_yyyymmdd・scheduled_date のいずれか1つの指定が必須です
-        （2つ以上指定するとAPI側で400エラーになります）。SchDate が未定の
-        場合は空文字列のままです（pd.to_datetime は空文字を NaT に変換）。
+        code・date_yyyymmdd・scheduled_date_yyyymmdd のいずれか1つの指定が
+        必須です（API 仕様。未指定・2つ以上の指定は ValueError）。SchDate が
+        未定の場合は空文字列のままです（pd.to_datetime は空文字を NaT に変換）。
         """
+        specified = [v for v in (code, date_yyyymmdd, scheduled_date_yyyymmdd) if v]
+        if len(specified) != 1:
+            raise ValueError(
+                "code / date_yyyymmdd / scheduled_date_yyyymmdd の"
+                "いずれか1つを指定してください。"
+            )
+
         params: dict[str, Any] = {}
         if code:
             params["code"] = code
         if date_yyyymmdd:
             params["date"] = date_yyyymmdd
-        if scheduled_date:
-            params["scheduled_date"] = scheduled_date
+        if scheduled_date_yyyymmdd:
+            params["scheduled_date"] = scheduled_date_yyyymmdd
 
         all_data = client._get_paginated(  # type: ignore[attr-defined]
             "/fins/earnings-date",

@@ -642,3 +642,57 @@ TD_LIST_COLUMNS_V2 = [
     "DiscItems",
     "Docs",
 ]
+
+# ref. ja https://jpx-jquants.com/ja/spec/edinet-major-shareholders
+# ref. en https://jpx-jquants.com/en/spec/edinet-major-shareholders
+EDINET_MAJOR_SHAREHOLDERS_COLUMNS_V2 = [
+    "DocId",
+    "Code",
+    "EdinetCode",
+    "FilerName",
+    "FilerNameEn",
+    "DocTypeCode",
+    "SubDate",
+    "SubTime",
+    "PerSt",
+    "PerEn",
+    "Hldrs",
+]
+
+# ref. ja https://jpx-jquants.com/ja/spec/edinet-cross-shareholdings
+# ref. en https://jpx-jquants.com/en/spec/edinet-cross-shareholdings
+EDINET_CROSS_SHAREHOLDINGS_COLUMNS_V2 = [
+    "DocId",
+    "Code",
+    "EdinetCode",
+    "FilerName",
+    "FilerNameEn",
+    "DocTypeCode",
+    "SubDate",
+    "SubTime",
+    "PerSt",
+    "PerEn",
+    "Report",
+    "Largest",
+    "SecondLargest",
+]
+
+# ref. ja https://jpx-jquants.com/ja/spec/edinet-large-volume-shareholders
+# ref. en https://jpx-jquants.com/en/spec/edinet-large-volume-shareholders
+EDINET_LARGE_VOLUME_SHAREHOLDERS_COLUMNS_V2 = [
+    "DocId",
+    "Code",
+    "EdinetCode",
+    "IsrName",
+    "DocTypeCode",
+    "SubDate",
+    "SubTime",
+    "LargeHldgTypeCode",
+    "DocTitle",
+    "ChgRsn",
+    "TotalShsHeld",
+    "TotalShsRatio",
+    "TotalShsRatioLast",
+    "TotalOutStks",
+    "Hldrs",
+]

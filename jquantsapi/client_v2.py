@@ -29,6 +29,11 @@ from jquantsapi.apis.v2.derivatives import (
     DrvBarsDailyOpt225ApiV2,
     DrvBarsDailyOptApiV2,
 )
+from jquantsapi.apis.v2.edinet import (
+    EdinetCrossShareholdingsApiV2,
+    EdinetLargeVolumeShareholdersApiV2,
+    EdinetMajorShareholdersApiV2,
+)
 from jquantsapi.apis.v2.equities import (
     EqBarsDailyAmApiV2,
     EqBarsDailyApiV2,
@@ -129,6 +134,11 @@ class ClientV2:
         self._td_list_api = TdListApiV2()
         self._td_files_api = TdFilesApiV2()
         self._td_bulk_api = TdBulkApiV2()
+        self._edinet_major_shareholders_api = EdinetMajorShareholdersApiV2()
+        self._edinet_cross_shareholdings_api = EdinetCrossShareholdingsApiV2()
+        self._edinet_large_volume_shareholders_api = (
+            EdinetLargeVolumeShareholdersApiV2()
+        )
 
     # ------------------------------------------------------------------
     # 内部ユーティリティ
@@ -873,7 +883,7 @@ class ClientV2:
         self,
         code: str = "",
         date_yyyymmdd: str = "",
-        scheduled_date: str = "",
+        scheduled_date_yyyymmdd: str = "",
     ) -> pd.DataFrame:
         """
         決算発表予定日 (v2: /fins/earnings-date)
@@ -882,13 +892,13 @@ class ClientV2:
         （旧 /equities/earnings-calendar）と異なり、決算期によらず全上場銘柄
         （REIT等含む）が対象で、予定日の変更・未定の履歴も公表日単位で追跡できます。
 
-        code・date_yyyymmdd・scheduled_date のいずれか1つの指定が必須です
-        （2つ以上指定するとAPI側で400エラーになります）。
+        code・date_yyyymmdd・scheduled_date_yyyymmdd のいずれか1つの指定が
+        必須です（未指定・2つ以上の指定は ValueError）。
 
         Args:
             code: 銘柄コード。指定時は変更履歴を含む全レコードを返却
             date_yyyymmdd: 公表日 (YYYYMMDD or YYYY-MM-DD)。指定日に公表・変更された全銘柄
-            scheduled_date: 発表予定日 (YYYYMMDD or YYYY-MM-DD)。指定日を現在有効な予定日とする全銘柄
+            scheduled_date_yyyymmdd: 発表予定日 (YYYYMMDD or YYYY-MM-DD)。指定日を現在有効な予定日とする全銘柄
                 （その後予定日が変更されたレコードはヒットしない点に注意）
         Returns:
             pd.DataFrame: 決算発表予定日データ（PubDate/SchDate/FQName/FYE/Code/CoName/CoNameEn）
@@ -897,8 +907,33 @@ class ClientV2:
             self,
             code=code,
             date_yyyymmdd=date_yyyymmdd,
-            scheduled_date=scheduled_date,
+            scheduled_date_yyyymmdd=scheduled_date_yyyymmdd,
         )
+
+    def get_fin_earnings_date_range(
+        self,
+        start_dt: DatetimeLike = "20140901",
+        end_dt: DatetimeLike = datetime.now(),
+    ) -> pd.DataFrame:
+        """
+        決算発表予定日データを公表日の範囲指定で取得 (v2: /fins/earnings-date)
+        """
+        buff: list[pd.DataFrame] = []
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            futures = [
+                executor.submit(
+                    self.get_fin_earnings_date, date_yyyymmdd=s.strftime("%Y-%m-%d")
+                )
+                for s in dates
+            ]
+            for future in as_completed(futures):
+                df = future.result()
+                if not df.empty:
+                    buff.append(df)
+        if not buff:
+            return pd.DataFrame()
+        return pd.concat(buff).sort_values(["PubDate", "Code"]).reset_index(drop=True)
 
     # ------------------------------------------------------------------
     # /equities/earnings-calendar (path_old: /fins/announcement)
@@ -1516,6 +1551,94 @@ class ClientV2:
         with open(output_path, "wb") as f:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
+
+    # ------------------------------------------------------------------
+    # EDINET API (v2: /edinet/*)
+    # ------------------------------------------------------------------
+    def get_edinet_major_shareholders(
+        self,
+        edinet_code: str = "",
+        code: str = "",
+        date_yyyymmdd: str = "",
+    ) -> pd.DataFrame:
+        """
+        大株主状況 (v2: /edinet/major-shareholders)
+
+        有価証券報告書に記載されている大株主の状況を取得できます。
+        edinet_code と code の同時指定はできません。すべて省略した場合は
+        API 実行日に提出された全有報のデータを返します。
+        大株主レコードは Hldrs 列に list のまま保持されます。
+
+        Args:
+            edinet_code: EDINETコード (例: E03814)
+            code: 銘柄コード
+            date_yyyymmdd: 提出日
+        Returns:
+            pd.DataFrame: 大株主状況データ
+        """
+        return self._edinet_major_shareholders_api.execute(
+            self,
+            edinet_code=edinet_code,
+            code=code,
+            date_yyyymmdd=date_yyyymmdd,
+        )
+
+    def get_edinet_cross_shareholdings(
+        self,
+        edinet_code: str = "",
+        code: str = "",
+        date_yyyymmdd: str = "",
+    ) -> pd.DataFrame:
+        """
+        政策保有株式 (v2: /edinet/cross-shareholdings)
+
+        有価証券報告書「株式の保有状況」に記載されている政策保有株式を取得できます。
+        edinet_code と code の同時指定はできません。すべて省略した場合は
+        API 実行日に提出された全有報のデータを返します。
+        保有主体ブロックは Report / Largest / SecondLargest 列に dict のまま
+        保持されます（内部に Spec[] / Deem[] の銘柄明細を含む）。
+
+        Args:
+            edinet_code: EDINETコード (例: E02367)
+            code: 銘柄コード
+            date_yyyymmdd: 提出日
+        Returns:
+            pd.DataFrame: 政策保有株式データ
+        """
+        return self._edinet_cross_shareholdings_api.execute(
+            self,
+            edinet_code=edinet_code,
+            code=code,
+            date_yyyymmdd=date_yyyymmdd,
+        )
+
+    def get_edinet_large_volume_shareholders(
+        self,
+        edinet_code: str = "",
+        code: str = "",
+        date_yyyymmdd: str = "",
+    ) -> pd.DataFrame:
+        """
+        大量保有報告書 (v2: /edinet/large-volume-shareholders)
+
+        大量保有報告書・変更報告書に記載されている発行者、提出者情報を取得できます。
+        edinet_code と code の同時指定はできません。すべて省略した場合は
+        API 実行日に提出された全書類のデータを返します。
+        提出者及び共同保有者のレコードは Hldrs 列に list のまま保持されます。
+
+        Args:
+            edinet_code: 発行者の EDINETコード (例: E03814)
+            code: 発行者の銘柄コード
+            date_yyyymmdd: 提出日
+        Returns:
+            pd.DataFrame: 大量保有報告書データ
+        """
+        return self._edinet_large_volume_shareholders_api.execute(
+            self,
+            edinet_code=edinet_code,
+            code=code,
+            date_yyyymmdd=date_yyyymmdd,
+        )
 
     # ------------------------------------------------------------------
     # TDnet/適時開示 API (v2: /td/*)

@@ -41,6 +41,8 @@ class BulkEndpoint(str, Enum):
     FIN_DETAILS = "/fins/details"
     # 配当金情報API
     FIN_DIVIDEND = "/fins/dividend"
+    # 決算発表予定日API
+    FIN_EARNINGS_DATE = "/fins/earnings-date"
 
     # 業種別空売り比率API
     MKT_SHORT_RATIO = "/markets/short-ratio"
