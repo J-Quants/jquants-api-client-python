@@ -14,6 +14,15 @@ pip 経由でインストールします。
 pip install jquants-api-client
 ```
 
+### 動作環境
+
+- Python 3.10 以上
+- pandas 2.2 以上
+  - pandas 3 系にも対応しています。ただし pandas 3 系は Python 3.11 以上が必須のため、Python 3.10 では pandas 2 系が使用されます。
+  - pandas 3 系では返却される DataFrame の dtype が一部変わります。dtype に依存した処理を行っている場合はご注意ください。
+    - 文字列カラム: `object` → `str`
+    - 日付カラム: `datetime64[ns]` → `datetime64[us]`
+
 ### J-Quants API の利用
 
 To use J-Quants API, you need to "Applications for J-Quants API" from [J-Quants API Web site](https://jpx-jquants.com/) and to select a plan.

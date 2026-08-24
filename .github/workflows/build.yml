@@ -30,6 +30,16 @@ jobs:
       matrix:
         os: [ "ubuntu-latest" ]
         python-version: [ "3.10", "3.11", "3.12", "3.13" ]
+        # poetry.lock は pandas 2 系で固定されているため、
+        # pandas 3 系の動作確認は lock を上書きする専用ジョブで行う
+        pandas-version: [ "" ]
+        include:
+          - os: "ubuntu-latest"
+            python-version: "3.11"
+            pandas-version: ">=3.0.0"
+          - os: "ubuntu-latest"
+            python-version: "3.13"
+            pandas-version: ">=3.0.0"
     runs-on: ${{ matrix.os }}
     steps:
       #----------------------------------------------
@@ -56,6 +66,12 @@ jobs:
       #----------------------------------------------
       - name: Install dependencies
         run: poetry install
+      #----------------------------------------------
+      #      override pandas version if specified
+      #----------------------------------------------
+      - name: Install pandas ${{ matrix.pandas-version }}
+        if: matrix.pandas-version != ''
+        run: poetry run pip install "pandas${{ matrix.pandas-version }}"
       #----------------------------------------------
       #               run test suite
       #----------------------------------------------
