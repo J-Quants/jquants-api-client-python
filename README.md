@@ -84,50 +84,43 @@ API レスポンスが Dataframe の形式で取得できます。
 
 `ClientV2` クラスで利用可能な V2 API エンドポイントです。
 
-### ラッパー群
+プランごとに利用可能な API とデータ格納期間については、[公式ドキュメント](https://jpx-jquants.com/spec/data-spec) をご参照ください。
 
------------------- Free plan or higher is required ------------------
+### ラッパー群
 
 - get_eq_master - 上場銘柄一覧
 - get_eq_bars_daily - 株価日足
-- get_fin_summary - 決算サマリー
-- get_fin_earnings_date - 決算発表予定日
+- get_eq_bars_daily_am - 株価午前終値
 - get_eq_earnings_cal - 決算発表予定日（3・9月期決算会社のみ・翌営業日分）
-
------------------- Light plan or higher is required ------------------
-
+- get_eq_investor_types - 投資部門別売買状況
 - get_idx_bars_daily - 指数日足
 - get_idx_bars_daily_topix - TOPIX日足
 - get_mkt_calendar - 営業日カレンダー
-- get_bulk_list - バルクデータ一覧
-- get_bulk - バルクデータ取得
-
------------------- Standard plan or higher is required ------------------
-
 - get_mkt_short_ratio - 空売り比率
 - get_mkt_short_sale_report - 空売り報告
 - get_mkt_margin_interest - 週次信用取引残高
 - get_mkt_margin_alert - 信用規制情報
+- get_mkt_breakdown - 売買内訳
 - get_drv_bars_daily_fut - 先物日足
 - get_drv_bars_daily_opt - オプション日足
 - get_drv_bars_daily_opt_225 - 日経225オプション日足
+- get_fin_summary - 決算サマリー
+- get_fin_summary_cursor - 決算サマリー（cursor 差分取得）
+- get_fin_details - 財務詳細
+- get_fin_details_cursor - 財務詳細（cursor 差分取得）
+- get_fin_dividend - 配当情報
+- get_fin_earnings_date - 決算発表予定日
 - get_edinet_major_shareholders - 大株主状況（EDINET）
 - get_edinet_cross_shareholdings - 政策保有株式（EDINET）
 - get_edinet_large_volume_shareholders - 大量保有報告書（EDINET）
-
------------------- Premium plan or higher is required ------------------
-
-- get_mkt_breakdown - 売買内訳
-- get_eq_bars_daily_am - 株価午前終値
-- get_eq_investor_types - 投資部門別売買状況
-- get_fin_details - 財務詳細
-- get_fin_dividend - 配当情報
-
------------------- Minute Bar Addon is required ------------------
-
+- get_bulk_list - バルクデータ一覧
+- get_bulk - バルクデータ取得
 - get_eq_bars_minute - 分足
 - get_eq_bars_5minute - 5分足（分足から算出）
 - get_eq_bars_15minute - 15分足（分足から算出）
+- get_td_list - 適時開示インデックス一覧
+- get_td_files - 適時開示ファイルダウンロードURL取得
+- get_td_bulk - 適時開示インデックス一括ダウンロードURL取得
 
 ### ユーティリティ群
 
@@ -139,27 +132,19 @@ API レスポンスが Dataframe の形式で取得できます。
 
 日付範囲を指定して一括でデータ取得して、取得したデータを結合して返すユーティリティです。
 
------------------- Free plan or higher is required ------------------
-
 - get_list - 銘柄一覧（セクター情報付き）
 - get_eq_bars_daily_range - 株価日足（範囲指定）
-- get_fin_summary_range - 決算サマリー（範囲指定）
-- get_fin_earnings_date_range - 決算発表予定日（公表日の範囲指定）
-
------------------- Standard plan or higher is required ------------------
-
 - get_mkt_short_ratio_range - 空売り比率（範囲指定）
 - get_mkt_short_sale_report_range - 空売り報告（範囲指定）
 - get_mkt_margin_interest_range - 信用取引残高（範囲指定）
 - get_mkt_margin_alert_range - 信用規制情報（範囲指定）
+- get_mkt_breakdown_range - 売買内訳（範囲指定）
 - get_drv_bars_daily_fut_range - 先物日足（範囲指定）
 - get_drv_bars_daily_opt_range - オプション日足（範囲指定）
 - get_drv_bars_daily_opt_225_range - 日経225オプション日足（範囲指定）
-
------------------- Premium plan or higher is required ------------------
-
-- get_mkt_breakdown_range - 売買内訳（範囲指定）
+- get_fin_summary_range - 決算サマリー（範囲指定）
 - get_fin_details_range - 財務詳細（範囲指定）
+- get_fin_earnings_date_range - 決算発表予定日（公表日の範囲指定）
 
 ## レートリミット
 
