@@ -174,6 +174,39 @@ def test_get_eq_master(code, date_yyyymmdd, exp_params):
         assert len(ret) == exp_ret_len
 
 
+EQ_MASTER_RECORD = {
+    "Date": "2026-08-27",
+    "Code": "86970",
+    "CoName": "日本取引所グループ",
+    "CoNameEn": "Japan Exchange Group,Inc.",
+    "S17": "16",
+    "S17Nm": "金融（除く銀行）",
+    "S33": "9050",
+    "S33Nm": "その他金融業",
+    "ScaleCat": "TOPIX Large70",
+    "Mkt": "0111",
+    "MktNm": "プライム",
+    "Mrgn": "1",
+    "MrgnNm": "信用制度信用銘柄",
+    "ProdCat": "011",
+}
+
+
+def test_get_eq_master_returns_dataframe():
+    """get_eq_masterが正しい列・値のDataFrameを返すことを確認（ProdCat含む）"""
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = [EQ_MASTER_RECORD]
+
+        cli = jquantsapi.ClientV2()
+        df = cli.get_eq_master(code="86970")
+        assert list(df.columns) == constants.EQ_MASTER_COLUMNS_V2
+        assert len(df) == 1
+        assert df.loc[0, "Code"] == "86970"
+        assert df.loc[0, "ProdCat"] == "011"
+
+
 @pytest.mark.parametrize(
     "code, from_yyyymmdd, to_yyyymmdd, date_yyyymmdd, exp_params",
     (

@@ -113,6 +113,7 @@ EQ_MASTER_COLUMNS_V2 = [
     "MktNm",
     "Mrgn",
     "MrgnNm",
+    "ProdCat",
 ]
 
 # ref. ja https://jpx-jquants.com/ja/spec/eq-bars-daily
