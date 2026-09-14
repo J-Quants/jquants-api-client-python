@@ -1209,7 +1209,8 @@ def test_get_eq_valuation_params(
             "from_yyyymmdd": "20260801",
             "to_yyyymmdd": "20260826",
         },  # code未指定の期間指定
-        {"date_yyyymmdd": "20260826", "from_yyyymmdd": "20260801"},  # 同上
+        # dateはあるがcodeが無いため、fromが黙って無視されるのを防いで弾く
+        {"date_yyyymmdd": "20260826", "from_yyyymmdd": "20260801"},
     ),
 )
 def test_get_eq_valuation_raises_on_invalid_params(kwargs):
@@ -1322,3 +1323,21 @@ def test_get_eq_valuation_range():
         assert actual_dates == expected_dates
         assert len(mock.mock_calls) == 5
         mock.reset_mock()
+
+
+def test_get_eq_valuation_range_empty_result():
+    """全日付で該当データが無い場合も、単発取得と同じ列定義を持つ
+    空のDataFrameを返すことを確認"""
+    mock = MagicMock(
+        return_value=pd.DataFrame(columns=constants.EQ_VALUATION_COLUMNS_V2)
+    )
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ):
+        cli = jquantsapi.ClientV2()
+        cli.get_eq_valuation = mock
+
+        df = cli.get_eq_valuation_range("20200227", "20200302")
+        assert df.empty
+        assert list(df.columns) == constants.EQ_VALUATION_COLUMNS_V2

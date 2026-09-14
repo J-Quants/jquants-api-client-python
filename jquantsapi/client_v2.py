@@ -494,11 +494,16 @@ class ClientV2:
         """
         全銘柄のバリュエーション指標を日付範囲指定して取得 (v2: /equities/valuation)
 
+        指定範囲の全暦日 (休業日を含む) に対して並列でリクエストするため、
+        長期間を指定するとリクエスト数が膨大になりレートリミットに達する
+        可能性があります。
+
         Args:
             start_dt: 取得開始日
             end_dt: 取得終了日
         Returns:
             pd.DataFrame: バリュエーション指標データ (Code, Date 列でソート)
+                該当データがない場合も列定義を保持した空の DataFrame を返します。
         """
         buff: list[pd.DataFrame] = []
         dates = pd.date_range(start_dt, end_dt, freq="D")
@@ -514,7 +519,8 @@ class ClientV2:
                 if not df.empty:
                     buff.append(df)
         if not buff:
-            return pd.DataFrame()
+            # 単発取得 (get_eq_valuation) の空結果と返却契約を揃える
+            return pd.DataFrame(columns=constants.EQ_VALUATION_COLUMNS_V2)
         return pd.concat(buff).sort_values(["Code", "Date"]).reset_index(drop=True)
 
     # ------------------------------------------------------------------
