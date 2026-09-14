@@ -1138,3 +1138,206 @@ def test_get_edinet_large_volume_shareholders_params():
         assert kwargs_called.get("params", {}) == {"code": "86970"}
         assert len(df) == 1
         assert isinstance(df["Hldrs"].iloc[0], list)
+
+
+EQ_VALUATION_RECORD = {
+    "Date": "2023-03-24",
+    "Code": "86970",
+    "EPS": 89.4,
+    "FwdEPS": 87.9,
+    "BPS": 590.65,
+    "ROE": 0.1534,
+    "FwdROE": 0.1488,
+    "PER": 22.88,
+    "FwdPER": 23.26,
+    "PBR": 3.46,
+    "MktCap": 1077137.0,
+}
+
+
+@pytest.mark.parametrize(
+    "code, from_yyyymmdd, to_yyyymmdd, date_yyyymmdd, exp_params",
+    (
+        ("86970", "", "", "", {"code": "86970"}),
+        ("", "", "", "20260826", {"date": "20260826"}),
+        ("86970", "", "", "20260826", {"code": "86970", "date": "20260826"}),
+        ("86970", "20260801", "", "", {"code": "86970", "from": "20260801"}),
+        ("86970", "", "20260826", "", {"code": "86970", "to": "20260826"}),
+        (
+            "86970",
+            "20260801",
+            "20260826",
+            "",
+            {"code": "86970", "from": "20260801", "to": "20260826"},
+        ),
+        # date指定時はfrom/toを送らない
+        (
+            "86970",
+            "20260801",
+            "20260826",
+            "20260826",
+            {"code": "86970", "date": "20260826"},
+        ),
+    ),
+)
+def test_get_eq_valuation_params(
+    code, from_yyyymmdd, to_yyyymmdd, date_yyyymmdd, exp_params
+):
+    """get_eq_valuationがクエリパラメータを正しく組み立てることを確認"""
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = []
+
+        cli = jquantsapi.ClientV2()
+        cli.get_eq_valuation(
+            code=code,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+            date_yyyymmdd=date_yyyymmdd,
+        )
+        args, kwargs = mock_get_paginated.call_args
+        assert args[0] == "/equities/valuation"
+        assert kwargs.get("params", {}) == exp_params
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    (
+        {},  # codeもdateも未指定
+        {
+            "from_yyyymmdd": "20260801",
+            "to_yyyymmdd": "20260826",
+        },  # code未指定の期間指定
+        # dateはあるがcodeが無いため、fromが黙って無視されるのを防いで弾く
+        {"date_yyyymmdd": "20260826", "from_yyyymmdd": "20260801"},
+    ),
+)
+def test_get_eq_valuation_raises_on_invalid_params(kwargs):
+    """get_eq_valuationはcode/dateのいずれか必須、from/toはcodeとの併用が必須
+    （APIを呼ぶ前にValueError）"""
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ):
+        cli = jquantsapi.ClientV2()
+        with pytest.raises(ValueError):
+            cli.get_eq_valuation(**kwargs)
+
+
+def test_get_eq_valuation_returns_dataframe():
+    """get_eq_valuationが正しい列・型のDataFrameを返すことを確認"""
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = [EQ_VALUATION_RECORD]
+
+        cli = jquantsapi.ClientV2()
+        df = cli.get_eq_valuation(code="86970")
+        assert list(df.columns) == constants.EQ_VALUATION_COLUMNS_V2
+        assert len(df) == 1
+        assert pd.api.types.is_datetime64_any_dtype(df["Date"])
+        assert df.loc[0, "Code"] == "86970"
+        assert df.loc[0, "MktCap"] == 1077137.0
+
+
+def test_get_eq_valuation_null_indicators():
+    """算出対象外の銘柄で指標がnullでも列が保持されることを確認
+    （ETF/ETN等は全項目null、REIT等はMktCapのみ値が入りうる）"""
+    record = {
+        "Date": "2023-03-24",
+        "Code": "13050",
+        "EPS": None,
+        "FwdEPS": None,
+        "BPS": None,
+        "ROE": None,
+        "FwdROE": None,
+        "PER": None,
+        "FwdPER": None,
+        "PBR": None,
+        "MktCap": None,
+    }
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = [record]
+
+        cli = jquantsapi.ClientV2()
+        df = cli.get_eq_valuation(date_yyyymmdd="20230324")
+        assert list(df.columns) == constants.EQ_VALUATION_COLUMNS_V2
+        assert pd.isna(df.loc[0, "EPS"])
+        assert pd.isna(df.loc[0, "MktCap"])
+
+
+def test_get_eq_valuation_empty_result():
+    """該当データなし（空配列）の場合、列定義のみの空DataFrameを返すことを確認"""
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = []
+
+        cli = jquantsapi.ClientV2()
+        df = cli.get_eq_valuation(code="86970")
+        assert df.empty
+        assert list(df.columns) == constants.EQ_VALUATION_COLUMNS_V2
+
+
+def test_get_eq_valuation_range():
+    """
+    get_eq_valuation_range()を呼ぶ際、引数に様々な型が入っていても問題なく
+    get_eq_valuation()に単一の年月日が渡される事を確認する。
+    """
+    mock = MagicMock(return_value=pd.DataFrame(columns=["Code", "Date"]))
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ):
+        cli = jquantsapi.ClientV2()
+        cli.get_eq_valuation = mock
+
+    formats = {
+        "str_8digits": ("20200227", "20200302"),
+        "str_split_by_hyphen": ("2020-02-27", "2020-03-02"),
+        "datetime_without_tz": (datetime(2020, 2, 27), datetime(2020, 3, 2)),
+        "datetime_with_tz": (
+            datetime(2020, 2, 27, tzinfo=tz.gettz("Asia/Tokyo")),
+            datetime(2020, 3, 2, tzinfo=tz.gettz("Asia/Tokyo")),
+        ),
+        "pd.Timestamp": (pd.Timestamp("2020-02-27"), pd.Timestamp("2020-03-02")),
+    }
+
+    for _fmt, (start, end) in formats.items():
+        cli.get_eq_valuation_range(start, end)
+
+        # 並列実行のため順序は保証されないので、セットとして比較
+        expected_dates = {
+            "2020-02-27",
+            "2020-02-28",
+            "2020-02-29",
+            "2020-03-01",
+            "2020-03-02",
+        }
+        actual_dates = {
+            call_obj.kwargs["date_yyyymmdd"] for call_obj in mock.mock_calls
+        }
+        assert actual_dates == expected_dates
+        assert len(mock.mock_calls) == 5
+        mock.reset_mock()
+
+
+def test_get_eq_valuation_range_empty_result():
+    """全日付で該当データが無い場合も、単発取得と同じ列定義を持つ
+    空のDataFrameを返すことを確認"""
+    mock = MagicMock(
+        return_value=pd.DataFrame(columns=constants.EQ_VALUATION_COLUMNS_V2)
+    )
+
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ):
+        cli = jquantsapi.ClientV2()
+        cli.get_eq_valuation = mock
+
+        df = cli.get_eq_valuation_range("20200227", "20200302")
+        assert df.empty
+        assert list(df.columns) == constants.EQ_VALUATION_COLUMNS_V2

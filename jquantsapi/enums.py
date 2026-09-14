@@ -34,6 +34,8 @@ class BulkEndpoint(str, Enum):
     EQ_INVESTOR_TYPES = "/equities/investor-types"
     # TickデータAPI
     EQ_TRADES = "/equities/trades"
+    # バリュエーション指標API
+    EQ_VALUATION = "/equities/valuation"
 
     # 財務情報API
     FIN_SUMMARY = "/fins/summary"
