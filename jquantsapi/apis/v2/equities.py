@@ -293,3 +293,76 @@ class EqEarningsCalApiV2(BaseApi):
         if sort_cols:
             df.sort_values(sort_cols, inplace=True)
         return df.reset_index(drop=True)
+
+
+class EqValuationApiV2(BaseApi):
+    """
+    v2 のバリュエーション指標 API (`/equities/valuation`) のラッパークラス。
+    """
+
+    name = "eq_valuation"
+    version = "v2"
+
+    def execute(
+        self,
+        client: SupportsRequest,
+        *,
+        code: str = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+        date_yyyymmdd: str = "",
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """
+        v2 `/equities/valuation` を実行し、バリュエーション指標を DataFrame で返す。
+
+        code または date_yyyymmdd のいずれかの指定が必須です (API 仕様)。
+        from_yyyymmdd / to_yyyymmdd で期間を指定する場合は code の指定も必須です。
+        サーバ側は from と to の両方が指定された場合のみ code を必須とするが、
+        仕様書のパラメータ組み合わせに code なしの期間指定が存在せず、
+        code なしで片側だけ指定すると黙って無視されるため、ここでは片側のみの
+        指定でも code を必須として弾く。
+
+        Args:
+            client: v2 `ClientV2` インスタンスを想定
+            code: 銘柄コード (5桁 or 4桁)
+            from_yyyymmdd: 取得開始日
+            to_yyyymmdd: 取得終了日
+            date_yyyymmdd: 取得日
+        """
+        if not code and not date_yyyymmdd:
+            raise ValueError("code または date_yyyymmdd のいずれかを指定してください。")
+        if (from_yyyymmdd or to_yyyymmdd) and not code:
+            raise ValueError(
+                "from_yyyymmdd / to_yyyymmdd を指定する場合は code も指定してください。"
+            )
+
+        params: dict[str, Any] = {}
+        if code:
+            params["code"] = code
+        if date_yyyymmdd:
+            params["date"] = date_yyyymmdd
+        else:
+            if from_yyyymmdd:
+                params["from"] = from_yyyymmdd
+            if to_yyyymmdd:
+                params["to"] = to_yyyymmdd
+
+        all_data = client._get_paginated(  # type: ignore[attr-defined]
+            "/equities/valuation",
+            params=params,
+        )
+
+        cols = constants.EQ_VALUATION_COLUMNS_V2
+        if not all_data:
+            return pd.DataFrame(columns=cols)
+
+        df = pd.DataFrame.from_records(all_data)
+        if "Date" in df.columns:
+            df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+
+        sort_cols = [c for c in ["Code", "Date"] if c in df.columns]
+        if sort_cols:
+            df.sort_values(sort_cols, inplace=True)
+
+        return df[cols].reset_index(drop=True)

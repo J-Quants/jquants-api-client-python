@@ -211,6 +211,22 @@ INDICES_TOPIX_COLUMNS_V2 = [
     "C",
 ]
 
+# ref. ja https://jpx-jquants.com/ja/spec/eq-valuation
+# ref. en https://jpx-jquants.com/en/spec/eq-valuation
+EQ_VALUATION_COLUMNS_V2 = [
+    "Date",
+    "Code",
+    "EPS",
+    "FwdEPS",
+    "BPS",
+    "ROE",
+    "FwdROE",
+    "PER",
+    "FwdPER",
+    "PBR",
+    "MktCap",
+]
+
 # ref. ja https://jpx-jquants.com/ja/spec/eq-investor-types
 # ref. en https://jpx-jquants.com/en/spec/eq-investor-types
 EQ_INVESTOR_TYPES_COLUMNS_V2 = [

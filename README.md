@@ -93,6 +93,7 @@ API レスポンスが Dataframe の形式で取得できます。
 - get_eq_bars_daily_am - 株価午前終値
 - get_eq_earnings_cal - 決算発表予定日（3・9月期決算会社のみ・翌営業日分）
 - get_eq_investor_types - 投資部門別売買状況
+- get_eq_valuation - バリュエーション指標（PER/PBR/ROE・時価総額）
 - get_idx_bars_daily - 指数日足
 - get_idx_bars_daily_topix - TOPIX日足
 - get_mkt_calendar - 営業日カレンダー
@@ -134,6 +135,7 @@ API レスポンスが Dataframe の形式で取得できます。
 
 - get_list - 銘柄一覧（セクター情報付き）
 - get_eq_bars_daily_range - 株価日足（範囲指定）
+- get_eq_valuation_range - バリュエーション指標（範囲指定）
 - get_mkt_short_ratio_range - 空売り比率（範囲指定）
 - get_mkt_short_sale_report_range - 空売り報告（範囲指定）
 - get_mkt_margin_interest_range - 信用取引残高（範囲指定）

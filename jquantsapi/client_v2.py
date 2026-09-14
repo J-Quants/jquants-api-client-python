@@ -41,6 +41,7 @@ from jquantsapi.apis.v2.equities import (
     EqEarningsCalApiV2,
     EqInvestorTypesApiV2,
     EqMasterApiV2,
+    EqValuationApiV2,
 )
 from jquantsapi.apis.v2.fins import (
     FinDetailsApiV2,
@@ -113,6 +114,7 @@ class ClientV2:
         self._eq_bars_daily_am_api = EqBarsDailyAmApiV2()
         self._eq_bars_minute_api = EqBarsMinuteApiV2()
         self._eq_investor_types_api = EqInvestorTypesApiV2()
+        self._eq_valuation_api = EqValuationApiV2()
         self._fin_summary_api = FinSummaryApiV2()
         self._fin_details_api = FinDetailsApiV2()
         self._fin_dividend_api = FinDividendApiV2()
@@ -435,6 +437,75 @@ class ClientV2:
             futures = [
                 executor.submit(
                     self.get_eq_bars_daily, date_yyyymmdd=s.strftime("%Y-%m-%d")
+                )
+                for s in dates
+            ]
+            for future in as_completed(futures):
+                df = future.result()
+                if not df.empty:
+                    buff.append(df)
+        if not buff:
+            return pd.DataFrame()
+        return pd.concat(buff).sort_values(["Code", "Date"]).reset_index(drop=True)
+
+    # ------------------------------------------------------------------
+    # eq-valuation (/equities/valuation)
+    # ------------------------------------------------------------------
+    def get_eq_valuation(
+        self,
+        code: str = "",
+        from_yyyymmdd: str = "",
+        to_yyyymmdd: str = "",
+        date_yyyymmdd: str = "",
+    ) -> pd.DataFrame:
+        """
+        eq-valuation: バリュエーション指標 (v2: /equities/valuation)
+
+        決算短信の開示内容と株価から算出した、日次のバリュエーション指標と
+        時価総額を取得します。実績値は直近12ヶ月 (TTM) の純利益、予想値は
+        進行期の予想純利益をもとに算出されます。
+
+        code または date_yyyymmdd のいずれかの指定が必須です（未指定は ValueError）。
+        from_yyyymmdd / to_yyyymmdd で期間を指定する場合は code も必須です。
+
+        Args:
+            code: 銘柄コード (5桁 or 4桁)
+            from_yyyymmdd: 期間開始日 (YYYYMMDD or YYYY-MM-DD)。code との併用が必須
+            to_yyyymmdd: 期間終了日 (YYYYMMDD or YYYY-MM-DD)。code との併用が必須
+            date_yyyymmdd: 特定日付 (YYYYMMDD or YYYY-MM-DD)
+        Returns:
+            pd.DataFrame: バリュエーション指標データ
+                (Date/Code/EPS/FwdEPS/BPS/ROE/FwdROE/PER/FwdPER/PBR/MktCap)
+                ROE・FwdROE は小数（0.2310 は 23.1%）、MktCap は百万円単位です。
+        """
+        return self._eq_valuation_api.execute(
+            self,
+            code=code,
+            from_yyyymmdd=from_yyyymmdd,
+            to_yyyymmdd=to_yyyymmdd,
+            date_yyyymmdd=date_yyyymmdd,
+        )
+
+    def get_eq_valuation_range(
+        self,
+        start_dt: DatetimeLike = "20170101",
+        end_dt: DatetimeLike = datetime.now(),
+    ) -> pd.DataFrame:
+        """
+        全銘柄のバリュエーション指標を日付範囲指定して取得 (v2: /equities/valuation)
+
+        Args:
+            start_dt: 取得開始日
+            end_dt: 取得終了日
+        Returns:
+            pd.DataFrame: バリュエーション指標データ (Code, Date 列でソート)
+        """
+        buff: list[pd.DataFrame] = []
+        dates = pd.date_range(start_dt, end_dt, freq="D")
+        with ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
+            futures = [
+                executor.submit(
+                    self.get_eq_valuation, date_yyyymmdd=s.strftime("%Y-%m-%d")
                 )
                 for s in dates
             ]
