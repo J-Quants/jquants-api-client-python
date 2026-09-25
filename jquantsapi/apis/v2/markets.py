@@ -114,7 +114,13 @@ class MktShortSaleReportApiV2(BaseApi):
 
 class MktMarginInterestApiV2(BaseApi):
     """
-    v2 の信用取引週末残高 API (`/markets/margin-interest`) のラッパークラス。
+    v2 の信用取引残高 API (`/markets/margin-interest`) のラッパークラス。
+
+    2026-09-28 リリースの仕様変更後の 16 項目（PubDate 先頭）を返す。
+    日次データ・PubDate・金額 6 項目は 2026-09-25 申込分以降のみ値が入り、
+    2026-09-24 以前は週末時点（通常は金曜日付）のデータのみで PubDate・金額は null。
+    null 列やキー欠落があっても列定義と順序を保つため、他の markets 系 API の
+    `df[cols]` ではなく `reindex(columns=cols)` で整形する。
     """
 
     name = "mkt_margin_interest"
@@ -128,15 +134,49 @@ class MktMarginInterestApiV2(BaseApi):
         date_yyyymmdd: str = "",
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
+        published_date_yyyymmdd: str = "",
         **kwargs: Any,
     ) -> pd.DataFrame:
         """
-        `/markets/margin-interest` を実行し、信用取引週末残高を DataFrame で返す。
+        `/markets/margin-interest` を実行し、信用取引残高を DataFrame で返す。
+
+        code / date_yyyymmdd / published_date_yyyymmdd のいずれかの指定が必須です (API 仕様)。
+        published_date_yyyymmdd（公表日）は申込日付軸 (date_yyyymmdd / from_yyyymmdd / to_yyyymmdd)
+        と同時に指定できません (API は 400 を返す)。code との併用は可能です。
+        from_yyyymmdd / to_yyyymmdd で期間を指定する場合は code の指定も必須です
+        (仕様書のパラメータ組み合わせに code なしの期間指定が存在しないため。
+        片側のみの指定も code があれば通す)。
+        date_yyyymmdd を指定した場合、from_yyyymmdd / to_yyyymmdd は無視されます
+        (他の API ラッパーと同じ挙動)。
+
+        Args:
+            client: v2 `ClientV2` インスタンスを想定
+            code: 銘柄コード (5桁 or 4桁)
+            date_yyyymmdd: 申込日付
+            from_yyyymmdd: 申込日付の取得開始日
+            to_yyyymmdd: 申込日付の取得終了日
+            published_date_yyyymmdd: 公表日
         """
+        if not code and not date_yyyymmdd and not published_date_yyyymmdd:
+            raise ValueError(
+                "code, date_yyyymmdd, published_date_yyyymmdd のいずれかを指定してください。"
+            )
+        if published_date_yyyymmdd and (date_yyyymmdd or from_yyyymmdd or to_yyyymmdd):
+            raise ValueError(
+                "published_date_yyyymmdd は date_yyyymmdd / from_yyyymmdd / to_yyyymmdd "
+                "と同時に指定できません。"
+            )
+        if (from_yyyymmdd or to_yyyymmdd) and not code:
+            raise ValueError(
+                "from_yyyymmdd / to_yyyymmdd を指定する場合は code も指定してください。"
+            )
+
         params: dict[str, Any] = {}
         if code:
             params["code"] = code
-        if date_yyyymmdd:
+        if published_date_yyyymmdd:
+            params["published_date"] = published_date_yyyymmdd
+        elif date_yyyymmdd:
             params["date"] = date_yyyymmdd
         else:
             if from_yyyymmdd:
@@ -148,15 +188,20 @@ class MktMarginInterestApiV2(BaseApi):
             "/markets/margin-interest",
             params=params,
         )
-        if not data:
-            return pd.DataFrame()
 
-        df = pd.DataFrame.from_records(data)
-        if "Date" in df.columns:
-            df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        sort_cols = [c for c in ["Date", "Code"] if c in df.columns]
-        if sort_cols:
-            df.sort_values(sort_cols, inplace=True)
+        cols = constants.MKT_MARGIN_INTEREST_COLUMNS_V2
+        if not data:
+            return pd.DataFrame(columns=cols)
+
+        # 定義済みカラムの順序 (PubDate 先頭・16 項目) に整形する。
+        # 仕様外のキーは破棄し、欠落キーは NaN 列として補う
+        df = pd.DataFrame.from_records(data).reindex(columns=cols)
+        # PubDate は 2026-09-24 以前の過去分では null（NaT）。キー欠落時も
+        # datetime64 に揃えるため reindex 後に変換する
+        for col in ["PubDate", "Date"]:
+            df[col] = pd.to_datetime(df[col], errors="coerce")
+        # ソートは申込日付軸（Date, Code）で固定する。公表日検索時も同じ
+        df.sort_values(["Date", "Code"], inplace=True)
         return df.reset_index(drop=True)
 
 

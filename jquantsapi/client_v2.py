@@ -1149,17 +1149,33 @@ class ClientV2:
         from_yyyymmdd: str = "",
         to_yyyymmdd: str = "",
         date_yyyymmdd: str = "",
+        published_date_yyyymmdd: str = "",
     ) -> pd.DataFrame:
         """
-        信用取引週末残高 (v2: /markets/margin-interest)
+        信用取引残高 (v2: /markets/margin-interest)
+
+        全銘柄の信用取引残高（株数・金額）を取得します。2026-09-25 申込分以降は日次
+        （毎営業日に申込日付 Date が前営業日となるデータを配信）、2026-09-24 以前は
+        週末時点（通常は金曜日付）のデータのみです。
+
+        code / date_yyyymmdd / published_date_yyyymmdd のいずれかの指定が必須です
+        （未指定は ValueError）。published_date_yyyymmdd（公表日）は date_yyyymmdd /
+        from_yyyymmdd / to_yyyymmdd と同時に指定できません（code との併用は可）。
+        from_yyyymmdd / to_yyyymmdd で期間を指定する場合は code も必須です。
 
         Args:
-            code: 銘柄コード
-            from_yyyymmdd: 期間開始日
-            to_yyyymmdd: 期間終了日
-            date_yyyymmdd: 特定日付
+            code: 銘柄コード (5桁 or 4桁)
+            from_yyyymmdd: 申込日付の期間開始日 (YYYYMMDD or YYYY-MM-DD)。code との併用が必須
+            to_yyyymmdd: 申込日付の期間終了日 (YYYYMMDD or YYYY-MM-DD)。code との併用が必須
+            date_yyyymmdd: 申込日付 (YYYYMMDD or YYYY-MM-DD)
+            published_date_yyyymmdd: 公表日 (YYYYMMDD or YYYY-MM-DD)。
+                公表日が収録されていない 2026-09-24 以前のデータは返却されません
         Returns:
-            pd.DataFrame: 信用取引週末残高データ
+            pd.DataFrame: 信用取引残高データ（16 列）
+                (PubDate/Date/Code/IssType/ShrtVol/LongVol/ShrtNegVol/LongNegVol/
+                ShrtStdVol/LongStdVol/ShrtVal/LongVal/ShrtNegVal/LongNegVal/ShrtStdVal/LongStdVal)
+                PubDate と金額 6 項目（*Val）は 2026-09-25 申込分以降のみ値が入り、
+                それ以前は NaT / NaN です。
         """
         return self._mkt_margin_interest_api.execute(
             self,
@@ -1167,6 +1183,7 @@ class ClientV2:
             from_yyyymmdd=from_yyyymmdd,
             to_yyyymmdd=to_yyyymmdd,
             date_yyyymmdd=date_yyyymmdd,
+            published_date_yyyymmdd=published_date_yyyymmdd,
         )
 
     def get_mkt_margin_interest_range(
@@ -1175,7 +1192,21 @@ class ClientV2:
         end_dt: DatetimeLike = datetime.now(),
     ) -> pd.DataFrame:
         """
-        信用取引週末残高を日付範囲指定して取得 (v2: /markets/margin-interest)
+        全銘柄の信用取引残高を申込日付の範囲指定で取得 (v2: /markets/margin-interest)
+
+        指定範囲の全暦日（休業日を含む）に対して全銘柄分を並列でリクエストします。
+        2026-09-24 以前は週末時点のデータのみのため、該当しない日付は空で返ります。
+        日次化後は取得件数が増えるため、特定銘柄の長期間取得には本メソッドではなく
+        get_mkt_margin_interest(code=..., from_yyyymmdd=..., to_yyyymmdd=...) を推奨します。
+        公表日（published_date_yyyymmdd）軸での範囲取得は提供していないため、
+        必要な場合は get_mkt_margin_interest を日付ごとに呼び出してください。
+
+        Args:
+            start_dt: 取得開始日（申込日付）
+            end_dt: 取得終了日（申込日付）
+        Returns:
+            pd.DataFrame: 信用取引残高データ (Date, Code 列でソート)
+                該当データがない場合も列定義を保持した空の DataFrame を返します。
         """
         buff: list[pd.DataFrame] = []
         dates = pd.date_range(start_dt, end_dt, freq="D")
@@ -1191,9 +1222,16 @@ class ClientV2:
                 df = future.result()
                 if not df.empty:
                     buff.append(df)
+        cols = constants.MKT_MARGIN_INTEREST_COLUMNS_V2
         if not buff:
-            return pd.DataFrame()
-        return pd.concat(buff).sort_values(["Date", "Code"]).reset_index(drop=True)
+            # 単発取得 (get_mkt_margin_interest) の空結果と返却契約を揃える
+            return pd.DataFrame(columns=cols)
+        return (
+            pd.concat(buff)
+            .sort_values(["Date", "Code"])
+            .reindex(columns=cols)
+            .reset_index(drop=True)
+        )
 
     # ------------------------------------------------------------------
     # /markets/margin-alert (path_old: /markets/daily_margin_interest)

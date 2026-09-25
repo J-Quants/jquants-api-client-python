@@ -50,7 +50,7 @@ class BulkEndpoint(str, Enum):
     MKT_SHORT_RATIO = "/markets/short-ratio"
     # 空売り残高報告API
     MKT_SHORT_SALE_REPORT = "/markets/short-sale-report"
-    # 信用取引週末残高API
+    # 信用取引残高API
     MKT_MARGIN_INTEREST = "/markets/margin-interest"
     # 日々公表信用取引残高API
     MKT_MARGIN_ALERT = "/markets/margin-alert"
