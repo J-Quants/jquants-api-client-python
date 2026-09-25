@@ -99,7 +99,7 @@ API レスポンスが Dataframe の形式で取得できます。
 - get_mkt_calendar - 営業日カレンダー
 - get_mkt_short_ratio - 空売り比率
 - get_mkt_short_sale_report - 空売り報告
-- get_mkt_margin_interest - 信用取引残高（2026-09-25 申込分以降は日次、それ以前は週次。公表日 `published_date_yyyymmdd` での検索に対応）
+- get_mkt_margin_interest - 信用取引残高（2026-09-25 申込分以降は日次、それ以前は週次。公表日 `published_date_yyyymmdd` での検索に対応。空結果でも 16 列の列定義を保持した DataFrame を返します）
 - get_mkt_margin_alert - 信用規制情報
 - get_mkt_breakdown - 売買内訳
 - get_drv_bars_daily_fut - 先物日足

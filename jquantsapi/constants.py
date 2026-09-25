@@ -310,9 +310,10 @@ MKT_MARGIN_INTEREST_COLUMNS_V2 = [
     "ShrtStdVal",
     "LongStdVal",
 ]
-# 旧名称の import 互換のみを目的とした別名。列定義は旧週次仕様（9 列）ではなく
-# 上記 MKT_MARGIN_INTEREST_COLUMNS_V2（16 列）と同一。新規コードでは新名称を使用すること
-# （本別名は将来のメジャーバージョンで削除予定）
+# 旧名称の import 互換のみを目的とした別名（非推奨）。列定義は旧週次仕様（9 列・Date 先頭）
+# ではなく上記 MKT_MARGIN_INTEREST_COLUMNS_V2（16 列・PubDate 先頭）と同一で、列数・順序は
+# 旧定数と非互換（`len(...) == 9` や位置インデックス前提のコードは動作しない）。
+# 新規コードでは新名称を使用すること。本別名は将来のメジャーバージョンで削除予定
 MARKETS_WEEKLY_MARGIN_INTEREST_COLUMNS_V2 = MKT_MARGIN_INTEREST_COLUMNS_V2
 
 # ref. ja https://jpx-jquants.com/ja/spec/mkt-short-ratio
