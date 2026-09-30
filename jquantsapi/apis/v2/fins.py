@@ -59,6 +59,13 @@ class FinSummaryApiV2(BaseApi):
         if not all_data:
             return pd.DataFrame(columns=cols), returned_cursor
 
+        # Code が数値で返却されると、欠損値との混在時に float 化して
+        # "7203.0" のようになるため、DataFrame 化の前に文字列へ固定する
+        for record in all_data:
+            record_code = record.get("Code")
+            if record_code is not None:
+                record["Code"] = str(record_code)
+
         df = pd.DataFrame.from_records(all_data)
         for col in (
             "DiscDate",
