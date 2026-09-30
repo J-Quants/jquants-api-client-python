@@ -290,17 +290,31 @@ EQ_INVESTOR_TYPES_COLUMNS_V2 = [
 
 # ref. ja https://jpx-jquants.com/ja/spec/mkt-margin-int
 # ref. en https://jpx-jquants.com/en/spec/mkt-margin-int
-MARKETS_WEEKLY_MARGIN_INTEREST_COLUMNS_V2 = [
+# 2026-09-28 リリースの仕様変更（週次 → 日次化・公表日 PubDate と金額 6 項目の追加）後の 16 項目。
+# 日次データ・PubDate・金額 6 項目（*Val）は 2026-09-25 申込分以降のみ値が入り、それ以前は null。
+MKT_MARGIN_INTEREST_COLUMNS_V2 = [
+    "PubDate",
     "Date",
     "Code",
+    "IssType",
     "ShrtVol",
     "LongVol",
     "ShrtNegVol",
     "LongNegVol",
     "ShrtStdVol",
     "LongStdVol",
-    "IssType",
+    "ShrtVal",
+    "LongVal",
+    "ShrtNegVal",
+    "LongNegVal",
+    "ShrtStdVal",
+    "LongStdVal",
 ]
+# 旧名称の import 互換のみを目的とした別名（非推奨）。列定義は旧週次仕様（9 列・Date 先頭）
+# ではなく上記 MKT_MARGIN_INTEREST_COLUMNS_V2（16 列・PubDate 先頭）と同一で、列数・順序は
+# 旧定数と非互換（`len(...) == 9` や位置インデックス前提のコードは動作しない）。
+# 新規コードでは新名称を使用すること。本別名は将来のメジャーバージョンで削除予定
+MARKETS_WEEKLY_MARGIN_INTEREST_COLUMNS_V2 = MKT_MARGIN_INTEREST_COLUMNS_V2
 
 # ref. ja https://jpx-jquants.com/ja/spec/mkt-short-ratio
 # ref. en https://jpx-jquants.com/en/spec/mkt-short-ratio

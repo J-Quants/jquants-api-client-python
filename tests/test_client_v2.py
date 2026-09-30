@@ -1341,3 +1341,271 @@ def test_get_eq_valuation_range_empty_result():
         df = cli.get_eq_valuation_range("20200227", "20200302")
         assert df.empty
         assert list(df.columns) == constants.EQ_VALUATION_COLUMNS_V2
+
+
+# ---------------------------------------------------------------------------
+# /markets/margin-interest (2026-09-28 仕様変更: 日次化・PubDate・金額 6 項目)
+# ---------------------------------------------------------------------------
+MKT_MARGIN_INTEREST_RECORD = {
+    "PubDate": "2026-09-28",
+    "Date": "2026-09-25",
+    "Code": "86970",
+    "IssType": "2",
+    "ShrtVol": 257400.0,
+    "LongVol": 225000.0,
+    "ShrtNegVol": 242800.0,
+    "LongNegVol": 81900.0,
+    "ShrtStdVol": 14600.0,
+    "LongStdVol": 143100.0,
+    "ShrtVal": 514800000.0,
+    "LongVal": 450000000.0,
+    "ShrtNegVal": 485600000.0,
+    "LongNegVal": 163800000.0,
+    "ShrtStdVal": 29200000.0,
+    "LongStdVal": 286200000.0,
+}
+
+
+@pytest.mark.parametrize(
+    "kwargs, exp_params",
+    (
+        ({"code": "86970"}, {"code": "86970"}),
+        ({"date_yyyymmdd": "20260925"}, {"date": "20260925"}),
+        (
+            {"code": "86970", "date_yyyymmdd": "2026-09-25"},
+            {"code": "86970", "date": "2026-09-25"},
+        ),
+        (
+            {"code": "86970", "from_yyyymmdd": "20260901", "to_yyyymmdd": "20260930"},
+            {"code": "86970", "from": "20260901", "to": "20260930"},
+        ),
+        # date 指定時は from/to を無視する（他 API ラッパーと同じ挙動）
+        (
+            {
+                "code": "86970",
+                "date_yyyymmdd": "20260925",
+                "from_yyyymmdd": "20260901",
+                "to_yyyymmdd": "20260930",
+            },
+            {"code": "86970", "date": "20260925"},
+        ),
+        # 公表日検索
+        ({"published_date_yyyymmdd": "20260928"}, {"published_date": "20260928"}),
+        (
+            {"code": "86970", "published_date_yyyymmdd": "2026-09-28"},
+            {"code": "86970", "published_date": "2026-09-28"},
+        ),
+    ),
+)
+def test_get_mkt_margin_interest_params(kwargs, exp_params):
+    """get_mkt_margin_interestがクエリパラメータを正しく組み立てることを確認"""
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = []
+
+        cli = jquantsapi.ClientV2()
+        cli.get_mkt_margin_interest(**kwargs)
+        args, call_kwargs = mock_get_paginated.call_args
+        assert args[0] == "/markets/margin-interest"
+        assert call_kwargs.get("params", {}) == exp_params
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    (
+        {},  # code / date / published_date いずれも未指定
+        {"from_yyyymmdd": "20260901", "to_yyyymmdd": "20260930"},  # code 無しの期間指定
+        # 公表日と申込日付軸の同時指定（API は 400 を返す）は事前に弾く
+        {"published_date_yyyymmdd": "20260928", "date_yyyymmdd": "20260925"},
+        {
+            "code": "86970",
+            "published_date_yyyymmdd": "20260928",
+            "from_yyyymmdd": "20260901",
+        },
+    ),
+)
+def test_get_mkt_margin_interest_raises_on_invalid_params(kwargs):
+    """get_mkt_margin_interestはcode/date/published_dateのいずれか必須、
+    published_dateと申込日付軸は排他、from/toはcodeとの併用が必須（APIを呼ぶ前にValueError）"""
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ):
+        cli = jquantsapi.ClientV2()
+        with pytest.raises(ValueError):
+            cli.get_mkt_margin_interest(**kwargs)
+
+
+def test_get_mkt_margin_interest_returns_dataframe():
+    """get_mkt_margin_interestが16列（PubDate先頭）のDataFrameを返すことを確認"""
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = [MKT_MARGIN_INTEREST_RECORD]
+
+        cli = jquantsapi.ClientV2()
+        df = cli.get_mkt_margin_interest(code="86970")
+        assert list(df.columns) == constants.MKT_MARGIN_INTEREST_COLUMNS_V2
+        assert len(df.columns) == 16
+        assert len(df) == 1
+        assert pd.api.types.is_datetime64_any_dtype(df["PubDate"])
+        assert pd.api.types.is_datetime64_any_dtype(df["Date"])
+        assert df.loc[0, "PubDate"] == pd.Timestamp("2026-09-28")
+        assert df.loc[0, "Code"] == "86970"
+        assert df.loc[0, "IssType"] == "2"
+        assert df.loc[0, "ShrtVol"] == 257400.0
+        assert df.loc[0, "LongStdVal"] == 286200000.0
+
+
+def test_get_mkt_margin_interest_null_pub_date_and_values():
+    """2026-09-24以前の週次データ（PubDate・金額6項目がnull）でも列が保持されることを確認"""
+    record = dict(MKT_MARGIN_INTEREST_RECORD)
+    record.update(
+        {
+            "PubDate": None,
+            "Date": "2026-09-18",
+            "ShrtVal": None,
+            "LongVal": None,
+            "ShrtNegVal": None,
+            "LongNegVal": None,
+            "ShrtStdVal": None,
+            "LongStdVal": None,
+        }
+    )
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = [record]
+
+        cli = jquantsapi.ClientV2()
+        df = cli.get_mkt_margin_interest(date_yyyymmdd="20260918")
+        assert list(df.columns) == constants.MKT_MARGIN_INTEREST_COLUMNS_V2
+        assert pd.isna(df.loc[0, "PubDate"])
+        assert df.loc[0, "Date"] == pd.Timestamp("2026-09-18")
+        assert df.loc[0, "ShrtVol"] == 257400.0
+        for col in [
+            "ShrtVal",
+            "LongVal",
+            "ShrtNegVal",
+            "LongNegVal",
+            "ShrtStdVal",
+            "LongStdVal",
+        ]:
+            assert pd.isna(df.loc[0, col])
+
+
+def test_get_mkt_margin_interest_missing_value_keys():
+    """レスポンスにPubDate・金額6項目のキー自体が無くても16列に整形されることを確認"""
+    record = {
+        k: v
+        for k, v in MKT_MARGIN_INTEREST_RECORD.items()
+        if k
+        not in (
+            "PubDate",
+            "ShrtVal",
+            "LongVal",
+            "ShrtNegVal",
+            "LongNegVal",
+            "ShrtStdVal",
+            "LongStdVal",
+        )
+    }
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = [record]
+
+        cli = jquantsapi.ClientV2()
+        df = cli.get_mkt_margin_interest(code="86970")
+        assert list(df.columns) == constants.MKT_MARGIN_INTEREST_COLUMNS_V2
+        # キー欠落でも PubDate は datetime64 に揃う
+        assert pd.api.types.is_datetime64_any_dtype(df["PubDate"])
+        assert pd.isna(df.loc[0, "PubDate"])
+        assert pd.isna(df.loc[0, "ShrtVal"])
+        assert df.loc[0, "LongStdVol"] == 143100.0
+
+
+def test_get_mkt_margin_interest_sorted_by_date_and_code():
+    """複数レコードがDate, Codeでソートされることを確認"""
+    r1 = dict(MKT_MARGIN_INTEREST_RECORD, Date="2026-09-25", Code="86970")
+    r2 = dict(MKT_MARGIN_INTEREST_RECORD, Date="2026-09-24", Code="86970")
+    r3 = dict(MKT_MARGIN_INTEREST_RECORD, Date="2026-09-24", Code="13010")
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = [r1, r2, r3]
+
+        cli = jquantsapi.ClientV2()
+        df = cli.get_mkt_margin_interest(published_date_yyyymmdd="20260928")
+        assert list(df["Code"]) == ["13010", "86970", "86970"]
+        assert list(df["Date"]) == [
+            pd.Timestamp("2026-09-24"),
+            pd.Timestamp("2026-09-24"),
+            pd.Timestamp("2026-09-25"),
+        ]
+
+
+def test_get_mkt_margin_interest_empty_result():
+    """データが空の場合も列定義を保持した空のDataFrameを返すことを確認"""
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "_get_paginated") as mock_get_paginated:
+        mock_get_paginated.return_value = []
+
+        cli = jquantsapi.ClientV2()
+        df = cli.get_mkt_margin_interest(published_date_yyyymmdd="20260928")
+        assert df.empty
+        assert list(df.columns) == constants.MKT_MARGIN_INTEREST_COLUMNS_V2
+
+
+def test_get_mkt_margin_interest_range():
+    """get_mkt_margin_interest_rangeが日付ごとの結果を結合しDate, Codeでソートすることを確認"""
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "get_mkt_margin_interest") as mock_get:
+
+        def _side_effect(date_yyyymmdd="", **kwargs):
+            if date_yyyymmdd == "2026-09-25":
+                return pd.DataFrame(
+                    [dict(MKT_MARGIN_INTEREST_RECORD, Date=pd.Timestamp("2026-09-25"))],
+                    columns=constants.MKT_MARGIN_INTEREST_COLUMNS_V2,
+                )
+            if date_yyyymmdd == "2026-09-24":
+                return pd.DataFrame(
+                    [
+                        dict(
+                            MKT_MARGIN_INTEREST_RECORD,
+                            Date=pd.Timestamp("2026-09-24"),
+                            Code="13010",
+                        )
+                    ],
+                    columns=constants.MKT_MARGIN_INTEREST_COLUMNS_V2,
+                )
+            return pd.DataFrame(columns=constants.MKT_MARGIN_INTEREST_COLUMNS_V2)
+
+        mock_get.side_effect = _side_effect
+
+        cli = jquantsapi.ClientV2()
+        df = cli.get_mkt_margin_interest_range(
+            start_dt="2026-09-23", end_dt="2026-09-25"
+        )
+        assert mock_get.call_count == 3
+        assert list(df.columns) == constants.MKT_MARGIN_INTEREST_COLUMNS_V2
+        assert list(df["Code"]) == ["13010", "86970"]
+
+
+def test_get_mkt_margin_interest_range_empty_result():
+    """範囲内にデータがない場合も列定義を保持した空のDataFrameを返すことを確認"""
+    with patch.object(
+        jquantsapi.ClientV2, "_load_config", return_value={"api_key": "dummy_key"}
+    ), patch.object(jquantsapi.ClientV2, "get_mkt_margin_interest") as mock_get:
+        mock_get.return_value = pd.DataFrame(
+            columns=constants.MKT_MARGIN_INTEREST_COLUMNS_V2
+        )
+
+        cli = jquantsapi.ClientV2()
+        df = cli.get_mkt_margin_interest_range(
+            start_dt="2026-09-19", end_dt="2026-09-21"
+        )
+        assert df.empty
+        assert list(df.columns) == constants.MKT_MARGIN_INTEREST_COLUMNS_V2
